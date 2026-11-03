@@ -1,0 +1,9 @@
+/* The two faces the VCP theme names but doesn't load: Poppins for UI, Inter for numerics. */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+/* Every VCP token as a Tailwind utility, and the components' classes generated. */
+@import "@vdm-design-team/vcp-design-system/theme.css";
+
+body {
+  @apply bg-surface-canvas font-sans text-text-primary;
+}
