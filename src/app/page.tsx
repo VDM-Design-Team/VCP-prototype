@@ -14,7 +14,7 @@ export default function DashboardScreen() {
         <StatCard className="flex-1" label="In Review" value="6" accent="brand" />
         <StatCard className="flex-1" label="Overdue" value="3" accent="critical" />
         <StatCard className="flex-1" label="In Progress" value="8" accent="brand" />
-        <StatCard className="flex-1" label="Pending" value="4" accent="warning" />
+        <StatCard className="flex-1" label="Pending" value="4" accent="yellow" />
         <StatCard className="flex-1" label="Draft" value="5" accent="neutral" />
       </div>
       <Panel title="Recent activity">Nothing yet this cycle.</Panel>
