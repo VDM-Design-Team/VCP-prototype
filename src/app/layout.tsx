@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
+import { ToastProvider } from "@vdm-design-team/vcp-design-system";
 import { ShellStateProvider } from "@/components/shell-state";
 import { RoleSwitch } from "@/components/role-switch";
+import { AVStoreProvider } from "@/components/av-store";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,8 +19,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <ShellStateProvider>
-            {children}
-            <RoleSwitch />
+            <AVStoreProvider>
+              <ToastProvider>
+                {children}
+                <RoleSwitch />
+              </ToastProvider>
+            </AVStoreProvider>
           </ShellStateProvider>
         </ThemeProvider>
       </body>

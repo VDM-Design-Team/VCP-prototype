@@ -9,7 +9,8 @@ import { keyForPath, ROLES, roleSees, type Role } from "./roles";
 /**
  * The prototype's own control, not part of VCP: a floating switch for who the
  * prototype is being viewed as. Switching keeps the page if the new role's
- * rail has it, and otherwise goes to that role's Dashboard.
+ * rail has it, and otherwise goes to that role's Dashboard. It sits bottom
+ * centre, out of the way of the design system's toasts (bottom right).
  */
 export function RoleSwitch() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export function RoleSwitch() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-md border border-stroke-default bg-surface-elevated py-2 pl-4 pr-2 shadow-card">
+    <div className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-md border border-stroke-default bg-surface-elevated py-2 pl-4 pr-2 shadow-card">
       <span id={labelId} className="text-label-sm-medium text-text-secondary">
         View as
       </span>
