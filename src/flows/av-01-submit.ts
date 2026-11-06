@@ -92,7 +92,11 @@ const submitted: ScenarioStep = {
   target: "group:Status",
   path: AV_PAGE,
 };
-const pressSubmit = (text = "Press Submit. Every check runs at once."): ScenarioStep => ({ text, target: "button:Submit" });
+const pressSubmit = (text = "Press Submit. Every check runs at once."): ScenarioStep => ({
+  text,
+  target: "button:Submit",
+  action: true,
+});
 
 /* ---------- The scenarios ---------- */
 

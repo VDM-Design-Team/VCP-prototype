@@ -148,6 +148,17 @@ function CreateForm() {
   const [attempted, setAttempted] = React.useState(false);
   const [links, setLinks] = React.useState<{ id: string; title: string; url: string; domain: "design" | "development" }[]>([]);
   const problems = React.useMemo(() => check(draft), [draft]);
+  /* Each blocked Submit, once its inline errors are on screen: bring the first
+     one into view and put the cursor in it (Figma: "scroll to the highest
+     missing field"). An assignee the card can't mark is reached by its banner
+     and toast. */
+  const [blockedSubmits, setBlockedSubmits] = React.useState(0);
+  React.useEffect(() => {
+    if (!blockedSubmits) return;
+    const first = document.querySelector<HTMLElement>('main [aria-invalid="true"]');
+    first?.scrollIntoView({ block: "center" });
+    first?.focus({ preventScroll: true });
+  }, [blockedSubmits]);
   const shown = attempted ? problems : undefined;
 
   const setList = (key: ListKey, list: string[]) => setDraft((d) => ({ ...d, [key]: list }));
@@ -163,6 +174,7 @@ function CreateForm() {
       for (const message of problems.toasts) {
         toast({ tone: "critical", title: "Missing Input", description: message, announce: false, duration: null });
       }
+      setBlockedSubmits((n) => n + 1);
       return;
     }
     const av = create({

@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { AppShell, Sidebar, TopBar } from "@vdm-design-team/vcp-design-system";
 import { useShellState } from "./shell-state";
 import { CreateAVButton } from "./create-av-button";
+import { useScenario } from "./scenario";
 import { railFor } from "./roles";
 
 /** The rail reports a row's key — `drafts`, or a sub-row's `planning/gantt-chart` —
@@ -39,6 +40,7 @@ export function Screen({
   const { resolvedTheme, setTheme } = useTheme();
   const { collapsed, setCollapsed, role } = useShellState();
   const mounted = useMounted();
+  const { active: scenario, view } = useScenario();
 
   return (
     <AppShell
@@ -65,6 +67,9 @@ export function Screen({
       header={header}
     >
       {children}
+      {/* Room under the content for the prototype's floating controls (the role
+          switch, and a scenario's card), so the last field can scroll clear of them. */}
+      <div aria-hidden="true" className={scenario && view === "reviewer" ? "h-64 shrink-0" : "h-20 shrink-0"} />
     </AppShell>
   );
 }

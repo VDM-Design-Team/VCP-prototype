@@ -156,8 +156,10 @@ function StepHighlight({ target, stepKey }: { target: string; stepKey: string })
     const tick = () => {
       const el = findTarget(target);
       if (el && !scrolled) {
-        /* Nearest: only as far as needed, so the page itself never scrolls past the app. */
-        el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        /* Only when it's out of view, and only as far as needed, so it never
+           fights the page's own scrolling (a blocked Submit scrolls to its first error). */
+        const box = el.getBoundingClientRect();
+        if (box.top < 0 || box.bottom > window.innerHeight) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
         scrolled = true;
       }
       const r = el?.getBoundingClientRect() ?? null;
@@ -178,6 +180,24 @@ function StepHighlight({ target, stepKey }: { target: string; stepKey: string })
       style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
     />
   );
+}
+
+/** Moves the walk on when the user presses an action step's target themselves. */
+function ActionWatcher({ target, onDone }: { target: string; onDone: () => void }) {
+  const done = React.useRef(onDone);
+  React.useEffect(() => {
+    done.current = onDone;
+  });
+  React.useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      const el = findTarget(target);
+      /* After the page has handled the press, so the step after sees its result. */
+      if (el && event.target instanceof Node && el.contains(event.target)) window.setTimeout(() => done.current());
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [target]);
+  return null;
 }
 
 /* ---------- The card ---------- */
@@ -221,10 +241,17 @@ export function ScenarioBar() {
   const step = scenario.steps[index];
   const last = !step?.options && !step?.next && index >= scenario.steps.length - 1;
   const here = step && onPage(step, scenario, pathname);
+  /* An action step: Next does the action (presses Submit), which then moves the walk on. */
+  const actOrNext = () => {
+    const el = step?.action && step.target ? findTarget(step.target) : null;
+    if (el) el.click();
+    else next();
+  };
 
   return (
     <>
       {step?.target && here && <StepHighlight target={step.target} stepKey={`${scenario.id}:${index}`} />}
+      {step?.action && step.target && here && <ActionWatcher target={step.target} onDone={() => next()} />}
       <aside
         data-scenario-bar
         aria-labelledby={headingId}
@@ -263,7 +290,7 @@ export function ScenarioBar() {
               onSelect={(goto) => goto && next(goto)}
             />
           ) : (
-            <Button size="sm" onClick={() => next()}>
+            <Button size="sm" onClick={actOrNext}>
               Next
             </Button>
           )}

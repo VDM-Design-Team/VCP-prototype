@@ -33,6 +33,12 @@ export interface ScenarioStep {
   options?: readonly { label: string; goto: string }[];
   /** Where Next goes when it isn't the following step (where a branch rejoins). */
   next?: string;
+  /**
+   * The step asks the user to press its target (Submit). Pressing it moves the
+   * walk on by itself, and Next presses it for them, so the screen always shows
+   * what the step after describes. Never skipped past.
+   */
+  action?: boolean;
 }
 
 export interface ScenarioDef<Setup = unknown> {
