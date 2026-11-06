@@ -7,12 +7,7 @@ import { Screen } from "@/components/screen";
    (src/app/<key>/) and take it off this list. */
 const NOT_DESIGNED_YET: Record<string, string> = {
   "my-values": "My Values",
-  assigned: "Assigned",
   "task-log": "Task Log Trail",
-  "archive/completed": "Completed",
-  "archive/rejected": "Rejected",
-  "archive/backlogs": "Backlogs",
-  manage: "Manage",
   "planning/planning-list": "Planning List",
   "planning/holiday-registry": "Holiday Registry",
   accounts: "Accounts",
