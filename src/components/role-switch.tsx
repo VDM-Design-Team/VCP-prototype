@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { SegmentedControl } from "@vdm-design-team/vcp-design-system";
+import { Button, SegmentedControl } from "@vdm-design-team/vcp-design-system";
+import { useScenario } from "./scenario";
 import { useShellState } from "./shell-state";
 import { keyForPath, ROLES, roleSees, type Role } from "./roles";
 
@@ -16,7 +17,10 @@ export function RoleSwitch() {
   const router = useRouter();
   const pathname = usePathname();
   const { role, setRole } = useShellState();
+  const { view } = useScenario();
   const labelId = React.useId();
+  /* The catalogue is its own page, and a usability participant gets the task only. */
+  if (pathname.startsWith("/flows") || view === "participant") return null;
 
   const switchTo = (next: string) => {
     const nextRole = next as Role;
@@ -39,6 +43,9 @@ export function RoleSwitch() {
         value={role}
         onChange={switchTo}
       />
+      <Button size="sm" variant="tertiary" onClick={() => router.push("/flows")}>
+        Flows &amp; Scenarios
+      </Button>
     </div>
   );
 }

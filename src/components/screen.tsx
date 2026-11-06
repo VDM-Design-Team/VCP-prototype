@@ -3,8 +3,9 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { AppShell, Button, Sidebar, TopBar } from "@vdm-design-team/vcp-design-system";
+import { AppShell, Sidebar, TopBar } from "@vdm-design-team/vcp-design-system";
 import { useShellState } from "./shell-state";
+import { CreateAVButton } from "./create-av-button";
 import { railFor } from "./roles";
 
 /** The rail reports a row's key — `drafts`, or a sub-row's `planning/gantt-chart` —
@@ -52,7 +53,7 @@ export function Screen({
       }
       topBar={
         <TopBar
-          primaryAction={<Button>Create Added Value</Button>}
+          primaryAction={<CreateAVButton />}
           notifications={3}
           onNotifications={() => {}}
           theme={mounted && resolvedTheme === "dark" ? "dark" : "light"}

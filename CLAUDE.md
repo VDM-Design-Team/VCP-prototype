@@ -48,6 +48,25 @@ app from them. `main` is the prototype everyone clicks through.
 - Sample data lives in the screen's file, or in `src/data/` once more than
   one screen shares it. No real customer data, ever.
 
+## Flows and scenarios
+
+Two ways in, one set of screens: **Explore** (the Dashboard, with the sample
+data) and the **Flows & Scenarios catalogue** (`/flows`). A flow is a user's
+task; a scenario is one set of conditions inside it.
+
+- `flows/<flow-id>.md`: the flow doc (goal, entry points, steps, failures and
+  recovery, exit, open questions). The approved behaviour.
+- `src/flows/<flow-id>.ts`: the flow's scenarios. **One definition per
+  scenario** feeds both its catalogue card and its start. A scenario changes the
+  data a screen starts with, never the screen.
+- `src/flows/catalogue.ts`: every flow, in the FigJam Index's order. Planned
+  flows stay listed with no Start.
+- `/flows/<flow-id>/<scenario>` is a scenario's shareable link. Opening it
+  resets the sample data, the role and the rail, then opens its screen.
+  `?view=participant` hides the reviewer controls for a usability session.
+- A flow change updates the doc, its scenarios, the catalogue and the screens
+  in the same PR. If its FigJam page also needs changing, say so.
+
 ## It's a static site
 
 `next build` writes plain files to `out/` (`output: "export"`), which

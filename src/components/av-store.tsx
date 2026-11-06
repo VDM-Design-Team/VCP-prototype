@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { AVStatus, CommentData } from "@vdm-design-team/vcp-design-system";
-import { ADDED_VALUES, CHAINS, VIEWER, stageLabel, type AddedValue } from "@/data/added-values";
+import { ADDED_VALUES, CHAINS, NEW_AV_IDS, VIEWER, stageLabel, type AddedValue } from "@/data/added-values";
 
 /* The Added Values as the prototype has them right now. It lives in the root
    layout, so rejecting or handing off an AV on its page shows on every list
@@ -15,6 +15,10 @@ interface AVStore {
   update: (id: string, change: Partial<AddedValue>) => void;
   addComment: (id: string, comment: CommentData) => void;
   remove: (id: string) => void;
+  /** Add a new AV (created in the prototype) under the next free reference, and return it. */
+  create: (av: Omit<AddedValue, "id" | "ref">) => AddedValue;
+  /** Back to the sample data: what starting a scenario does, so nothing carries over. */
+  reset: () => void;
 }
 
 const AVStoreContext = React.createContext<AVStore | null>(null);
@@ -51,6 +55,13 @@ export function AVStoreProvider({ children }: { children: React.ReactNode }) {
       update: (id, change) => touch(id, (av) => ({ ...av, ...change })),
       addComment: (id, comment) => touch(id, (av) => ({ ...av, comments: [comment, ...av.comments] })),
       remove: (id) => setAvs((list) => list.filter((av) => av.id !== id)),
+      create: (fields) => {
+        const id = NEW_AV_IDS.find((free) => !avs.some((av) => av.id === free)) ?? `vcp-${1211 + avs.length}`;
+        const created: AddedValue = { ...fields, id, ref: id.toUpperCase() };
+        setAvs((list) => [created, ...list]);
+        return created;
+      },
+      reset: () => setAvs(ADDED_VALUES),
     };
   }, [avs]);
 

@@ -4,6 +4,7 @@ import { ToastProvider } from "@vdm-design-team/vcp-design-system";
 import { ShellStateProvider } from "@/components/shell-state";
 import { RoleSwitch } from "@/components/role-switch";
 import { AVStoreProvider } from "@/components/av-store";
+import { ScenarioBar, ScenarioProvider } from "@/components/scenario";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,8 +22,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <ShellStateProvider>
             <AVStoreProvider>
               <ToastProvider>
-                {children}
-                <RoleSwitch />
+                <ScenarioProvider>
+                  {children}
+                  <RoleSwitch />
+                  <ScenarioBar />
+                </ScenarioProvider>
               </ToastProvider>
             </AVStoreProvider>
           </ShellStateProvider>
