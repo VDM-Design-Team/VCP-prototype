@@ -86,11 +86,10 @@ const COMPLETE: SubmitDraft = {
 
 /* ---------- The guided steps ---------- */
 
-const AV_PAGE = "/added-values/vcp-";
+/* After a successful Submit the AV closes and the Dashboard opens, with a toast that can open the AV. */
 const submitted: ScenarioStep = {
-  text: "Submitted: the AV is Pending. It waits for an admin to accept or reject it (AV · 06).",
-  target: "group:Status",
-  path: AV_PAGE,
+  text: "Submitted: the AV closes and you're back on the Dashboard. The toast confirms it, and Open it shows the AV, Pending until an admin accepts or rejects it (AV · 06).",
+  path: "/",
 };
 const pressSubmit = (text = "Press Submit. Every check runs at once."): ScenarioStep => ({
   text,
@@ -133,7 +132,7 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     demonstrates: "Submit passes every check and the AV moves from Draft to Pending.",
     conditions: "Eve (User) on the creation page with every required field filled and the tag rule met.",
     simulated: "Submit always succeeds. The new AV gets the next free reference and waits for an admin.",
-    expected: "The AV's page opens with status Pending and a success toast. Nothing is blocked.",
+    expected: "The AV closes and the Dashboard opens with a success toast (Open it shows the AV, Pending). Nothing is blocked.",
     task: "Submit this Added Value for review.",
     setup: COMPLETE,
   },
@@ -262,7 +261,7 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     demonstrates: "A busy assignee only gets a warning; Submit still passes.",
     conditions: "Eve (User), a complete draft assigned to Jack Morgan, who is fully booked 9–13 Nov.",
     simulated: "Jack's booking comes from the sample availability.",
-    expected: "An amber warning about Jack; Submit still moves the AV to Pending.",
+    expected: "An amber warning about Jack; Submit still goes through, back to the Dashboard.",
     task: "Submit this Added Value for review.",
     setup: { ...COMPLETE, details: { ...COMPLETE.details, assignees: [{ name: "Jack Morgan", description: "Assignee", points: 5 }] } },
   },

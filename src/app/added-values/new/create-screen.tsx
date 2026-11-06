@@ -203,9 +203,16 @@ function CreateForm() {
       updatedAt: new Date().toISOString(),
       updatedLabel: "Just now",
     } satisfies Omit<AddedValue, "id" | "ref">);
-    /* Inferred: Figma draws no landing page or success toast for Submit. */
-    router.push(`/added-values/${av.id}`);
-    toast({ tone: "success", title: `${av.ref} submitted`, description: "It's Pending until an admin accepts or rejects it." });
+    /* Decided 6 Nov 2026: a submitted AV closes, and the Dashboard opens with a
+       success toast that can open it. (Figma draws no landing page.) */
+    router.push("/");
+    toast({
+      tone: "success",
+      title: `${av.ref} submitted`,
+      description: "It's Pending until an admin accepts or rejects it.",
+      actionLabel: "Open it",
+      onAction: () => router.push(`/added-values/${av.id}`),
+    });
   };
 
   const section = (key: ListKey, type: "problem" | "solution" | "deliverable", noun: string) => (

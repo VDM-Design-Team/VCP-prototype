@@ -22,7 +22,7 @@ Get a new Added Value in front of an admin: from Draft to Pending.
    - every problem paired with a solution;
    - the tag rule met;
    - no assignee **unavailable** (e.g. on leave) during the AV's dates.
-5. All pass → the AV moves **Draft → Pending** and its page opens, with a success toast *(inferred: Figma draws no landing page or toast)*. It waits for an admin to Accept or Reject (AV · 06).
+5. All pass → the AV moves **Draft → Pending**, the creation page closes and the **Dashboard** opens, with a success toast ("VCP-1211 submitted") whose **Open it** shows the AV *(decided 6 Nov 2026; Figma draws no landing page)*. It waits for an admin to Accept or Reject (AV · 06).
 
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
@@ -37,7 +37,7 @@ Get a new Added Value in front of an admin: from Draft to Pending.
 A new Submit replaces the last Submit's toasts instead of stacking more.
 
 ## Completion or exit
-- **Done:** the AV is Pending and its page is open.
+- **Done:** the AV is Pending, and the user is back on the Dashboard.
 - **Leave early:** the back arrow; **Save as Draft** (AV · 03) and **Discard** (AV · 02) are separate flows, not in the prototype yet. Save as draft shows a "not in the prototype yet" toast.
 
 ## Unresolved questions
@@ -46,5 +46,4 @@ A new Submit replaces the last Submit's toasts instead of stacking more.
 - **Busy-assignee warning:** Figma draws it inside the assignee picker (`103:30193`). `DetailCard`'s add-assignee form is a plain picker with no availability, so the prototype shows a banner instead. Design system follow-up?
 - **The Assignee field's error:** `DetailCard` accepts `errors.assignees` in its types but never draws it (only its dropdowns and dates show errors), so the block is a banner. Design system bug.
 - **Which card the creation page uses:** Figma's creation page has Assignee, Start and Due Date and Capacity, which is `DetailCard`'s `editing` card. Its `new` card has none of them.
-- **Where Submit lands, and its success toast**, are inferred.
 - **The status buttons in Figma's creation header** ("Return to In Progress", "Move to For QA") look copied from the AV page; the prototype leaves them out.

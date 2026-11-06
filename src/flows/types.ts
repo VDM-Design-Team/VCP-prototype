@@ -24,7 +24,7 @@ export interface ScenarioStep {
   /** One short line: what to do or notice. */
   text: string;
   target?: string;
-  /** The page the step happens on (a path prefix). Default: the scenario's start. */
+  /** The page the step happens on: exact ("/" is the Dashboard), or a prefix ending in "*". Default: the scenario's start. */
   path?: string;
   /**
    * Two or more ways forward: Next opens a menu of them, each going to its own

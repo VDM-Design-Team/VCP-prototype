@@ -30,8 +30,10 @@ interface ScenarioState {
 const ScenarioContext = React.createContext<ScenarioState | null>(null);
 
 /** Whether a step happens on this page. */
-const onPage = (step: ScenarioStep, scenario: ScenarioDef, pathname: string) =>
-  pathname.startsWith(step.path ?? scenario.start);
+const onPage = (step: ScenarioStep, scenario: ScenarioDef, pathname: string) => {
+  const path = step.path ?? scenario.start;
+  return path.endsWith("*") ? pathname.startsWith(path.slice(0, -1)) : pathname === path;
+};
 
 /**
  * The prototype's Flows & Scenarios machinery, not part of VCP. A scenario
