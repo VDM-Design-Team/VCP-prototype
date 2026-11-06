@@ -67,7 +67,9 @@ task; a scenario is one set of conditions inside it.
   `data-flow-step`, `group:<Label>`, `button:<Text>`). A step with two or more
   ways on has `options`, and Next opens a menu of them. When the user's own
   click opens another page, the walk follows to the step for that page. The
-  participant view has no guidance.
+  participant view has no guidance. **Reset, Finish and Leave scenario** put
+  everything back: the sample data (anything the scenario created or changed),
+  its toasts, the role and the rail. Finish and Leave return to the list.
 - `/flows/<flow-id>/<scenario>` is a scenario's shareable link. Opening it
   resets the sample data, the role and the rail, then opens its screen.
   `?view=participant` hides the reviewer controls for a usability session.

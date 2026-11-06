@@ -23,7 +23,7 @@ interface ScenarioState {
   back: () => void;
   /** Set the scenario's conditions (fresh data, its role, an open rail) and return the route it opens on. */
   start: (flowId: string, scenarioKey: string, view?: ScenarioView) => string | undefined;
-  /** Leave the scenario: Explore prototype from here on. */
+  /** Leave the scenario (Finish, Leave scenario): the sample data, toasts, role and rail all go back to how they were. */
   clear: () => void;
 }
 
@@ -94,6 +94,11 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         return found.scenario.start;
       },
       clear: () => {
+        /* Nothing a scenario did outlives it: what it created or changed, its toasts, its role. */
+        reset();
+        dismissAll();
+        setRole("user");
+        setCollapsed(false);
         setActive(undefined);
         setView("reviewer");
         setTrail([0]);
