@@ -1,6 +1,6 @@
 import type { DetailCardValue, SearchSelectOption } from "@vdm-design-team/vcp-design-system";
 import { VIEWER } from "@/data/added-values";
-import type { FlowDef, ScenarioDef } from "./types";
+import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
 
 /**
  * AV · 01 Submit an AV — the flow doc is `flows/av-01-submit.md`, the FigJam
@@ -84,6 +84,16 @@ const COMPLETE: SubmitDraft = {
   },
 };
 
+/* ---------- The guided steps ---------- */
+
+const AV_PAGE = "/added-values/vcp-";
+const submitted: ScenarioStep = {
+  text: "Submitted: the AV is Pending. It waits for an admin to accept or reject it (AV · 06).",
+  target: "group:Status",
+  path: AV_PAGE,
+};
+const pressSubmit = (text = "Press Submit. Every check runs at once."): ScenarioStep => ({ text, target: "button:Submit" });
+
 /* ---------- The scenarios ---------- */
 
 const base = {
@@ -97,6 +107,24 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
   {
     ...base,
     id: "av-01-submit.happy",
+    steps: [
+      { text: "Every required field is filled in, starting with the Title.", target: "step:title" },
+      { text: "Problems and Solutions pair up by number: each problem has its solution.", target: "step:problems" },
+      { text: "Acceptance Criteria and Desired Outcome are required too.", target: "step:deliverables" },
+      { text: "Tags: one global tag (Accessibility) and one Development tag (Frontend).", target: "group:Tags" },
+      {
+        id: "leave",
+        text: "There are two ways off this page. Which one?",
+        target: "step:actions",
+        options: [
+          { label: "Submit it", goto: "submit" },
+          { label: "Save it as a draft", goto: "draft" },
+        ],
+      },
+      { id: "draft", text: "Save as Draft is its own flow (AV · 03), not in the prototype yet: the AV would stay a Draft. Go back and choose Submit.", target: "button:Save as draft", next: "leave" },
+      { id: "submit", ...pressSubmit() },
+      submitted,
+    ],
     name: "Everything filled in",
     demonstrates: "Submit passes every check and the AV moves from Draft to Pending.",
     conditions: "Eve (User) on the creation page with every required field filled and the tag rule met.",
@@ -108,6 +136,14 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
   {
     ...base,
     id: "av-01-submit.one-missing",
+    steps: [
+      { text: "Desired Outcome is empty. Leave it that way for now.", target: "step:desired-outcome" },
+      pressSubmit(),
+      { text: "Blocked: one \"Missing Input\" toast, and an error under Desired Outcome.", target: "step:desired-outcome" },
+      { text: "Type a desired outcome: the error clears as you type.", target: "step:desired-outcome" },
+      pressSubmit("Press Submit again."),
+      submitted,
+    ],
     name: "One required field empty",
     demonstrates: "Submit is blocked by one empty required field: one toast and one field error.",
     conditions: "Eve (User), the same draft with Desired Outcome left empty.",
@@ -119,6 +155,14 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
   {
     ...base,
     id: "av-01-submit.several-missing",
+    steps: [
+      pressSubmit("The page is blank. Press Submit without filling anything in."),
+      { text: "Every check runs at once: a toast per empty field, and an error under each one.", target: "step:form" },
+      { text: "Fill in the Title: its error clears, the others stay until their fields are filled.", target: "step:title" },
+      { text: "Fill in the rest, and add a global and a Development tag.", target: "step:form" },
+      pressSubmit("Press Submit again."),
+      submitted,
+    ],
     name: "Several required fields empty",
     demonstrates: "Every check runs at once: one toast per problem, every field error together.",
     conditions: "Eve (User) on a blank creation page.",
@@ -130,6 +174,23 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
   {
     ...base,
     id: "av-01-submit.problem-without-solution",
+    steps: [
+      { text: "There are two problems…", target: "step:problems" },
+      { text: "…but only one solution.", target: "step:solutions" },
+      pressSubmit(),
+      {
+        text: "Blocked: both cards of the pair say \"Problem and solution should be filled together\". How do you fix it?",
+        target: "step:problems",
+        options: [
+          { label: "Add the second solution", goto: "fill" },
+          { label: "Remove the second problem", goto: "remove" },
+        ],
+      },
+      { id: "fill", text: "Type the second solution: both errors clear.", target: "step:solutions", next: "again" },
+      { id: "remove", text: "Hover problem 2 and press its ✕: both errors clear.", target: "step:problems", next: "again" },
+      { id: "again", ...pressSubmit("Press Submit again.") },
+      submitted,
+    ],
     name: "A problem without its solution",
     demonstrates: "Each problem needs its solution: a second problem with no matching solution blocks Submit.",
     conditions: "Eve (User), a complete draft with a second problem and no second solution.",
@@ -141,6 +202,14 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
   {
     ...base,
     id: "av-01-submit.tag-rule",
+    steps: [
+      { text: "One tag, Accessibility, which is global. There's no Development tag.", target: "group:Tags" },
+      pressSubmit(),
+      { text: "Blocked: the error under Tags says which kind is missing.", target: "group:Tags" },
+      { text: "Add a Development tag (Development, Frontend or Backend): the error clears.", target: "group:Tags" },
+      pressSubmit("Press Submit again."),
+      submitted,
+    ],
     name: "Tag rule not met",
     demonstrates: "Tags need one global tag and at least one in-domain tag.",
     conditions: "Eve (User), a complete draft tagged only \"Accessibility\" (global, no Development tag).",
@@ -152,6 +221,23 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
   {
     ...base,
     id: "av-01-submit.assignee-unavailable",
+    steps: [
+      { text: "Lena Novak is assigned. She's on leave 16/11/2026–20/11/2026.", target: "group:Assignee" },
+      { text: "The AV runs 09/11/2026 to 20/11/2026, so it overlaps her leave.", target: "group:Due Date" },
+      pressSubmit(),
+      {
+        text: "Blocked: the Assignee unavailable banner says why. How do you fix it?",
+        target: "step:assignee-unavailable",
+        options: [
+          { label: "Move the due date earlier", goto: "dates" },
+          { label: "Remove Lena", goto: "remove" },
+        ],
+      },
+      { id: "dates", text: "Set the due date to 13/11/2026 or earlier: the banner goes.", target: "group:Due Date", next: "again" },
+      { id: "remove", text: "Hover Lena's chip and press its ✕: the banner goes.", target: "group:Assignee", next: "again" },
+      { id: "again", ...pressSubmit("Press Submit again.") },
+      submitted,
+    ],
     name: "Assignee unavailable on the AV's dates",
     demonstrates: "An assignee who is away (on leave) during the AV's dates blocks Submit.",
     conditions: "Eve (User), a complete draft assigned to Lena Novak, who is on leave 16–20 Nov; the AV runs 9–20 Nov.",
@@ -163,6 +249,11 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
   {
     ...base,
     id: "av-01-submit.assignee-busy",
+    steps: [
+      { text: "Jack Morgan is fully booked 09/11/2026–13/11/2026: an amber warning, not a block.", target: "step:assignee-busy" },
+      pressSubmit("Press Submit: it still goes through."),
+      submitted,
+    ],
     name: "Assignee busy (warning only)",
     demonstrates: "A busy assignee only gets a warning; Submit still passes.",
     conditions: "Eve (User), a complete draft assigned to Jack Morgan, who is fully booked 9–13 Nov.",

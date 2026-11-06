@@ -197,7 +197,13 @@ function CreateForm() {
   };
 
   const section = (key: ListKey, type: "problem" | "solution" | "deliverable", noun: string) => (
-    <DescriptionSection type={type} onAdd={() => setList(key, [...draft[key], ""])} addLabel={`Add ${noun}`}>
+    <DescriptionSection
+      type={type}
+      onAdd={() => setList(key, [...draft[key], ""])}
+      addLabel={`Add ${noun}`}
+      /* Where a guided scenario's step points: see src/flows/types.ts. */
+      data-flow-step={key}
+    >
       {draft[key].map((value, i) => (
         <DescriptionCard
           key={i}
@@ -218,8 +224,8 @@ function CreateForm() {
       header={<PageTitle title="Added Value Creation" onBack={() => router.back()} backLabel="Back" />}
     >
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="flex flex-col gap-4 lg:col-span-2">
-          <section className="rounded-md bg-surface-elevated p-6">
+        <div data-flow-step="form" className="flex flex-col gap-4 lg:col-span-2">
+          <section data-flow-step="title" className="rounded-md bg-surface-elevated p-6">
             <Field label="Title" error={shown?.title}>
               <Input
                 fullWidth
@@ -232,7 +238,7 @@ function CreateForm() {
           {section("problems", "problem", "problem")}
           {section("solutions", "solution", "solution")}
           {section("deliverables", "deliverable", "acceptance criterion")}
-          <DescriptionSection type="desired-outcome">
+          <DescriptionSection type="desired-outcome" data-flow-step="desired-outcome">
             <DescriptionCard
               editing
               value={draft.desiredOutcome}
@@ -243,15 +249,21 @@ function CreateForm() {
         </div>
         <div className="flex flex-col gap-4">
           {shown?.unavailable && (
-            <Banner tone="critical" title="Assignee unavailable">
-              {shown.unavailable}
-            </Banner>
+            <div data-flow-step="assignee-unavailable">
+              <Banner tone="critical" title="Assignee unavailable">
+                {shown.unavailable}
+              </Banner>
+            </div>
           )}
-          {problems.warnings.map((w) => (
-            <Banner key={w} tone="warning" title="Assignee busy">
-              {w} You can still submit.
-            </Banner>
-          ))}
+          {problems.warnings.length > 0 && (
+            <div data-flow-step="assignee-busy" className="flex flex-col gap-4">
+              {problems.warnings.map((w) => (
+                <Banner key={w} tone="warning" title="Assignee busy">
+                  {w} You can still submit.
+                </Banner>
+              ))}
+            </div>
+          )}
           <DetailCard
             type="editing"
             value={draft.details}
@@ -277,7 +289,7 @@ function CreateForm() {
             }
             onRemoveLink={(_section, id) => setLinks((list) => list.filter((l) => l.id !== id))}
           />
-          <div className="flex justify-end gap-3">
+          <div data-flow-step="actions" className="flex justify-end gap-3">
             <Button
               variant="secondary"
               onClick={() =>

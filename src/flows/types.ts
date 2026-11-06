@@ -10,6 +10,31 @@ import type { Role } from "@/components/roles";
 export type ImplementationStatus = "Planned" | "In progress" | "Implemented";
 export type TestingStatus = "Not tested" | "Tested";
 
+/**
+ * One step of a guided scenario: what the reviewer does or looks at now, and
+ * which part of the screen it's about. `target` finds that part:
+ * - `step:<name>`: an element marked `data-flow-step="<name>"` on the screen;
+ * - `group:<Label>`: a field group named by its label (DetailCard's "Tags", "Assignee");
+ * - `button:<Text>`: a button by its words ("Submit").
+ * Without a target, the step is text only.
+ */
+export interface ScenarioStep {
+  /** Needed only by a step that a branch or `next` points at. */
+  id?: string;
+  /** One short line: what to do or notice. */
+  text: string;
+  target?: string;
+  /** The page the step happens on (a path prefix). Default: the scenario's start. */
+  path?: string;
+  /**
+   * Two or more ways forward: Next opens a menu of them, each going to its own
+   * step. Without options, Next goes to `next` or the step after this one.
+   */
+  options?: readonly { label: string; goto: string }[];
+  /** Where Next goes when it isn't the following step (where a branch rejoins). */
+  next?: string;
+}
+
 export interface ScenarioDef<Setup = unknown> {
   /** Stable, never reused: "av-01-submit.happy". Also the last part of its link. */
   id: string;
@@ -30,6 +55,8 @@ export interface ScenarioDef<Setup = unknown> {
   testing: TestingStatus;
   /** The role the scenario starts as. */
   role: Role;
+  /** The reviewer's guided walk through it. The participant view shows none of it. */
+  steps: readonly ScenarioStep[];
   /** The screen's starting data. Read by the screen the scenario opens. */
   setup: Setup;
 }

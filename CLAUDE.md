@@ -61,6 +61,13 @@ task; a scenario is one set of conditions inside it.
   data a screen starts with, never the screen.
 - `src/flows/catalogue.ts`: every flow, in the FigJam Index's order. Planned
   flows stay listed with no Start.
+- Each scenario has **guided steps** (`steps` in its definition): the
+  reviewer card walks through them with Back and Next, outlining the part of
+  the screen each step is about (`target`: `step:<name>` for an element marked
+  `data-flow-step`, `group:<Label>`, `button:<Text>`). A step with two or more
+  ways on has `options`, and Next opens a menu of them. When the user's own
+  click opens another page, the walk follows to the step for that page. The
+  participant view has no guidance.
 - `/flows/<flow-id>/<scenario>` is a scenario's shareable link. Opening it
   resets the sample data, the role and the rail, then opens its screen.
   `?view=participant` hides the reviewer controls for a usability session.
