@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { AppShell, Button, Sidebar, TopBar } from "@vdm-design-team/vcp-design-system";
 import { useShellState } from "./shell-state";
+import { railFor } from "./roles";
 
-/** The rail reports a row's key; every key is a route of the same name, except Dashboard. */
+/** The rail reports a row's key — `drafts`, or a sub-row's `planning/gantt-chart` —
+    and every key is a route of the same name, except Dashboard. */
 export const routeFor = (key: string) => (key === "dashboard" ? "/" : `/${key}`);
 
 /* The theme is only known in the browser, so the server renders the switch as light. */
@@ -19,7 +21,9 @@ const useMounted = () =>
 
 /**
  * Every screen sits in this: VCP's AppShell with the rail, the app bar and the
- * screen's own title band. `active` is the rail row this screen belongs to.
+ * screen's own title band. `active` is the rail row this screen belongs to —
+ * a sub-row's key (`planning/gantt-chart`) for a screen under Planning or Archive.
+ * The rail is the one for the role the floating RoleSwitch is set to.
  */
 export function Screen({
   active,
@@ -32,14 +36,14 @@ export function Screen({
 }) {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
-  const { collapsed, setCollapsed } = useShellState();
+  const { collapsed, setCollapsed, role } = useShellState();
   const mounted = useMounted();
 
   return (
     <AppShell
       sidebar={
         <Sidebar
-          userType="user"
+          userType={railFor(role)}
           active={active}
           onNavigate={(key) => router.push(routeFor(key))}
           collapsed={collapsed}
