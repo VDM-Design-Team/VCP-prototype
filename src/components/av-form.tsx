@@ -12,6 +12,7 @@ import {
   Field,
   formatDate,
   Input,
+  Modal,
   PageTitle,
   StatusHistory,
   useToast,
@@ -22,15 +23,16 @@ import { Screen } from "@/components/screen";
 import { useAddedValues } from "@/components/av-store";
 import { useScenario, useScenarioSetup } from "@/components/scenario";
 import { TODAY } from "@/data/gantt";
-import { CYCLE_OPTIONS, VIEWER, type AddedValue } from "@/data/added-values";
+import { CYCLE_OPTIONS, VIEWER, stageLabel, type AddedValue, type AVDomain } from "@/data/added-values";
 import {
   availabilityClash,
-  DOMAIN_TAGS,
+  DOMAIN_NAMES,
+  DOMAIN_TAG_SETS,
   EMPTY_DRAFT,
   GLOBAL_TAGS,
   SUBMIT_FLOW,
   SUBMIT_PEOPLE,
-  TAG_OPTIONS,
+  tagOptions,
   type SubmitDraft,
 } from "@/flows/av-01-submit";
 import { DRAFT_FLOW } from "@/flows/av-03-save-as-draft";
@@ -58,7 +60,7 @@ const PAIR = "Problem and solution should be filled together";
 const blank = (s: string) => !s.trim();
 const range = (from: string, to: string) => `${formatDate(from)}–${formatDate(to)}`;
 
-function check(d: SubmitDraft): Problems {
+function check(d: SubmitDraft, avDomain: AVDomain): Problems {
   const p: Problems = { problems: {}, solutions: {}, deliverables: {}, details: {}, toasts: [], warnings: [] };
   if (blank(d.title)) {
     p.title = EMPTY_FIELD;
@@ -103,16 +105,17 @@ function check(d: SubmitDraft): Problems {
   }
 
   /* The tag rule: one global tag and at least one of the AV's own domain. */
+  const domainName = DOMAIN_NAMES[avDomain];
   const tags = d.details.tags ?? [];
   if (tags.length === 0) {
     p.details.tags = "Please select at least one tag before submitting";
     p.toasts.push("Please select at least one Tag before submitting");
   } else {
     const global = tags.some((t) => (GLOBAL_TAGS as readonly string[]).includes(t));
-    const domain = tags.some((t) => (DOMAIN_TAGS as readonly string[]).includes(t));
+    const domain = tags.some((t) => DOMAIN_TAG_SETS[avDomain].includes(t));
     if (!global || !domain) {
-      p.details.tags = `Add ${!global ? "one global tag" : ""}${!global && !domain ? " and " : ""}${!domain ? "at least one Development tag" : ""} before submitting`;
-      p.toasts.push("Tags need one global tag and at least one Development tag before submitting");
+      p.details.tags = `Add ${!global ? "one global tag" : ""}${!global && !domain ? " and " : ""}${!domain ? `at least one ${domainName} tag` : ""} before submitting`;
+      p.toasts.push(`Tags need one global tag and at least one ${domainName} tag before submitting`);
     }
   }
 
@@ -172,8 +175,8 @@ type Link = { id: string; title: string; url: string; domain: "design" | "develo
 
 /**
  * The Added Value form: Added Value Creation (Figma 2:11984; AV · 01 Submit,
- * AV · 03 Save as Draft) and, given `editing`, the edit page of a Draft or
- * Pending AV (Figma 1026:166675 and 1043:239669; AV · 04 Edit an AV). The
+ * AV · 03 Save as Draft) and, given `editing`, an AV's edit page at any status
+ * (Figma 1026:166675 and 1043:239669; AV · 04 Edit an AV). The
  * description on the left, the details and deliverables on the right, the
  * buttons under them. Submit runs every check at once; a blocked Submit raises
  * one "Missing Input" toast per problem (not announced: the field errors
@@ -191,16 +194,19 @@ function Form({ editing }: { editing?: AddedValue }) {
   const { toast, dismissAll } = useToast();
   const { create, update, moveTo } = useAddedValues();
   const setup = useScenarioSetup<SubmitDraft>([SUBMIT_FLOW.id, DRAFT_FLOW.id]);
-  const [draft, setDraft] = React.useState<SubmitDraft>(() =>
-    structuredClone(editing ? fromAV(editing) : (setup ?? EMPTY_DRAFT)),
-  );
+  const [initial] = React.useState<SubmitDraft>(() => structuredClone(editing ? fromAV(editing) : (setup ?? EMPTY_DRAFT)));
+  const [draft, setDraft] = React.useState<SubmitDraft>(() => structuredClone(initial));
+  /* AV · 04, decided 9 Nov 2026: the back arrow asks before dropping unsaved edits. */
+  const [askLeave, setAskLeave] = React.useState(false);
   /* Errors show from the first Submit (or Save as draft) on, and each clears as
      its field is fixed. Which one was pressed last decides which checks show. */
   const [attempted, setAttempted] = React.useState<"submit" | "draft">();
   const [links, setLinks] = React.useState<Link[]>(() =>
     (editing?.links ?? []).map((l) => ({ ...l, domain: (l.domain ?? "development") as Link["domain"] })),
   );
-  const problems = React.useMemo(() => check(draft), [draft]);
+  /* A new AV is Development's for now (the prototype's viewer is a developer). */
+  const avDomain: AVDomain = editing?.domain ?? "development";
+  const problems = React.useMemo(() => check(draft, avDomain), [draft, avDomain]);
   const draftProblems = React.useMemo(() => checkDraft(draft), [draft]);
   /* Each blocked press, once its inline errors are on screen: bring the first
      one into view and put the cursor in it (Figma: "scroll to the highest
@@ -259,7 +265,7 @@ function Form({ editing }: { editing?: AddedValue }) {
   const createAs = (status: "Pending" | "Draft") =>
     create({
       ...content(),
-      domain: "development",
+      domain: avDomain,
       status,
       dateInitiated: TODAY,
       files: [],
@@ -300,7 +306,7 @@ function Form({ editing }: { editing?: AddedValue }) {
       return submitted(editing);
     }
     update(editing.id, content());
-    backToAV(editing, `${editing.ref}: changes saved`, "It's still Pending until an admin accepts or rejects it.");
+    backToAV(editing, `${editing.ref}: changes saved`, `It stays ${stageLabel(editing)}.`);
   };
 
   /* AV · 03: only the Title is checked. A new draft closes the page and opens
@@ -320,13 +326,18 @@ function Form({ editing }: { editing?: AddedValue }) {
       });
       return;
     }
-    if (editing.status === "Draft") {
-      update(editing.id, content());
-      return backToAV(editing, `${editing.ref}: changes saved`, "It's still a Draft. Only you can see it until it's submitted.");
-    }
-    moveTo(editing.id, "Draft", content());
-    backToAV(editing, `${editing.ref} moved back to Draft`, "It leaves the admins' queue until it's submitted again.");
+    /* Decided 9 Nov 2026: on an AV past Draft, Save as draft only saves the
+       changes; the status stays. */
+    update(editing.id, content());
+    backToAV(
+      editing,
+      `${editing.ref}: changes saved`,
+      editing.status === "Draft" ? "It's still a Draft. Only you can see it until it's submitted." : `It stays ${stageLabel(editing)}.`,
+    );
   };
+
+  /** Edits not saved yet: what the back arrow asks about. */
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial) || links.length !== (editing?.links.length ?? 0);
 
   const section = (key: ListKey, type: "problem" | "solution" | "deliverable", noun: string) => (
     <DescriptionSection
@@ -351,11 +362,14 @@ function Form({ editing }: { editing?: AddedValue }) {
   );
 
   const header = editing ? (
-    <PageTitle
-      title={`Edit ${editing.ref}`}
-      onBack={() => router.push(`/added-values/${editing.id}`)}
-      backLabel={`Back to ${editing.ref}`}
-    />
+    /* Where a guided scenario's step points: see src/flows/types.ts. */
+    <div data-flow-step="back">
+      <PageTitle
+        title={`Edit ${editing.ref}`}
+        onBack={() => (dirty ? setAskLeave(true) : router.push(`/added-values/${editing.id}`))}
+        backLabel={`Back to ${editing.ref}`}
+      />
+    </div>
   ) : (
     <PageTitle title="Added Value Creation" onBack={() => router.back()} backLabel="Back" />
   );
@@ -415,19 +429,19 @@ function Form({ editing }: { editing?: AddedValue }) {
                 cycles: CYCLE_OPTIONS,
                 projects: ["VCP"],
                 categories: ["Improvement", "New feature", "Fix"],
-                tags: TAG_OPTIONS,
+                tags: tagOptions(avDomain),
               }}
               errors={shown?.details}
             />
           </div>
           <DeliverablesCard
-            domain="development"
+            domain={avDomain}
             mode="edit"
             links={links}
             onAddLinks={(_section, added) =>
               setLinks((list) => [
                 ...list,
-                ...added.map((l, i) => ({ ...l, id: `link-${list.length + i + 1}`, domain: "development" as const })),
+                ...added.map((l, i) => ({ ...l, id: `link-${list.length + i + 1}`, domain: avDomain })),
               ])
             }
             onRemoveLink={(_section, id) => setLinks((list) => list.filter((l) => l.id !== id))}
@@ -452,6 +466,23 @@ function Form({ editing }: { editing?: AddedValue }) {
           </div>
         </div>
       </div>
+      {editing && (
+        <Modal
+          open={askLeave}
+          onClose={() => setAskLeave(false)}
+          title="Leave without saving?"
+          tone="critical"
+          size="sm"
+          actions={{
+            cancelLabel: "Keep editing",
+            confirm: { label: "Leave", onClick: () => router.push(`/added-values/${editing.id}`) },
+          }}
+        >
+          <p className="text-body-md-regular text-text-secondary">
+            Your changes to {editing.ref} aren&apos;t saved. If you leave now, they&apos;re lost.
+          </p>
+        </Modal>
+      )}
     </Screen>
   );
 }

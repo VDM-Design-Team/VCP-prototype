@@ -1,16 +1,13 @@
-import type { AVStatus } from "@vdm-design-team/vcp-design-system";
 import { ADDED_VALUES } from "@/data/added-values";
 import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
 
 /**
  * AV · 04 Edit an AV — the flow doc is `flows/av-04-edit.md`, the FigJam page
  * is "AV · 04 Edit an AV". Editing opens the creation form, filled in from the
- * AV. Its scenarios start from Eve's sample draft (VCP-1199) and her Pending
- * AV (VCP-1200), changed per scenario through `avs`.
+ * AV, at any status (decided 9 Nov 2026). Its scenarios start from Eve's
+ * sample draft (VCP-1199), her Pending AV (VCP-1200) and her AV in Review
+ * (VCP-1207), changed per scenario through `avs`.
  */
-
-/** The statuses whose AV opens on the edit page. Figma draws only these two. */
-export const EDITABLE: readonly AVStatus[] = ["Draft", "Pending"];
 
 const sample = (id: string) => ADDED_VALUES.find((av) => av.id === id)!;
 const DRAFT = sample("vcp-1199");
@@ -117,59 +114,76 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
     steps: [
       { text: "VCP-1200 is Eve's, Pending: it waits for an admin.", target: "step:av-menu" },
       openEdit("vcp-1200"),
-      onEditPage("A Pending AV's edit page has Save as draft and Submit, and no Discard (Figma 1043:239669)."),
+      onEditPage("Past Draft, the edit page has Save as draft and Submit, and no Discard (Figma 1043:239669)."),
       onEditPage("Change something: add a second acceptance criterion.", "step:deliverables"),
       {
-        text: "Which one?",
+        text: "Both buttons save the change, and it stays Pending. Which one?",
         target: "step:actions",
         path: "/added-values/*/edit",
         options: [
-          { label: "Submit: keep it Pending", goto: "submit" },
-          { label: "Save as draft: take it back", goto: "draft" },
+          { label: "Submit: every check runs", goto: "submit" },
+          { label: "Save as draft: only the Title is checked", goto: "draft" },
         ],
       },
-      { id: "submit", ...press("Submit", "Press Submit. The checks run; the AV stays Pending.") },
+      { id: "submit", ...press("Submit", "Press Submit. Every check runs, then the change is saved."), next: "saved" },
+      { id: "draft", ...press("Save as draft", "Press Save as draft. Only the change is saved: it doesn't go back to Draft.") },
       {
-        text: "Saved: its page opens with the change, still Pending, and a \"changes saved\" toast.",
+        id: "saved",
+        text: "Saved: its page opens with the change, still Pending, and a \"changes saved\" toast (inferred landing).",
         target: "step:av-menu",
         path: "/added-values/vcp-1200",
-        next: "end",
       },
-      { id: "draft", ...press("Save as draft", "Press Save as draft. It moves back to Draft.") },
-      {
-        text: "Back to Draft: it leaves the admins' queue (Manage) and waits on Drafts. Status History logs Pending → Draft.",
-        target: "step:av-menu",
-        path: "/added-values/vcp-1200",
-        next: "end",
-      },
-      { id: "end", text: "Either way the edit page closes and the AV's page opens (inferred: Figma draws no landing page)." },
     ],
     name: "Edit a Pending AV",
-    demonstrates: "A Pending AV can be edited: Submit keeps it Pending, Save as draft takes it back to Draft.",
+    demonstrates: "A Pending AV is edited on the same page: Submit and Save as draft both save, and it stays Pending.",
     conditions: "Eve (User) on her Pending AV VCP-1200.",
     simulated: "Saving always succeeds.",
-    expected: "Submit saves the change and it stays Pending. Save as draft moves it back to Draft. Both return to the AV's page with a toast.",
+    expected: "The change is saved and the AV stays Pending. The AV's page opens with a toast.",
     task: "Add a second acceptance criterion to your Added Value about undo, which is waiting for review.",
   },
   {
     ...base,
-    id: "av-04-edit.past-pending",
+    id: "av-04-edit.in-review",
     start: "/added-values/vcp-1207",
     steps: [
-      { text: "VCP-1207 is Eve's and in Review: past Pending.", target: "step:av-menu" },
-      openEdit("vcp-1207", "Open the ⋮ menu and choose Edit."),
+      { text: "VCP-1207 is Eve's and in Review: well past Pending.", target: "step:av-menu" },
+      openEdit("vcp-1207"),
+      onEditPage("The same edit page as a Draft or Pending AV (decided 9 Nov 2026). Change the desired outcome.", "step:desired-outcome"),
+      press("Submit", "Press Submit. Every check runs, then the change is saved."),
       {
-        text: "Editing past Pending isn't designed: Figma draws the edit page for a Draft or Pending AV only, so a toast says so. An open question.",
+        text: "Saved: its page opens with the change, still in Review.",
         target: "step:av-menu",
         path: "/added-values/vcp-1207",
       },
     ],
-    name: "Past Pending (not designed)",
-    demonstrates: "The ⋮ menu offers Edit at every status, but Figma's edit page covers Draft and Pending only.",
+    name: "Edit an AV in Review",
+    demonstrates: "Edit opens the same page at every status; the AV keeps its status.",
     conditions: "Eve (User) on her AV VCP-1207, in Review.",
-    simulated: "Nothing changes.",
-    expected: "An info toast; the AV stays as it is.",
-    task: "Change the title of your Added Value that's in review.",
+    simulated: "Saving always succeeds.",
+    expected: "The edit page opens; saving keeps it in Review and returns to its page with a toast.",
+    task: "Change the desired outcome of your Added Value that's in review.",
+  },
+  {
+    ...base,
+    id: "av-04-edit.unsaved-changes",
+    start: "/added-values/vcp-1199/edit",
+    steps: [
+      onEditPage("Eve's draft, open for editing. Change the title.", "step:title"),
+      onEditPage("Press the back arrow. A dialog asks before your change is dropped.", "step:back"),
+      onEditPage("Keep editing closes it and keeps the change. Leave drops it. Press Keep editing, then Next.", "step:back"),
+      onEditPage("Press the back arrow again, and this time choose Leave.", "step:back"),
+      {
+        text: "Left without saving: the draft's page opens with the title as it was.",
+        target: "step:av-menu",
+        path: "/added-values/vcp-1199",
+      },
+    ],
+    name: "Leave with unsaved changes",
+    demonstrates: "The back arrow asks before dropping unsaved changes.",
+    conditions: "Eve (User) on the edit page of her draft VCP-1199.",
+    simulated: "Nothing is saved.",
+    expected: "\"Leave without saving?\": Keep editing keeps the change; Leave drops it and opens the AV's page. With nothing changed, the arrow leaves at once.",
+    task: "Start renaming your draft about saved filters, then change your mind and go back without saving.",
   },
 ];
 
@@ -178,8 +192,8 @@ export const EDIT_FLOW: FlowDef = {
   area: "AV",
   number: "04",
   name: "Edit an AV",
-  actor: "The initiator (Draft, Pending); an admin too",
-  goal: "Change an Added Value before it's accepted: finish a draft, or correct one waiting for review.",
+  actor: "The initiator; an admin too",
+  goal: "Change an Added Value: finish a draft and submit it, or correct one already submitted.",
   figjam: "https://www.figma.com/board/Jl6ANWtBbRbTTo4ItjtdoQ/VCP-Flows---Scenarios?node-id=26-72",
   doc: "flows/av-04-edit.md",
   status: "Implemented",

@@ -32,7 +32,6 @@ import { useShellState } from "@/components/shell-state";
 import { useAddedValues } from "@/components/av-store";
 import { TODAY } from "@/data/gantt";
 import { CHAINS, CYCLE_OPTIONS, VIEWER, daysOverdue, stageLabel, type AddedValue } from "@/data/added-values";
-import { EDITABLE } from "@/flows/av-04-edit";
 
 type Dialog = "accept" | "reject" | "handoff" | "review" | "delete" | null;
 
@@ -163,15 +162,8 @@ export function AVScreen({ id }: { id: string }) {
               <DetailCardMenu
                 role={admin ? "admin" : "user"}
                 status={av.status}
-                onEdit={() =>
-                  EDITABLE.includes(av.status)
-                    ? router.push(`/added-values/${av.id}/edit`)
-                    : toast({
-                        tone: "info",
-                        title: "Editing past Pending isn't designed yet",
-                        description: "Figma draws the edit page for a Draft or Pending Added Value only.",
-                      })
-                }
+                /* Decided 9 Nov 2026: the same edit page at every status (AV · 04). */
+                onEdit={() => router.push(`/added-values/${av.id}/edit`)}
                 onDelete={() => setDialog("delete")}
                 onMoveToBacklog={() => {
                   moveTo(av.id, "Backlog");
