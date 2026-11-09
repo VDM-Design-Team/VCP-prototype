@@ -10,6 +10,9 @@ interface NotificationStore {
   unread: number;
   setRead: (id: string, read: boolean) => void;
   markAllRead: () => void;
+  /** Activity · 03: cards dismissed from "In Case You Missed it", for this session. */
+  dismissed: readonly string[];
+  dismiss: (id: string) => void;
   reset: () => void;
 }
 
@@ -17,15 +20,21 @@ const Ctx = React.createContext<NotificationStore | null>(null);
 
 export function NotificationStoreProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = React.useState<readonly AppNotification[]>(NOTIFICATIONS);
+  const [dismissed, setDismissed] = React.useState<readonly string[]>([]);
   const store = React.useMemo<NotificationStore>(
     () => ({
       notifications,
       unread: notifications.filter((n) => n.unread).length,
       setRead: (id, read) => setNotifications((list) => list.map((n) => (n.id === id ? { ...n, unread: !read } : n))),
       markAllRead: () => setNotifications((list) => list.map((n) => ({ ...n, unread: false }))),
-      reset: () => setNotifications(NOTIFICATIONS),
+      dismissed,
+      dismiss: (id) => setDismissed((list) => [...list, id]),
+      reset: () => {
+        setNotifications(NOTIFICATIONS);
+        setDismissed([]);
+      },
     }),
-    [notifications],
+    [notifications, dismissed],
   );
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }
