@@ -45,6 +45,12 @@ export interface ScenarioStep {
    * what the step after describes. Never skipped past.
    */
   action?: boolean;
+  /**
+   * The step asks the user to drag a row (the Planning List's Backlog) onto a
+   * section: `row` is the AV's reference, `on` the section's title ("Cycle 45").
+   * Next does the drop for them when the row hasn't moved yet.
+   */
+  drop?: { row: string; on: string };
 }
 
 export interface ScenarioDef<Setup = unknown> {

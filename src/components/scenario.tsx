@@ -162,6 +162,30 @@ function findTarget(target: string): HTMLElement | null {
 }
 
 /**
+ * A drag a reviewer would make with the mouse (`ScenarioStep.drop`), done with
+ * the same drag events, so the page handles it as theirs. Nothing happens when
+ * the row is no longer in the Backlog (they dragged it themselves).
+ */
+async function dropRow({ row, on }: { row: string; on: string }) {
+  const pause = () => new Promise((r) => window.setTimeout(r, 80));
+  const sections = [...document.querySelectorAll<HTMLElement>("main section")];
+  const titled = (title: string) => sections.find((s) => s.querySelector("h2")?.textContent?.startsWith(title));
+  const tr = [...(titled("Backlog")?.querySelectorAll<HTMLTableRowElement>("tbody tr") ?? [])].find((r) =>
+    r.cells[0]?.textContent?.startsWith(row),
+  );
+  const target = titled(on);
+  if (!tr || !target) return;
+  const data = new DataTransfer();
+  tr.dispatchEvent(new DragEvent("dragstart", { bubbles: true, dataTransfer: data }));
+  await pause();
+  target.dispatchEvent(new DragEvent("dragover", { bubbles: true, cancelable: true, dataTransfer: data }));
+  await pause();
+  target.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: data }));
+  tr.dispatchEvent(new DragEvent("dragend", { bubbles: true, dataTransfer: data }));
+  await pause();
+}
+
+/**
  * An outline around the part of the screen the current step is about. It
  * follows the element as the page scrolls or changes, and never takes a click.
  */
@@ -261,6 +285,10 @@ export function ScenarioBar() {
   const here = step && onPage(step, scenario, pathname);
   /* An action step: Next does the action (presses Submit), which then moves the walk on. */
   const actOrNext = () => {
+    if (step?.drop && !document.querySelector('[role="dialog"]')) {
+      void dropRow(step.drop).then(() => next());
+      return;
+    }
     const el = step?.action && step.target ? findTarget(step.target) : null;
     if (el) el.click();
     else next();

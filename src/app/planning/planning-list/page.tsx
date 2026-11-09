@@ -1,0 +1,316 @@
+"use client";
+
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import {
+  MoveAVToCycleModal,
+  PageTitle,
+  PlanningFilters,
+  PlanningTable,
+  formatCycleRange,
+  useToast,
+  type DataTableSort,
+  type MoveAVToCycleDraft,
+  type MoveAVToCycleResult,
+  type PlanningFiltersValue,
+  type PlanningRow,
+  type PlanningSection,
+} from "@vdm-design-team/vcp-design-system";
+import { Screen } from "@/components/screen";
+import { useAddedValues } from "@/components/av-store";
+import { CYCLE_OPTIONS, stageLabel, type AddedValue } from "@/data/added-values";
+import { CYCLES, PEOPLE, TODAY } from "@/data/gantt";
+import {
+  TOTAL_CAPACITY,
+  availability,
+  cycleOf,
+  cycleStart,
+  estimateDue,
+  estimateStart,
+  freeFrom,
+  inBacklog,
+  inCycle,
+  pointsOf,
+  shownCycles,
+} from "@/data/planning";
+
+/* Planning → Planning List (Planning · 02). Figma "VCP Pages - Flows", Planning
+   Page (147:9972): Development's cycles, each with its capacity, and the
+   Backlog under them. Dragging a Backlog row onto a cycle plans it: Accepted,
+   with its dates — its own, or the cycle's estimated ones — or, when it lacks
+   an assignee or points, Add Required Details first (Assignee Availability,
+   142:4943). Dates and points edit in place, and each recalculates the other. */
+
+const NO_FILTERS: PlanningFiltersValue = { search: "", status: "", priority: "" };
+type Field = "start" | "due";
+const key = (id: string, field: Field) => `${id}:${field}`;
+/** "Nov 21", as the assignee pill reads it. */
+const shortDate = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+
+export default function PlanningListScreen() {
+  const router = useRouter();
+  const { avs, get, moveTo, update } = useAddedValues();
+  const { toast } = useToast();
+  const [filters, setFilters] = React.useState(NO_FILTERS);
+  const [sort, setSort] = React.useState<DataTableSort | undefined>();
+  /* Dates this session just worked out: they play the table's animation once. */
+  const [animated, setAnimated] = React.useState<ReadonlySet<string>>(new Set());
+  const [details, setDetails] = React.useState<{ id: string; cycle: string } | null>(null);
+
+  const animate = (id: string, ...fields: Field[]) =>
+    setAnimated((s) => new Set([...s, ...fields.map((f) => key(id, f))]));
+
+  const toRow = (av: AddedValue): PlanningRow => {
+    const first = av.assignees[0];
+    const points = pointsOf(av);
+    return {
+      id: av.id,
+      ref: av.ref,
+      title: av.title,
+      urgency: av.urgency,
+      type: av.type,
+      initiator: { name: av.initiator },
+      ...(first && {
+        assignee: {
+          name: first.name,
+          availability: availability(first.name, { start: av.startDate, end: av.dueDate }, avs, av.id),
+        },
+      }),
+      ...(av.startDate && {
+        start: { value: av.startDate, estimated: av.startEstimated, animated: animated.has(key(av.id, "start")) },
+      }),
+      ...(points > 0 && { points }),
+      ...(av.dueDate && {
+        due: { value: av.dueDate, estimated: av.dueEstimated, animated: animated.has(key(av.id, "due")) },
+      }),
+      status: av.step ? { custom: stageLabel(av) } : { status: av.status },
+    };
+  };
+
+  const q = filters.search.trim().toLowerCase();
+  const shown = (av: AddedValue) =>
+    (!q || av.title.toLowerCase().includes(q) || av.ref.toLowerCase().includes(q)) &&
+    (!filters.status || stageLabel(av) === filters.status) &&
+    (!filters.priority || av.urgency === filters.priority);
+  const order = (list: AddedValue[]) =>
+    sort
+      ? [...list].sort((a, b) => a.title.localeCompare(b.title) * (sort.direction === "asc" ? 1 : -1))
+      : [...list].sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? ""));
+
+  const sections: PlanningSection[] = [
+    ...shownCycles(avs).map((c) => {
+      const mine = avs.filter((av) => inCycle(av) && av.cycle === c.id);
+      return {
+        id: c.id,
+        kind: "cycle" as const,
+        title: c.label,
+        dates: `(${formatCycleRange(c.start, c.end)})`,
+        totalCapacity: TOTAL_CAPACITY,
+        remainingCapacity: TOTAL_CAPACITY - mine.reduce((sum, av) => sum + pointsOf(av), 0),
+        rows: order(mine.filter(shown)).map(toRow),
+      };
+    }),
+    {
+      id: "backlog",
+      kind: "backlog" as const,
+      title: "Backlog",
+      rows: (sort ? order(avs.filter(inBacklog).filter(shown)) : avs.filter(inBacklog).filter(shown).sort((a, b) => a.ref.localeCompare(b.ref))).map(toRow),
+    },
+  ];
+
+  const statusOptions = [...new Set(avs.filter((av) => inCycle(av) || inBacklog(av)).map(stageLabel))];
+  const cycleLabel = (id: string) => CYCLES.find((c) => c.id === id)?.label ?? id;
+
+  const planned = (av: AddedValue, cycle: string, dropped: string) =>
+    toast({
+      tone: "success",
+      title: `${av.ref} planned into ${cycleLabel(cycle)}`,
+      description:
+        cycle === dropped
+          ? "It's Accepted, with its dates."
+          : `Its Start Date is in ${cycleLabel(cycle)}, so it went there.`,
+    });
+
+  /* A Backlog row dropped on a cycle (Figma 1155:77276). */
+  const onMoveRow = (row: PlanningRow, _from: PlanningSection, to: PlanningSection) => {
+    const av = get(row.id);
+    if (!av) return;
+    const points = pointsOf(av);
+    /* Missing who or how much: Add Required Details asks (142:4943). */
+    if (!av.assignees.length || points <= 0) {
+      setDetails({ id: av.id, cycle: to.id });
+      return;
+    }
+    /* Its own dates: it joins their cycle, shown on the page or not (1155:77333, 1155:77350).
+       Dates in a cycle that has ended count as none (Figma doesn't say). */
+    const own = av.startDate && av.dueDate ? cycleOf(av.startDate) : undefined;
+    if (own && own.end >= TODAY) {
+      moveTo(av.id, "Accepted", { cycle: own.id });
+      planned(av, own.id, to.id);
+      return;
+    }
+    /* No dates: the cycle's estimated ones, highlighted (1155:77293). */
+    const start = cycleStart(to.id);
+    moveTo(av.id, "Accepted", {
+      cycle: to.id,
+      startDate: start,
+      dueDate: estimateDue(start, points),
+      startEstimated: true,
+      dueEstimated: true,
+    });
+    animate(av.id, "start", "due");
+    planned(av, to.id, to.id);
+  };
+
+  /* The dialog opens from a drag, so it has no trigger to hand focus back to:
+     focus goes to the AV's title wherever it is now (never to the page). */
+  const focusRow = (ref: string) =>
+    window.setTimeout(() => {
+      const row = [...document.querySelectorAll<HTMLTableRowElement>('[data-flow-step="planning"] tbody tr')].find((r) =>
+        r.cells[0]?.textContent?.startsWith(ref),
+      );
+      row?.querySelector<HTMLElement>("td:nth-child(2) button")?.focus();
+    }, 50);
+  const closeDetails = () => {
+    if (detailsAV) focusRow(detailsAV.ref);
+    setDetails(null);
+  };
+
+  const detailsAV = details ? get(details.id) : undefined;
+  const people = (draft: MoveAVToCycleDraft) =>
+    PEOPLE.map((p) => {
+      const dates = { start: draft.start?.value, end: draft.due?.value };
+      const free = freeFrom(p.name, dates);
+      return {
+        value: p.name,
+        label: p.name,
+        availability: availability(p.name, dates, avs, details?.id),
+        ...(free && { until: shortDate(free) }),
+      };
+    });
+  const estimate = (draft: MoveAVToCycleDraft) => {
+    const start = draft.start && !draft.start.estimated ? draft.start.value : cycleStart(draft.cycle ?? details!.cycle);
+    const points = draft.points ?? draft.assignees.reduce((sum, a) => sum + (a.points ?? 0), 0);
+    const anyone = draft.assignees.some((a) => a.person);
+    return anyone && points > 0 ? { start, due: estimateDue(start, points) } : { start };
+  };
+  const confirmDetails = (r: MoveAVToCycleResult) => {
+    if (!detailsAV || !details) return;
+    const cycle = r.cycle ?? (r.start ? cycleOf(r.start.value)?.id : undefined) ?? details.cycle;
+    moveTo(detailsAV.id, "Accepted", {
+      assignees: r.assignees.map((a) => ({ name: a.person, points: a.points })),
+      capacityPoints: r.points,
+      cycle,
+      startDate: r.start?.value,
+      dueDate: r.due?.value,
+      startEstimated: !!r.start?.estimated,
+      dueEstimated: !!r.due?.estimated,
+    });
+    animate(detailsAV.id, ...(["start", "due"] as Field[]).filter((f) => r[f]?.estimated));
+    closeDetails();
+    planned(detailsAV, cycle, details.cycle);
+  };
+
+  /* An edit can move the row to another cycle's table, which drops the focus
+     with it: put it back on the same control in the row's new place. */
+  const refocus = (label: string) =>
+    /* After the picker has handed focus back to its pen — which may be the old, removed one. */
+    window.setTimeout(() => {
+      const el = document.activeElement;
+      if (el && el !== document.body && el.isConnected) return;
+      const named = (b: HTMLElement) => (b.getAttribute("aria-label") || b.title || b.textContent || "").trim() === label;
+      [...document.querySelectorAll<HTMLElement>('[data-flow-step="planning"] tbody button')].find(named)?.focus();
+    }, 200);
+
+  /* In place: each date and the points recalculate the other date (the column hints). */
+  const onStartChange = (row: PlanningRow, iso: string) => {
+    const av = get(row.id)!;
+    update(av.id, {
+      startDate: iso,
+      startEstimated: false,
+      dueDate: estimateDue(iso, pointsOf(av)),
+      dueEstimated: true,
+      ...(av.status !== "Backlog" && { cycle: cycleOf(iso)?.id }),
+    });
+    animate(av.id, "due");
+    refocus(`Change start date for ${av.ref}`);
+  };
+  const onDueChange = (row: PlanningRow, iso: string) => {
+    const av = get(row.id)!;
+    const start = estimateStart(iso, pointsOf(av));
+    update(av.id, {
+      dueDate: iso,
+      dueEstimated: false,
+      startDate: start,
+      startEstimated: true,
+      ...(av.status !== "Backlog" && { cycle: cycleOf(start)?.id }),
+    });
+    animate(av.id, "start");
+    refocus(`Change due date for ${av.ref}`);
+  };
+  const onPointsChange = (row: PlanningRow, points: number) => {
+    const av = get(row.id)!;
+    update(av.id, {
+      capacityPoints: points,
+      ...(av.assignees.length === 1 && { assignees: [{ ...av.assignees[0], points }] }),
+      ...(av.startDate && { dueDate: estimateDue(av.startDate, points), dueEstimated: true }),
+    });
+    if (av.startDate) animate(av.id, "due");
+  };
+
+  return (
+    <Screen active="planning/planning-list" header={<PageTitle title="Planning List" />}>
+      <div className="flex flex-col gap-6 py-6">
+        <PlanningFilters
+          value={filters}
+          onChange={setFilters}
+          statusOptions={statusOptions}
+          onReset={() => setFilters(NO_FILTERS)}
+        />
+        {/* Where a guided scenario's step points (Planning · 02): see src/flows/types.ts. */}
+        <div data-flow-step="planning" className="flex flex-col gap-6">
+          <PlanningTable
+            sections={sections}
+            sort={sort}
+            onSortChange={setSort}
+            onOpen={(row) => router.push(`/added-values/${row.id}`)}
+            onMoveRow={onMoveRow}
+            onStartChange={onStartChange}
+            onDueChange={onDueChange}
+            onPointsChange={onPointsChange}
+            onAnimationDismiss={(row, field) =>
+              setAnimated((s) => new Set([...s].filter((k) => k !== key(row.id, field))))
+            }
+            empty="No Added Values here."
+          />
+        </div>
+      </div>
+      {detailsAV && details && (
+        <MoveAVToCycleModal
+          key={detailsAV.id}
+          open
+          onClose={closeDetails}
+          onConfirm={confirmDetails}
+          onInvalid={(reason) => {
+            if (reason === "unavailable-assignee")
+              toast({
+                tone: "critical",
+                title: "Unavailable Assignee",
+                description:
+                  "A selected assignee is unavailable during the chosen dates. Please change the dates or remove this assignee before submitting.",
+              });
+          }}
+          people={people}
+          cycles={CYCLE_OPTIONS}
+          initial={{
+            start: { value: cycleStart(details.cycle), estimated: true },
+            cycle: details.cycle,
+            ...(pointsOf(detailsAV) > 0 && { points: pointsOf(detailsAV) }),
+          }}
+          estimate={estimate}
+        />
+      )}
+    </Screen>
+  );
+}
