@@ -21,7 +21,7 @@ import { useAddedValues } from "@/components/av-store";
 import { CYCLE_OPTIONS, stageLabel, type AddedValue } from "@/data/added-values";
 import { CYCLES, PEOPLE, TODAY } from "@/data/gantt";
 import {
-  TOTAL_CAPACITY,
+  capacityOf,
   availability,
   cycleOf,
   cycleStart,
@@ -106,8 +106,10 @@ export default function PlanningListScreen() {
         kind: "cycle" as const,
         title: c.label,
         dates: `(${formatCycleRange(c.start, c.end)})`,
-        totalCapacity: TOTAL_CAPACITY,
-        remainingCapacity: TOTAL_CAPACITY - mine.reduce((sum, av) => sum + pointsOf(av), 0),
+        totalCapacity: capacityOf(c.id),
+        remainingCapacity: capacityOf(c.id) - mine.reduce((sum, av) => sum + pointsOf(av), 0),
+        /* A cycle that has ended takes no more work; its own late AVs can still move on (DS #335). */
+        acceptsRows: c.end >= TODAY,
         rows: order(mine.filter(shown)).map(toRow),
       };
     }),
@@ -132,18 +134,39 @@ export default function PlanningListScreen() {
           : `Its Start Date is in ${cycleLabel(cycle)}, so it went there.`,
     });
 
-  /* A Backlog row dropped on a cycle (Figma 1155:77276). */
-  const onMoveRow = (row: PlanningRow, _from: PlanningSection, to: PlanningSection) => {
+  const moved = (av: AddedValue, to: string) =>
+    toast({
+      tone: "success",
+      title: to === "backlog" ? `${av.ref} moved to the Backlog` : `${av.ref} moved to ${cycleLabel(to)}`,
+      description: to === "backlog" ? "It's no longer planned." : "Its dates are estimated for that cycle.",
+    });
+
+  /* A row dragged onto a section, or sent there from its "Move … to…" button (DS #335): one handler. */
+  const onMoveRow = (row: PlanningRow, from: PlanningSection, to: PlanningSection) => {
     const av = get(row.id);
     if (!av) return;
     const points = pointsOf(av);
+    /* Back to the Backlog (decided 9 Nov 2026): no longer planned. It keeps its assignee and points. */
+    if (to.kind === "backlog") {
+      moveTo(av.id, "Backlog", { cycle: undefined });
+      moved(av, "backlog");
+      return;
+    }
     /* Missing who or how much: Add Required Details asks (142:4943). */
     if (!av.assignees.length || points <= 0) {
       setDetails({ id: av.id, cycle: to.id });
       return;
     }
-    /* Its own dates: it joins their cycle, shown on the page or not (1155:77333, 1155:77350).
-       Dates in a cycle that has ended count as none (Figma doesn't say). */
+    /* From one cycle to another (decided): it keeps its status, with that cycle's estimated dates. */
+    if (from.kind === "cycle") {
+      const start = cycleStart(to.id);
+      update(av.id, { cycle: to.id, startDate: start, dueDate: estimateDue(start, points), startEstimated: true, dueEstimated: true });
+      animate(av.id, "start", "due");
+      moved(av, to.id);
+      return;
+    }
+    /* From the Backlog (Figma 1155:77276), with its own dates: it joins their cycle, shown on the page or
+       not (1155:77333, 1155:77350). Dates in a cycle that has ended count as none (Figma doesn't say). */
     const own = av.startDate && av.dueDate ? cycleOf(av.startDate) : undefined;
     if (own && own.end >= TODAY) {
       moveTo(av.id, "Accepted", { cycle: own.id });
@@ -198,7 +221,7 @@ export default function PlanningListScreen() {
   const confirmDetails = (r: MoveAVToCycleResult) => {
     if (!detailsAV || !details) return;
     const cycle = r.cycle ?? (r.start ? cycleOf(r.start.value)?.id : undefined) ?? details.cycle;
-    moveTo(detailsAV.id, "Accepted", {
+    const change = {
       assignees: r.assignees.map((a) => ({ name: a.person, points: a.points })),
       capacityPoints: r.points,
       cycle,
@@ -206,7 +229,10 @@ export default function PlanningListScreen() {
       dueDate: r.due?.value,
       startEstimated: !!r.start?.estimated,
       dueEstimated: !!r.due?.estimated,
-    });
+    };
+    /* From the Backlog it is Accepted; a planned AV moving cycles keeps its status. */
+    if (detailsAV.status === "Backlog") moveTo(detailsAV.id, "Accepted", change);
+    else update(detailsAV.id, change);
     animate(detailsAV.id, ...(["start", "due"] as Field[]).filter((f) => r[f]?.estimated));
     closeDetails();
     planned(detailsAV, cycle, details.cycle);
@@ -276,6 +302,8 @@ export default function PlanningListScreen() {
             onSortChange={setSort}
             onOpen={(row) => router.push(`/added-values/${row.id}`)}
             onMoveRow={onMoveRow}
+            moves="anywhere"
+            canMove={(row) => get(row.id)?.status !== "Completed"}
             onStartChange={onStartChange}
             onDueChange={onDueChange}
             onPointsChange={onPointsChange}

@@ -151,7 +151,10 @@ function findTarget(target: string): HTMLElement | null {
   if (kind === "step") return document.querySelector<HTMLElement>(`[data-flow-step="${CSS.escape(value)}"]`);
   if (kind === "button")
     return (
-      [...document.querySelectorAll<HTMLElement>("button")].find((b) => outsideBar(b) && b.textContent?.trim() === value) ??
+      [...document.querySelectorAll<HTMLElement>("button")].find(
+        /* By its words, or for an icon-only button its name (`aria-label`, or a `title`, as IconButton's). */
+        (b) => outsideBar(b) && [b.textContent?.trim(), b.getAttribute("aria-label"), b.title].includes(value),
+      ) ??
       null
     );
   if (kind === "group")
@@ -164,15 +167,18 @@ function findTarget(target: string): HTMLElement | null {
 /**
  * A drag a reviewer would make with the mouse (`ScenarioStep.drop`), done with
  * the same drag events, so the page handles it as theirs. Nothing happens when
- * the row is no longer in the Backlog (they dragged it themselves).
+ * the row is already in that section (they dragged it themselves).
  */
 async function dropRow({ row, on }: { row: string; on: string }) {
   const pause = () => new Promise((r) => window.setTimeout(r, 80));
   const sections = [...document.querySelectorAll<HTMLElement>("main section")];
   const titled = (title: string) => sections.find((s) => s.querySelector("h2")?.textContent?.startsWith(title));
-  const tr = [...(titled("Backlog")?.querySelectorAll<HTMLTableRowElement>("tbody tr") ?? [])].find((r) =>
-    r.cells[0]?.textContent?.startsWith(row),
-  );
+  const rowIn = (section?: HTMLElement) =>
+    [...(section?.querySelectorAll<HTMLTableRowElement>("tbody tr") ?? [])].find((r) =>
+      r.cells[0]?.textContent?.startsWith(row),
+    );
+  if (rowIn(titled(on))) return;
+  const tr = sections.map(rowIn).find(Boolean);
   const target = titled(on);
   if (!tr || !target) return;
   const data = new DataTransfer();
@@ -290,7 +296,9 @@ export function ScenarioBar() {
       return;
     }
     const el = step?.action && step.target ? findTarget(step.target) : null;
-    if (el) el.click();
+    /* After Next's own click is done: a menu the press opens would otherwise take that click as one
+       outside it and close at once. */
+    if (el) window.setTimeout(() => el.click());
     else next();
   };
 

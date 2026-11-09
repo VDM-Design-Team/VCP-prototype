@@ -1,6 +1,6 @@
 import type { AssigneeAvailability } from "@vdm-design-team/vcp-design-system";
 import type { AddedValue } from "./added-values";
-import { CYCLES, PEOPLE, TODAY } from "./gantt";
+import { CYCLES, TODAY } from "./gantt";
 
 /* Planning · 02: the rules the Planning List runs on. Figma draws the
    screens, not the numbers, so each rule here is the prototype's until the
@@ -9,9 +9,14 @@ import { CYCLES, PEOPLE, TODAY } from "./gantt";
 /** Leave, until the Holiday Registry (Planning · 03) owns it. */
 export const LEAVE = [{ name: "Noah Foster", start: "2026-11-16", end: "2026-11-20" }];
 
-/** Points one person can take on in a cycle. Total Capacity is this for everyone. */
-export const POINTS_PER_PERSON = 10;
-export const TOTAL_CAPACITY = POINTS_PER_PERSON * PEOPLE.length;
+/**
+ * Each cycle's Total Capacity in points: a fixed number per cycle (decided 9 Nov 2026), standing in for
+ * the figure an admin sets. Capacity Remaining is it minus every AV in the cycle, Completed ones
+ * included (decided), and it may go below 0: no warning, no block (decided, as Figma).
+ */
+const CAPACITY: Record<string, number> = { c45: 50, c46: 40 };
+export const DEFAULT_CAPACITY = 60;
+export const capacityOf = (cycleId: string) => CAPACITY[cycleId] ?? DEFAULT_CAPACITY;
 
 /** Statuses that sit in a cycle on the Planning List; Backlog has its own section. */
 const IN_A_CYCLE = new Set(["Accepted", "In Progress", "Review", "Completed"]);
