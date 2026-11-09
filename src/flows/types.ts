@@ -70,7 +70,7 @@ export interface ScenarioDef<Setup = unknown> {
   steps: readonly ScenarioStep[];
   /** The screen's starting data. Read by the screen the scenario opens. */
   setup: Setup;
-  /** Sample AVs this scenario starts with changed (matched by id). The rest stay as they are. */
+  /** Sample AVs this scenario starts with changed (matched by id), or added (with an id from NEW_AV_IDS). */
   avs?: readonly AddedValue[];
 }
 

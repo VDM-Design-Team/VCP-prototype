@@ -22,8 +22,19 @@ const dayOf = (iso: string) => Math.floor(Date.parse(`${iso}T00:00:00Z`) / DAY);
 const formatDate = (iso: string) =>
   new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 
+/** A multipart AV's tag (AV · 10, DS #275): the parent's progress, or a part's place and parent. */
+function multipartOf(av: AddedValue, all: readonly AddedValue[]): AVTableRow["multipart"] {
+  if (av.parts?.length) {
+    const parts = av.parts.map((id) => all.find((x) => x.id === id)).filter(Boolean) as AddedValue[];
+    return { kind: "parent", completed: parts.filter((p) => p.status === "Completed").length, total: av.parts.length };
+  }
+  const parent = av.parent ? all.find((x) => x.id === av.parent) : undefined;
+  if (parent?.parts) return { kind: "child", position: parent.parts.indexOf(av.id) + 1, total: parent.parts.length, parentRef: parent.ref };
+  return undefined;
+}
+
 /** One AV as AVTable draws it. */
-function toRow(av: AddedValue): AVTableRow {
+function toRow(av: AddedValue, all: readonly AddedValue[] = []): AVTableRow {
   const left = av.dueDate ? dayOf(av.dueDate) - dayOf(TODAY) : undefined;
   return {
     id: av.id,
@@ -40,6 +51,7 @@ function toRow(av: AddedValue): AVTableRow {
     status: av.step ? { custom: stageLabel(av) } : { status: av.status },
     members: (av.assignees.length ? av.assignees.map((a) => a.name) : [av.initiator]) as string[],
     lastUpdated: updatedLabel(av),
+    multipart: multipartOf(av, all),
   };
 }
 
@@ -86,7 +98,7 @@ export function AVListScreen({
     .filter((av) => !q || av.title.toLowerCase().includes(q) || av.ref.toLowerCase().includes(q))
     .filter((av) => !statuses.length || statuses.includes(stageLabel(av)))
     .sort((a, b) => compare[sort.key](a, b) * (sort.direction === "asc" ? 1 : -1))
-    .map(toRow);
+    .map((av) => toRow(av, avs));
   const filtered = !!q || statuses.length > 0;
 
   return (
@@ -109,6 +121,10 @@ export function AVListScreen({
             sort={sort}
             onSortChange={setSort}
             onOpen={(row) => router.push(`/added-values/${row.id}`)}
+            onOpenParent={(row) => {
+              const parent = avs.find((x) => x.id === avs.find((a) => a.id === row.id)?.parent);
+              if (parent) router.push(`/added-values/${parent.id}`);
+            }}
             caption={title}
             {...(bulk ? { selectable: true, selected, onSelectedChange: setSelected } : {})}
             empty={

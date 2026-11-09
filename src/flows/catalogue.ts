@@ -6,6 +6,7 @@ import { DECIDE_FLOW } from "./av-06-accept-reject";
 import { HANDOFF_FLOW } from "./av-07-hand-off";
 import { INITIATE_FLOW } from "./av-08-initiate";
 import { BULK_FLOW } from "./av-09-bulk-actions";
+import { MULTIPART_FLOW } from "./av-10-multipart";
 import type { FlowDef } from "./types";
 
 /* Every VCP flow, in the FigJam Index's order. A flow with no scenarios yet is
@@ -31,7 +32,7 @@ export const FLOWS: readonly FlowDef[] = [
   HANDOFF_FLOW,
   INITIATE_FLOW,
   BULK_FLOW,
-  planned("AV", "10", "Multipart", "Dev Admin"),
+  MULTIPART_FLOW,
   planned("Planning", "01", "Gantt", "Admin"),
   planned("Planning", "02", "Plan AVs into cycles", "Dev Admin"),
   planned("Planning", "03", "Holiday registry", "Admin edits, User views"),
