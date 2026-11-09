@@ -19,9 +19,8 @@ import {
   type MenuItem,
 } from "@vdm-design-team/vcp-design-system";
 import { useAddedValues } from "./av-store";
-import { useShellState } from "./shell-state";
 import { TODAY } from "@/data/gantt";
-import { CHAINS, CYCLE_OPTIONS, VIEWER, stageLabel, type AddedValue } from "@/data/added-values";
+import { CHAINS, CYCLE_OPTIONS, stageLabel, type AddedValue } from "@/data/added-values";
 
 /**
  * AV · 09 Bulk actions: the bar under a list's selected rows (DS #279's
@@ -38,14 +37,22 @@ const cycleLabel = (c: (typeof CYCLE_OPTIONS)[number]) => `${c.code} (${formatDa
 const STEPS = [...CHAINS.development, ...CHAINS.design];
 const stepLabel = (id: string) => STEPS.find((s) => s.id === id)?.label ?? id;
 
-/** Development's list, with Design's steps after it (a selection can mix domains; a step the AV's domain lacks fails). */
-const STATUS_ITEMS: MenuItem[] = [
-  { key: "pending", label: "Pending Review", items: [{ key: "pending/accept", label: "Accept" }, { key: "pending/reject", label: "Reject" }] },
-  { key: "in-progress", label: "In Progress" },
-  ...STEPS.map((s) => ({ key: s.id, label: s.label })),
-  { key: "review", label: "Review", items: [{ key: "review/accept", label: "Accept" }, { key: "review/reject", label: "Reject" }] },
-  { key: "backlog", label: "Backlog" },
-] as MenuItem[];
+/**
+ * Figma's "Move to Status" list (Bulk_Actions_Dropdowns, 1707:169333), with
+ * only the domain steps every selected AV's domain has (decided 9 Nov 2026).
+ * Save as Draft and Submit are left out (decided), and Handoff waits for the
+ * shared handoff form (decided).
+ */
+const statusItems = (domains: ReadonlySet<AddedValue["domain"]>): MenuItem[] => {
+  const common = domains.size === 1 ? CHAINS[[...domains][0]] : [];
+  return [
+    { key: "pending", label: "Pending Review", items: [{ key: "pending/accept", label: "Accept" }, { key: "pending/reject", label: "Reject" }] },
+    { key: "in-progress", label: "In Progress" },
+    ...common.map((s) => ({ key: s.id, label: s.label })),
+    { key: "review", label: "Review", items: [{ key: "review/accept", label: "Accept" }, { key: "review/reject", label: "Reject" }] },
+    { key: "backlog", label: "Backlog" },
+  ] as MenuItem[];
+};
 
 const asReasons = (list: typeof PENDING_REJECTION_REASONS): BulkRejectionReason[] =>
   list.map((r) => ({ value: r.value, label: r.label, explanation: "description" in r ? r.description : undefined, other: "freeText" in r ? !!r.freeText : false }));
@@ -57,28 +64,19 @@ type Op =
   | { kind: "cycle"; value: string }
   | { kind: "delete" };
 
-/** Why `av` can't take `op`, or nothing when it can. Simulated: the server's rules aren't drawn. */
-function refusal(av: AddedValue, op: Op, admin: boolean): string | undefined {
-  if (op.kind === "urgency" || op.kind === "type") return undefined;
+/**
+ * Why `av` can't take `op`, or nothing when it can. Figma's bar (1707:166018)
+ * offers the same changes to everyone and draws no rules, so there are no role
+ * rules here (decided 9 Nov 2026). Kept where Figma is silent, because the
+ * choice itself says so: Pending Review's Accept/Reject is for Pending AVs,
+ * Review's for AVs in Review, and Design has no Cycle (DetailCard leaves it out).
+ */
+function refusal(av: AddedValue, op: Op): string | undefined {
   if (op.kind === "cycle") return av.domain === "design" ? "Design Added Values have no Cycle." : undefined;
-  if (op.kind === "delete") return admin || av.initiator === VIEWER.name ? undefined : "Only its initiator or an admin can delete it.";
-  const key = op.key;
-  if (key.startsWith("pending/")) {
-    if (!admin) return "Only an admin can accept or reject a Pending Added Value.";
-    return av.status === "Pending" || av.status === "Backlog" ? undefined : `It's ${stageLabel(av)}, not Pending.`;
-  }
-  if (key.startsWith("review/")) {
-    if (!admin && av.initiator !== VIEWER.name) return "Only its initiator or an admin can decide its review.";
-    return av.status === "Review" ? undefined : `It's ${stageLabel(av)}, not in Review.`;
-  }
-  if (key === "backlog") {
-    if (admin) return av.status === "Draft" || av.status === "Pending" ? undefined : "Only a Draft or Pending Added Value can go to the Backlog.";
-    return av.status === "Draft" && av.initiator === VIEWER.name ? undefined : "Only its initiator's own Draft can go to the Backlog.";
-  }
-  if (key === "in-progress") return av.status === "Accepted" ? undefined : `It's ${stageLabel(av)}: only an Accepted one moves to In Progress.`;
-  /* A domain step. */
-  if (!CHAINS[av.domain].some((s) => s.id === key)) return `${av.domain === "design" ? "Design" : "Development"} has no ${stepLabel(key)} step.`;
-  return av.status === "In Progress" ? undefined : `It's ${stageLabel(av)}: only one In Progress moves between steps.`;
+  if (op.kind !== "status") return undefined;
+  if (op.key.startsWith("pending/")) return av.status === "Pending" ? undefined : `It's ${stageLabel(av)}, not Pending.`;
+  if (op.key.startsWith("review/")) return av.status === "Review" ? undefined : `It's ${stageLabel(av)}, not in Review.`;
+  return undefined;
 }
 
 /** What the confirmation shows, and what it's called in the toast and the failure summary. */
@@ -94,9 +92,7 @@ const describe = (op: Op): { property: string; value: string } => {
 
 export function BulkActions({ selected, onClear }: { selected: readonly AddedValue[]; onClear: () => void }) {
   const { moveTo, update, remove } = useAddedValues();
-  const { role } = useShellState();
   const { toast } = useToast();
-  const admin = role !== "user";
   const [op, setOp] = React.useState<Op | null>(null);
   const [failed, setFailed] = React.useState<{ failures: BulkActionFailure[]; total: number; property: string; value: string } | null>(null);
 
@@ -110,7 +106,7 @@ export function BulkActions({ selected, onClear }: { selected: readonly AddedVal
     const ok: AddedValue[] = [];
     const failures: BulkActionFailure[] = [];
     for (const av of selected) {
-      const why = refusal(av, op, admin);
+      const why = refusal(av, op);
       if (why) failures.push({ ref: av.ref, title: av.title, href: `/added-values/${av.id}`, reason: why });
       else ok.push(av);
     }
@@ -132,7 +128,7 @@ export function BulkActions({ selected, onClear }: { selected: readonly AddedVal
   };
 
   const actions: BulkAction[] = [
-    { key: "status", label: "Status", heading: "Move to Status", items: STATUS_ITEMS, onSelect: (key) => key && !["pending", "review"].includes(key) && setOp({ kind: "status", key }) },
+    { key: "status", label: "Status", heading: "Move to Status", items: statusItems(domains), onSelect: (key) => key && !["pending", "review"].includes(key) && setOp({ kind: "status", key }) },
     { key: "urgency", label: "Urgency", heading: "Urgency", items: URGENCIES.map((u) => ({ key: u, label: u })), onSelect: (key) => key && setOp({ kind: "urgency", value: key as AVUrgency }) },
     { key: "type", label: "Type", heading: "Type", items: TYPES.map((t) => ({ key: t, label: t })), onSelect: (key) => key && setOp({ kind: "type", value: key as AVType }) },
     { key: "cycle", label: "Cycle", searchable: true, items: CYCLE_OPTIONS.map((c) => ({ key: c.value, label: cycleLabel(c) })), onSelect: (key) => key && setOp({ kind: "cycle", value: key }) },

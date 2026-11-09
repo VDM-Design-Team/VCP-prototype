@@ -10,7 +10,7 @@
 Change several Added Values at once, instead of opening each one.
 
 ## Actor, entry points and starting conditions
-- Anyone on an AV list with checkboxes: **Assigned** (a user) and **Manage** (an admin). What each may change differs; the AVs that can't take a change fail, with why.
+- Anyone on an AV list with checkboxes: **Assigned** (a user) and **Manage** (an admin). The bar is the same for both (Figma).
 - Tick rows in the table (`AVTable` `selectable`).
 
 ## Main steps and decision points
@@ -30,25 +30,28 @@ Change several Added Values at once, instead of opening each one.
 4. **Confirm** changes every selected AV that can take it, clears the selection and shows **"Added Values Updated"**, e.g. "Urgency changed to High for 2 Added Values." (Figma `1728:282486`).
 5. If some can't: **"Added Values Failed to Update"** (`BulkActionFailedModal`): "1 of 3 added values failed to update Status to Accepted", each with its reference, title and why (Figma `1737:287581`). **Got it** closes it.
 
-## Who can change what (the prototype's rules; the server's aren't drawn)
-| Change | Allowed when | Fails with |
+## What Figma defines (the action bar, `1707:166018`)
+- **The bar is the same for everyone**: "n Selected ✕", **Status**, **Urgency**, **Type**, **Cycle**, **Delete**. Figma draws it on Assigned, a user's list, with nothing restricted by role, so the prototype has no role rules (decided 9 Nov 2026).
+- **Status** ("Move to Status", `Bulk_Actions_Dropdowns` `1707:169333`): Save as Draft, Submit, Pending Review › Accept / Reject, In Progress, Handoff, For Review, In QA, For QA, Ready for Deploy, Confirmed Prod, Review › Accept / Reject, Backlog.
+  - **Only the steps every selected AV can take** (decided 9 Nov 2026): a domain's own steps appear only when every selected AV is in that domain.
+  - **Left out:** Save as Draft and Submit (decided: they're the edit page's), and Handoff (on hold for the shared handoff form).
+- **Urgency**: Low, Normal, High, Urgent. **Type**: Type 1–3. **Cycle**: the cycles, searchable.
+- **Failures** are named with why in "Added Values Failed to Update" (`1737:287581`); Figma doesn't say what fails.
+
+## Kept where Figma is silent
+| Change | Fails when | Why it's kept |
 |---|---|---|
-| Pending Review › Accept / Reject | An admin, on a Pending (or Backlog) AV | "It's Confirmed prod, not Pending." / "Only an admin can…" |
-| Review › Accept / Reject | Its initiator or an admin, on a Review AV | "It's …, not in Review." |
-| Backlog | An admin on Draft or Pending; the initiator on their own Draft | "Only a Draft or Pending Added Value can go to the Backlog." |
-| In Progress | An Accepted AV | "Only an Accepted one moves to In Progress." |
-| A domain step | An In Progress AV whose domain has that step | "Design has no For QA step." |
-| Urgency, Type | Always | — |
-| Cycle | A Development AV | "Design Added Values have no Cycle." |
-| Delete | Its initiator or an admin | "Only its initiator or an admin can delete it." |
+| Pending Review › Accept / Reject | The AV isn't Pending: "It's Confirmed prod, not Pending." | The choice and its dialog ("Accept 3 Pending Added Values") are about Pending AVs |
+| Review › Accept / Reject | The AV isn't in Review | The same, for a review |
+| Cycle | The AV is Design's: "Design Added Values have no Cycle." | `DetailCard` gives Design no Cycle |
+
+Everything else (In Progress, a step, Backlog, Urgency, Type, Delete) applies to every selected AV.
 
 ## Completion or exit
 - **Done:** the AVs that could take it are changed; the failures are named.
 - **On hold:** **bulk Handoff** (Figma `Bulk_Action_Handoff_Popup`) waits for the shared single-and-bulk handoff form (decided 9 Nov 2026), so the Status menu leaves it out. Save as Draft and Submit, which Figma's Development list starts with, are left out too: they belong to the edit page.
 
 ## Unresolved questions
-- **The rules above are the prototype's.** Which moves may each role make in bulk, and what does the server say when one fails?
-- **Mixed domains.** The Status menu lists Development's steps and then Design's; a step the AV's domain lacks fails. Should the menu only offer what every selected AV can take?
-- **Deleting in bulk** uses the failure summary's one sentence ("failed to update Status to Deleted"). A DS follow-up for a delete wording?
+- **Decided 9 Nov 2026:** the bar and its choices are Figma's, with no role rules; mixed domains get only their common steps; Save as Draft and Submit stay out; the failure dialog gets delete wording in the design system.
+- **Delete wording in the DS:** `BulkActionFailedModal` is only in Eve's #279, not on main yet. Branch from #279, or wait for it to merge?
 - **References in the summaries** are links that open the AV in a new tab, where the prototype starts from its sample data again.
-- **Save as Draft and Submit** in Figma's bulk Status list: do they belong there?
