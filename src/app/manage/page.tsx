@@ -10,6 +10,7 @@ export default function ManageScreen() {
     <AVListScreen
       active="manage"
       title="Manage Added Values"
+      bulk
       include={(av) => av.status !== "Draft" && !ARCHIVED.includes(av.status)}
       empty={{ title: "No open Added Values", description: "New Added Values wait here for an admin to accept them." }}
     />
