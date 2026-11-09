@@ -65,7 +65,7 @@ export const EMPTY_DRAFT: SubmitDraft = {
 };
 
 /** A draft with everything a Submit needs. */
-const COMPLETE: SubmitDraft = {
+export const COMPLETE_DRAFT: SubmitDraft = {
   title: "Keyboard shortcuts for the AV table",
   problems: ["Moving through a long AV table takes a mouse; keyboard users tab through every cell."],
   solutions: ["Arrow keys move between rows, Enter opens the AV, and / jumps to the search box."],
@@ -124,7 +124,7 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
           { label: "Save it as a draft", goto: "draft" },
         ],
       },
-      { id: "draft", text: "Save as Draft is its own flow (AV · 03), not in the prototype yet: the AV would stay a Draft. Go back and choose Submit.", target: "button:Save as draft", next: "leave" },
+      { id: "draft", text: "Saving it keeps it a Draft, on the Drafts page: that's AV · 03 Save as Draft, with its own scenarios. Go back and choose Submit.", target: "button:Save as draft", next: "leave" },
       { id: "submit", ...pressSubmit() },
       submitted,
     ],
@@ -134,7 +134,7 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     simulated: "Submit always succeeds. The new AV gets the next free reference and waits for an admin.",
     expected: "The AV closes and the Dashboard opens with a success toast (Open it shows the AV, Pending). Nothing is blocked.",
     task: "Submit this Added Value for review.",
-    setup: COMPLETE,
+    setup: COMPLETE_DRAFT,
   },
   {
     ...base,
@@ -153,7 +153,7 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     simulated: "Nothing is sent: the checks run in the page.",
     expected: "A \"Missing Input\" toast and the field's error. Filling the field clears its error; Submit then passes.",
     task: "Submit this Added Value for review.",
-    setup: { ...COMPLETE, desiredOutcome: "" },
+    setup: { ...COMPLETE_DRAFT, desiredOutcome: "" },
   },
   {
     ...base,
@@ -200,7 +200,7 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     simulated: "Nothing is sent: the checks run in the page.",
     expected: "Both cards of the pair show \"Problem and solution should be filled together\". Filling the solution, or removing the problem, clears it.",
     task: "Submit this Added Value for review.",
-    setup: { ...COMPLETE, problems: [...COMPLETE.problems, "Focus jumps to the top of the page after sorting a column."], solutions: [...COMPLETE.solutions, ""] },
+    setup: { ...COMPLETE_DRAFT, problems: [...COMPLETE_DRAFT.problems, "Focus jumps to the top of the page after sorting a column."], solutions: [...COMPLETE_DRAFT.solutions, ""] },
   },
   {
     ...base,
@@ -219,7 +219,7 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     simulated: "Nothing is sent: the checks run in the page.",
     expected: "A toast and an error under Tags. Adding a Development tag clears it.",
     task: "Submit this Added Value for review.",
-    setup: { ...COMPLETE, details: { ...COMPLETE.details, tags: ["Accessibility"] } },
+    setup: { ...COMPLETE_DRAFT, details: { ...COMPLETE_DRAFT.details, tags: ["Accessibility"] } },
   },
   {
     ...base,
@@ -247,7 +247,7 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     simulated: "Lena's leave comes from the sample availability. It doesn't change during the scenario.",
     expected: "A toast and an error under Assignee. Moving the due date before 16 Nov, or removing Lena, clears it.",
     task: "Submit this Added Value for review.",
-    setup: { ...COMPLETE, details: { ...COMPLETE.details, assignees: [{ name: "Lena Novak", description: "Assignee", points: 5 }] } },
+    setup: { ...COMPLETE_DRAFT, details: { ...COMPLETE_DRAFT.details, assignees: [{ name: "Lena Novak", description: "Assignee", points: 5 }] } },
   },
   {
     ...base,
@@ -263,7 +263,7 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     simulated: "Jack's booking comes from the sample availability.",
     expected: "An amber warning about Jack; Submit still goes through, back to the Dashboard.",
     task: "Submit this Added Value for review.",
-    setup: { ...COMPLETE, details: { ...COMPLETE.details, assignees: [{ name: "Jack Morgan", description: "Assignee", points: 5 }] } },
+    setup: { ...COMPLETE_DRAFT, details: { ...COMPLETE_DRAFT.details, assignees: [{ name: "Jack Morgan", description: "Assignee", points: 5 }] } },
   },
 ];
 

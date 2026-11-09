@@ -1,20 +1,19 @@
-import { EmptyState, Icon, PageTitle } from "@vdm-design-team/vcp-design-system";
-import { CreateAVButton } from "@/components/create-av-button";
-import { Screen } from "@/components/screen";
+"use client";
 
-/* Drafts with nothing in it yet. */
+import { AVListScreen } from "@/components/av-list";
+import { CreateAVButton } from "@/components/create-av-button";
+import { VIEWER } from "@/data/added-values";
+
+/* Drafts — Figma 254:74537: the viewer's own Added Values still in Draft
+   (AV · 03 Save as Draft). A draft is only its initiator's until it's submitted. */
 export default function DraftsScreen() {
   return (
-    <Screen active="drafts" header={<PageTitle title="Drafts" />}>
-      <div className="flex flex-1 items-center justify-center py-16">
-        <EmptyState
-          headingLevel={2}
-          icon={<Icon name="file" size="lg" />}
-          title="No drafts"
-          description="An Added Value you start and don't submit waits here."
-          action={<CreateAVButton />}
-        />
-      </div>
-    </Screen>
+    <AVListScreen
+      active="drafts"
+      title="Drafts"
+      include={(av) => av.status === "Draft" && av.initiator === VIEWER.name}
+      empty={{ title: "No drafts", description: "An Added Value you start and don't submit waits here." }}
+      emptyAction={<CreateAVButton />}
+    />
   );
 }

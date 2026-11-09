@@ -18,8 +18,12 @@ interface ScenarioState {
   run: number;
   /** The steps walked so far (indexes into `scenario.steps`); the last is the current one. Back pops it. */
   trail: readonly number[];
-  /** Go on: to the step with id `goto` (a branch), else to the current step's `next`, else the following step. */
-  next: (goto?: string) => void;
+  /**
+   * Go on: to the step with id `goto` (a branch), else to the current step's
+   * `next`, else the following step. With `from`, only if the walk is still on
+   * that step (a press that also opened another page has already moved it).
+   */
+  next: (goto?: string, from?: number) => void;
   back: () => void;
   /** Set the scenario's conditions (fresh data, its role, an open rail) and return the route it opens on. */
   start: (flowId: string, scenarioKey: string, view?: ScenarioView) => string | undefined;
@@ -70,10 +74,11 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
       view,
       run,
       trail,
-      next: (goto) => {
+      next: (goto, from) => {
         if (!active) return;
         const steps = active.scenario.steps;
         const current = trail[trail.length - 1];
+        if (from !== undefined && from !== current) return;
         const target = goto ?? steps[current]?.next;
         const to = target ? steps.findIndex((s) => s.id === target) : current + 1;
         if (to >= 0 && to < steps.length) setTrail([...trail, to]);
@@ -116,10 +121,11 @@ export function useScenario() {
   return state;
 }
 
-/** The scenario's setup, when the running scenario opens on this screen. */
-export function useScenarioSetup<T>(flowId: string): T | undefined {
+/** The scenario's setup, when the running scenario belongs to one of the flows that open this screen. */
+export function useScenarioSetup<T>(flowIds: string | readonly string[]): T | undefined {
   const { active } = useScenario();
-  return active?.flow.id === flowId ? (active.scenario.setup as T) : undefined;
+  const ids: readonly string[] = typeof flowIds === "string" ? [flowIds] : flowIds;
+  return active && ids.includes(active.flow.id) ? (active.scenario.setup as T) : undefined;
 }
 
 /* ---------- Finding and highlighting what a step is about ---------- */
@@ -258,7 +264,7 @@ export function ScenarioBar() {
   return (
     <>
       {step?.target && here && <StepHighlight target={step.target} stepKey={`${scenario.id}:${index}`} />}
-      {step?.action && step.target && here && <ActionWatcher target={step.target} onDone={() => next()} />}
+      {step?.action && step.target && here && <ActionWatcher target={step.target} onDone={() => next(undefined, index)} />}
       <aside
         data-scenario-bar
         aria-labelledby={headingId}
