@@ -18,6 +18,8 @@ import {
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { useAddedValues } from "@/components/av-store";
+import { useHolidays } from "@/components/holiday-store";
+import { publicDays } from "@/data/holidays";
 import { CYCLE_OPTIONS, stageLabel, type AddedValue } from "@/data/added-values";
 import { CYCLES, PEOPLE, TODAY } from "@/data/gantt";
 import {
@@ -52,6 +54,9 @@ export default function PlanningListScreen() {
   const router = useRouter();
   const { avs, get, moveTo, update } = useAddedValues();
   const { toast } = useToast();
+  /* Leave and holidays come from the Holiday Registry (Planning · 03). */
+  const { holidays } = useHolidays();
+  const daysOff = React.useMemo(() => publicDays(holidays), [holidays]);
   const [filters, setFilters] = React.useState(NO_FILTERS);
   const [sort, setSort] = React.useState<DataTableSort | undefined>();
   /* Dates this session just worked out: they play the table's animation once. */
@@ -74,7 +79,7 @@ export default function PlanningListScreen() {
       ...(first && {
         assignee: {
           name: first.name,
-          availability: availability(first.name, { start: av.startDate, end: av.dueDate }, avs, av.id),
+          availability: availability(first.name, { start: av.startDate, end: av.dueDate }, avs, holidays, av.id),
         },
       }),
       ...(av.startDate && {
@@ -159,8 +164,8 @@ export default function PlanningListScreen() {
     }
     /* From one cycle to another (decided): it keeps its status, with that cycle's estimated dates. */
     if (from.kind === "cycle") {
-      const start = cycleStart(to.id);
-      update(av.id, { cycle: to.id, startDate: start, dueDate: estimateDue(start, points), startEstimated: true, dueEstimated: true });
+      const start = cycleStart(to.id, daysOff);
+      update(av.id, { cycle: to.id, startDate: start, dueDate: estimateDue(start, points, daysOff), startEstimated: true, dueEstimated: true });
       animate(av.id, "start", "due");
       moved(av, to.id);
       return;
@@ -174,11 +179,11 @@ export default function PlanningListScreen() {
       return;
     }
     /* No dates: the cycle's estimated ones, highlighted (1155:77293). */
-    const start = cycleStart(to.id);
+    const start = cycleStart(to.id, daysOff);
     moveTo(av.id, "Accepted", {
       cycle: to.id,
       startDate: start,
-      dueDate: estimateDue(start, points),
+      dueDate: estimateDue(start, points, daysOff),
       startEstimated: true,
       dueEstimated: true,
     });
@@ -204,19 +209,19 @@ export default function PlanningListScreen() {
   const people = (draft: MoveAVToCycleDraft) =>
     PEOPLE.map((p) => {
       const dates = { start: draft.start?.value, end: draft.due?.value };
-      const free = freeFrom(p.name, dates);
+      const free = freeFrom(p.name, dates, holidays);
       return {
         value: p.name,
         label: p.name,
-        availability: availability(p.name, dates, avs, details?.id),
+        availability: availability(p.name, dates, avs, holidays, details?.id),
         ...(free && { until: shortDate(free) }),
       };
     });
   const estimate = (draft: MoveAVToCycleDraft) => {
-    const start = draft.start && !draft.start.estimated ? draft.start.value : cycleStart(draft.cycle ?? details!.cycle);
+    const start = draft.start && !draft.start.estimated ? draft.start.value : cycleStart(draft.cycle ?? details!.cycle, daysOff);
     const points = draft.points ?? draft.assignees.reduce((sum, a) => sum + (a.points ?? 0), 0);
     const anyone = draft.assignees.some((a) => a.person);
-    return anyone && points > 0 ? { start, due: estimateDue(start, points) } : { start };
+    return anyone && points > 0 ? { start, due: estimateDue(start, points, daysOff) } : { start };
   };
   const confirmDetails = (r: MoveAVToCycleResult) => {
     if (!detailsAV || !details) return;
@@ -255,7 +260,7 @@ export default function PlanningListScreen() {
     update(av.id, {
       startDate: iso,
       startEstimated: false,
-      dueDate: estimateDue(iso, pointsOf(av)),
+      dueDate: estimateDue(iso, pointsOf(av), daysOff),
       dueEstimated: true,
       ...(av.status !== "Backlog" && { cycle: cycleOf(iso)?.id }),
     });
@@ -264,7 +269,7 @@ export default function PlanningListScreen() {
   };
   const onDueChange = (row: PlanningRow, iso: string) => {
     const av = get(row.id)!;
-    const start = estimateStart(iso, pointsOf(av));
+    const start = estimateStart(iso, pointsOf(av), daysOff);
     update(av.id, {
       dueDate: iso,
       dueEstimated: false,
@@ -280,7 +285,7 @@ export default function PlanningListScreen() {
     update(av.id, {
       capacityPoints: points,
       ...(av.assignees.length === 1 && { assignees: [{ ...av.assignees[0], points }] }),
-      ...(av.startDate && { dueDate: estimateDue(av.startDate, points), dueEstimated: true }),
+      ...(av.startDate && { dueDate: estimateDue(av.startDate, points, daysOff), dueEstimated: true }),
     });
     if (av.startDate) animate(av.id, "due");
   };
@@ -332,7 +337,7 @@ export default function PlanningListScreen() {
           people={people}
           cycles={CYCLE_OPTIONS}
           initial={{
-            start: { value: cycleStart(details.cycle), estimated: true },
+            start: { value: cycleStart(details.cycle, daysOff), estimated: true },
             cycle: details.cycle,
             ...(pointsOf(detailsAV) > 0 && { points: pointsOf(detailsAV) }),
           }}

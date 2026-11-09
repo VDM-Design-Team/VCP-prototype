@@ -9,6 +9,7 @@ import { BULK_FLOW } from "./av-09-bulk-actions";
 import { MULTIPART_FLOW } from "./av-10-multipart";
 import { GANTT_FLOW } from "./planning-01-gantt";
 import { CYCLES_FLOW } from "./planning-02-cycles";
+import { HOLIDAYS_FLOW } from "./planning-03-holidays";
 import type { FlowDef } from "./types";
 
 /* Every VCP flow, in the FigJam Index's order. A flow with no scenarios yet is
@@ -37,7 +38,7 @@ export const FLOWS: readonly FlowDef[] = [
   MULTIPART_FLOW,
   GANTT_FLOW,
   CYCLES_FLOW,
-  planned("Planning", "03", "Holiday registry", "Admin edits, User views"),
+  HOLIDAYS_FLOW,
   planned("Activity", "01", "Comment reactions", "All users"),
   planned("Activity", "02", "Notifications", "All users"),
   planned("Activity", "03", "In case you missed it", "All users"),
