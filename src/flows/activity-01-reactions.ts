@@ -16,7 +16,7 @@ const press = (text: string, button: string): ScenarioStep => ({ text, target: `
 const say = (text: string): ScenarioStep => ({ text, path: PATH });
 
 const base = { status: "Implemented", testing: "Not tested", role: "user", start: PATH, setup: undefined } as const;
-const conditions = "Eve as a User on VCP-1205 (assigned to her): Alice's comment, Marvin's with Alice's 👀, and Eve's reply with 👍 from her and Marvin.";
+const conditions = "Eve as a User on VCP-1205 (assigned to her): Alice's comment, Marvin's with Alice's 👀, Eve's reply with 👍 from her and Marvin, and Lena's with seven kinds of reaction.";
 
 export const REACTION_SCENARIOS: readonly ScenarioDef[] = [
   {
@@ -30,7 +30,7 @@ export const REACTION_SCENARIOS: readonly ScenarioDef[] = [
     name: "A quick thumbs up",
     demonstrates: "The quick 👍 button (Figma 620:55208).",
     conditions,
-    simulated: "Reactions aren't saved; nobody is notified (Figma has no reaction notification).",
+    simulated: "Reactions aren't saved. Alice would be told (decided 9 Nov 2026: the author hears of a reaction; DS #341), shown in Activity · 02.",
     expected: "A 👍 1 pill, yours, on Alice's comment.",
     task: "Let Alice know you like her idea, with one click.",
   },
@@ -79,6 +79,22 @@ export const REACTION_SCENARIOS: readonly ScenarioDef[] = [
     simulated: "Nothing is saved.",
     expected: "👍 1, Marvin's only.",
     task: "You thumbed-up your own reply by mistake: undo it.",
+  },
+  {
+    ...base,
+    id: "activity-01-reactions.many",
+    steps: [
+      on("Lena's comment (the oldest, at the bottom) has seven kinds of reaction: five show, then \"+2\"."),
+      on("Point at or Tab to \"🎉 5\": \"Alice Carter, Marvin Ode, Jack Morgan and 2 others reacted with :tada:\": up to three names, then the rest (decided 9 Nov 2026)."),
+      press("Press \"+2\" to see them all.", "Show 2 more reactions"),
+      on("Every pill is in the row now (decided: expand in place), and the button reads Show less; press it to fold them. Focus stays on it either way (DS #338)."),
+    ],
+    name: "Many reactions",
+    demonstrates: "The \"+N\" button expanding the row, and the who-reacted names (three, then \"and N others\").",
+    conditions,
+    simulated: "Nothing is saved.",
+    expected: "7 pills after +2; Show less folds them to 5.",
+    task: "See every reaction on Lena's comment, and who cheered it.",
   },
 ];
 

@@ -388,6 +388,23 @@ const SAMPLE_AVS: AddedValue[] = [
         createdAt: "2026-11-05T09:20:00Z",
         body: text("The unread filter is lovely. Can it be the default when the inbox opens?"),
       },
+      /* More emoji than the row shows (5), and a reaction from five people: "+N" and "and N others". */
+      {
+        id: "c0",
+        author: { id: "u-lena", name: "Lena Novak" },
+        time: "2 days ago",
+        createdAt: "2026-11-03T11:00:00Z",
+        body: text("Shipped the first cut of the filters to staging. Have a look."),
+        reactions: [
+          { emoji: "🎉", count: 5, people: ["Alice Carter", "Marvin Ode", "Jack Morgan", "Maya Bennett", "Noah Foster"] },
+          { emoji: "🚀", count: 2, people: ["Jack Morgan", "Noah Foster"] },
+          { emoji: "👀", count: 1, people: ["Maya Bennett"] },
+          { emoji: "🔥", count: 1, people: ["Alice Carter"] },
+          { emoji: "💯", count: 1, people: ["Marvin Ode"] },
+          { emoji: "🙌", count: 1, people: ["John Mason Smith"] },
+          { emoji: "✅", count: 1, people: ["Lena Novak"] },
+        ],
+      },
     ],
     updatedAt: "2026-11-04T16:00:00Z",
   },
