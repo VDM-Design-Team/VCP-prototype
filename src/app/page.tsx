@@ -1,13 +1,16 @@
 "use client";
 
+import * as React from "react";
 import { useRouter } from "next/navigation";
-import { InCaseYouMissedIt, PageTitle, StatCard, useToast } from "@vdm-design-team/vcp-design-system";
+import { DomainBudgetSummary, InCaseYouMissedIt, PageTitle, StatCard, useToast, type Quarter } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { Panel } from "@/components/panel";
 import { useAddedValues } from "@/components/av-store";
 import { useNotifications } from "@/components/notification-store";
 import { useShellState } from "@/components/shell-state";
 import { missedFor, stateKey } from "@/data/missed";
+import { useBudgets } from "@/components/budget-store";
+import { CURRENT, YEARS, consumedFor, periodOf, quarterKey } from "@/data/budgets";
 
 /* A user's dashboard: the Value Cards, "In Case You Missed it" (Activity · 03; Figma 1552:13937, placed
    under the Value Cards as on the admin dashboard 951:370905), then recent activity. Sample data. */
@@ -17,6 +20,10 @@ export default function DashboardScreen() {
   const { dismissed, dismiss, undoDismiss } = useNotifications();
   const { role } = useShellState();
   const { toast } = useToast();
+  /* Admin · 01: an admin's own domain's budget (Figma 696:55584). The prototype's admin is Development's. */
+  const { budgets } = useBudgets();
+  const [budgetQ, setBudgetQ] = React.useState<{ year: number; quarter: Quarter }>(CURRENT);
+  const budgetKey = quarterKey(budgetQ.year, budgetQ.quarter);
   const keyOf = (id: string) => {
     const av = avs.find((a) => a.id === id);
     return av ? stateKey(av) : "";
@@ -47,6 +54,22 @@ export default function DashboardScreen() {
         <StatCard className="flex-1" label="Pending" value="4" accent="yellow" />
         <StatCard className="flex-1" label="Draft" value="5" accent="neutral" />
       </div>
+      {role === "admin" && (
+        /* Where a guided scenario's step points (Admin · 01): see src/flows/types.ts. */
+        <div className="pb-6" data-flow-step="budget-card">
+          <DomainBudgetSummary
+            allocated={budgets[budgetKey]?.development?.allocated ?? 0}
+            consumed={consumedFor("development", budgetKey, avs)}
+            quarter={budgetQ.quarter}
+            year={budgetQ.year}
+            years={YEARS}
+            period={periodOf(budgetQ.year, budgetQ.quarter)}
+            onQuarterChange={(quarter) => setBudgetQ((b) => ({ ...b, quarter }))}
+            onYearChange={(year) => setBudgetQ((b) => ({ ...b, year }))}
+            onGoToCurrent={() => setBudgetQ(CURRENT)}
+          />
+        </div>
+      )}
       {/* Where a guided scenario's step points (Activity · 03): see src/flows/types.ts. */}
       <div className="pb-6" data-flow-step="icymi">
         <InCaseYouMissedIt

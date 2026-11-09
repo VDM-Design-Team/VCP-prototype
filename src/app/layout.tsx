@@ -6,6 +6,7 @@ import { RoleSwitch } from "@/components/role-switch";
 import { AVStoreProvider } from "@/components/av-store";
 import { HolidayStoreProvider } from "@/components/holiday-store";
 import { NotificationStoreProvider } from "@/components/notification-store";
+import { BudgetStoreProvider } from "@/components/budget-store";
 import { ScenarioBar, ScenarioProvider } from "@/components/scenario";
 import "./globals.css";
 
@@ -25,13 +26,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <AVStoreProvider>
               <HolidayStoreProvider>
                 <NotificationStoreProvider>
-                  <ToastProvider>
-                    <ScenarioProvider>
-                      {children}
-                      <RoleSwitch />
-                      <ScenarioBar />
-                    </ScenarioProvider>
-                  </ToastProvider>
+                  <BudgetStoreProvider>
+                    <ToastProvider>
+                      <ScenarioProvider>
+                        {children}
+                        <RoleSwitch />
+                        <ScenarioBar />
+                      </ScenarioProvider>
+                    </ToastProvider>
+                  </BudgetStoreProvider>
                 </NotificationStoreProvider>
               </HolidayStoreProvider>
             </AVStoreProvider>
