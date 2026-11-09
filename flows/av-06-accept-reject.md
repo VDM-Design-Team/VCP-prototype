@@ -36,9 +36,12 @@ Decide a submitted Added Value: accept it into the work, or turn it down and say
 - **Done:** Accepted (next: Move to In Progress, then AV · 07 Hand off), or Rejected (in the archive).
 - **Not in this flow:** Multipart (AV · 10), the initiator being told (Activity · 02 Notifications), accepting or rejecting several at once (AV · 09 Bulk actions), the Review decision after a handoff (AV · 07).
 
+## Decided (9 Nov 2026)
+- **After Accept or Reject the admin stays on the AV** (as built).
+- **Rejected is final:** there is no way out of Rejected. (Edit still opens the edit page, which only saves; it can't change the status.)
+- **An admin can accept or reject any AV, their own included.**
+- **Dates:** `DetailCard`'s Date Accepted moves to dd/mm/yyyy in the design system (being fixed from the main session).
+- **Both Rejects are red:** decided 6 Nov; the reject dialog's button is fixed in Eve's DS #279.
+
 ## Unresolved questions
-- **Where a decision lands.** Figma shows the AV page after a reject; the prototype stays on the AV for both, with a toast. Should Accept/Reject from Manage go back to Manage?
-- **Can a rejected AV come back?** Figma draws no way out of Rejected for a Pending rejection (the ⋮ has Edit and Delete).
-- **Admins deciding their own AV.** Eve as Admin can accept her own Pending AV. Allowed?
-- **Design system: dates.** `DetailCard` writes Date Initiated and Date Accepted as words ("November 5, 2026"), on DS main too; the 6 Nov decision is dd/mm/yyyy everywhere.
-- **The reject dialog's answer is blue**, not the red danger button the header's Pending Reject uses. Intended?
+- None for this flow.
