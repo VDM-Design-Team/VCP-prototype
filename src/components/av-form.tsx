@@ -223,17 +223,21 @@ function Form({ editing }: { editing?: AddedValue }) {
   /* AV · 08: the domains ticked in "Duplicate to other Domains", and each one's copy. */
   const [initiate, setInitiate] = React.useState<string[]>([]);
   const [copies, setCopies] = React.useState<Record<string, Copy>>({});
-  const problems = React.useMemo(() => {
-    const p = check(draft, avDomain);
-    for (const d of initiate) {
-      if (blank(copies[d]?.title ?? "")) {
-        p.copies[d] = EMPTY_FIELD;
-        p.toasts.push(`The copy in ${domainName(d)} domain needs a title before submitting.`);
+  /* Each copy needs a title, on Submit and on Save as draft alike (both send it). */
+  const withCopies = React.useCallback(
+    (p: Problems, before: string) => {
+      for (const d of initiate) {
+        if (blank(copies[d]?.title ?? "")) {
+          p.copies[d] = before === "submitting" ? EMPTY_FIELD : DRAFT_TITLE;
+          p.toasts.push(`The copy in ${domainName(d)} domain needs a title before ${before}.`);
+        }
       }
-    }
-    return p;
-  }, [draft, avDomain, initiate, copies]);
-  const draftProblems = React.useMemo(() => checkDraft(draft), [draft]);
+      return p;
+    },
+    [initiate, copies],
+  );
+  const problems = React.useMemo(() => withCopies(check(draft, avDomain), "submitting"), [draft, avDomain, withCopies]);
+  const draftProblems = React.useMemo(() => withCopies(checkDraft(draft), "saving a draft"), [draft, withCopies]);
   /* Each blocked press, once its inline errors are on screen: bring the first
      one into view and put the cursor in it (Figma: "scroll to the highest
      missing field"). An assignee the card can't mark is reached by its banner
@@ -324,8 +328,8 @@ function Form({ editing }: { editing?: AddedValue }) {
     toast({ tone: "success", title, description });
   };
 
-  /* AV · 08: Submit initiates a copy in each ticked domain, "Initiated" there.
-     The original keeps its own status. */
+  /* AV · 08: Submit, or Save as draft (decided 9 Nov 2026), initiates a copy
+     in each ticked domain, "Initiated" there. The original keeps its own status. */
   const initiated = (): Duplicate[] => [
     ...(editing?.duplicates ?? []),
     ...initiate.map((d) => ({ domain: domainName(d), status: "Initiated", title: copies[d].title.trim() })),
@@ -364,14 +368,14 @@ function Form({ editing }: { editing?: AddedValue }) {
        1090:27191, AV · 05); everywhere else Save as draft only saves the
        changes and the status stays. */
     if (editing.status === "Backlog") {
-      moveTo(editing.id, "Draft", { ...content(), remarks: undefined });
-      return backToAV(editing, `${editing.ref} moved back to Draft`, "It's out of the Backlog. Only you can see it until it's submitted.");
+      moveTo(editing.id, "Draft", { ...content(), remarks: undefined, duplicates: initiated() });
+      return backToAV(editing, `${editing.ref} moved back to Draft`, `It's out of the Backlog. Only you can see it until it's submitted.${initiatedNote}`);
     }
-    update(editing.id, content());
+    update(editing.id, { ...content(), duplicates: initiated() });
     backToAV(
       editing,
       `${editing.ref}: changes saved`,
-      editing.status === "Draft" ? "It's still a Draft. Only you can see it until it's submitted." : `It stays ${stageLabel(editing)}.`,
+      (editing.status === "Draft" ? "It's still a Draft. Only you can see it until it's submitted." : `It stays ${stageLabel(editing)}.`) + initiatedNote,
     );
   };
 
@@ -489,7 +493,7 @@ function Form({ editing }: { editing?: AddedValue }) {
               </h2>
               <div className="flex flex-col gap-4 p-4">
                 <section className="rounded-md bg-surface-elevated p-6">
-                  <Field label="Title" error={attempted === "submit" ? problems.copies[d] : undefined}>
+                  <Field label="Title" error={shown?.copies[d]}>
                     <Input fullWidth value={copies[d].title} onChange={(e) => setCopy(d, { title: e.target.value })} />
                   </Field>
                 </section>
