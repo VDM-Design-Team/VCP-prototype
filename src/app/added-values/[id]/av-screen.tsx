@@ -285,7 +285,7 @@ export function AVScreen({ id }: { id: string }) {
         multipart={multipart}
         onMultipartChange={setMultipart}
         onConfirm={() => {
-          moveTo(av.id, "Accepted", { dateAccepted: TODAY });
+          moveTo(av.id, "Accepted", { dateAccepted: TODAY, remarks: undefined });
           close();
           toast({ tone: "success", title: `${av.ref} accepted`, description: "It's ready to be worked on." });
         }}
@@ -294,7 +294,7 @@ export function AVScreen({ id }: { id: string }) {
         open={dialog === "reject"}
         onClose={close}
         onReject={({ reason, detail }) => {
-          moveTo(av.id, "Rejected", { rejection: { reason, detail } });
+          moveTo(av.id, "Rejected", { rejection: { reason, detail }, remarks: undefined });
           close();
           archiveToast(
             `${av.ref} rejected`,
