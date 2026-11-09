@@ -14,6 +14,11 @@ interface AVStore {
   moveTo: (id: string, to: string, change?: Partial<AddedValue>) => void;
   update: (id: string, change: Partial<AddedValue>) => void;
   addComment: (id: string, comment: CommentData) => void;
+  /**
+   * Activity · 01: the viewer's reaction on a comment (or reply) flips — added, or taken back.
+   * A new emoji goes after the others (Figma: in the order first added); one at 0 goes away.
+   */
+  react: (id: string, commentId: string, emoji: string) => void;
   remove: (id: string) => void;
   /** Add a new AV (created in the prototype) under the next free reference, and return it. */
   create: (av: Omit<AddedValue, "id" | "ref">) => AddedValue;
@@ -27,6 +32,22 @@ interface AVStore {
 }
 
 const AVStoreContext = React.createContext<AVStore | null>(null);
+
+/* Reactions keep who reacted by name; the count is how many. The page shows the viewer as "You". */
+function toggleReaction(comments: readonly CommentData[], commentId: string, emoji: string): CommentData[] {
+  return comments.map((c) => {
+    if (c.id !== commentId) return c.replies ? { ...c, replies: toggleReaction(c.replies, commentId, emoji) } : c;
+    const reactions = [...(c.reactions ?? [])];
+    const at = reactions.findIndex((r) => r.emoji === emoji);
+    const people = at === -1 ? [] : [...(reactions[at].people ?? [])];
+    const next = people.includes(VIEWER.name) ? people.filter((p) => p !== VIEWER.name) : [...people, VIEWER.name];
+    const reaction = { emoji, count: next.length, people: next };
+    if (at === -1) reactions.push(reaction);
+    else if (next.length) reactions[at] = reaction;
+    else reactions.splice(at, 1);
+    return { ...c, reactions };
+  });
+}
 
 export function AVStoreProvider({ children }: { children: React.ReactNode }) {
   const [avs, setAvs] = React.useState<AddedValue[]>(ADDED_VALUES);
@@ -81,6 +102,8 @@ export function AVStoreProvider({ children }: { children: React.ReactNode }) {
       },
       update: (id, change) => touch(id, (av) => ({ ...av, ...change })),
       addComment: (id, comment) => touch(id, (av) => ({ ...av, comments: [comment, ...av.comments] })),
+      react: (id, commentId, emoji) =>
+        setAvs((list) => list.map((av) => (av.id === id ? { ...av, comments: toggleReaction(av.comments, commentId, emoji) } : av))),
       remove: (id) => setAvs((list) => list.filter((av) => av.id !== id)),
       createMany: (list) => {
         const taken = new Set(avs.map((av) => av.id));

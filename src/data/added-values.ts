@@ -361,6 +361,7 @@ const SAMPLE_AVS: AddedValue[] = [
       { actor: "Alice Carter", from: "Pending", to: "Accepted", when: "3 weeks ago" },
       { actor: VIEWER.name, from: "Ready for deploy", to: "Confirmed prod", when: "Yesterday" },
     ],
+    /* Activity · 01: a thread with reactions to add, join and take back (Figma 634:68928). */
     comments: [
       {
         id: "c1",
@@ -368,6 +369,24 @@ const SAMPLE_AVS: AddedValue[] = [
         time: "Yesterday",
         createdAt: "2026-11-04T16:40:00Z",
         body: text("Looks good on prod. Can you hand it off today? It's past due."),
+        reactions: [{ emoji: "👀", count: 1, people: ["Alice Carter"] }],
+        replies: [
+          {
+            id: "c1-r1",
+            author: { id: VIEWER.id, name: VIEWER.name },
+            time: "Yesterday",
+            createdAt: "2026-11-04T17:05:00Z",
+            body: text("On it: the handoff goes out this afternoon."),
+            reactions: [{ emoji: "👍", count: 2, people: [VIEWER.name, "Marvin Ode"] }],
+          },
+        ],
+      },
+      {
+        id: "c2",
+        author: { id: "u-alice", name: "Alice Carter" },
+        time: "Today",
+        createdAt: "2026-11-05T09:20:00Z",
+        body: text("The unread filter is lovely. Can it be the default when the inbox opens?"),
       },
     ],
     updatedAt: "2026-11-04T16:00:00Z",
