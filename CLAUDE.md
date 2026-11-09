@@ -64,7 +64,7 @@ task; a scenario is one set of conditions inside it.
 - Each scenario has **guided steps** (`steps` in its definition): the
   reviewer card walks through them with Back and Next, outlining the part of
   the screen each step is about (`target`: `step:<name>` for an element marked
-  `data-flow-step`, `group:<Label>`, `button:<Text>`). A step with two or more
+  `data-flow-step`, `group:<Label>`, `button:<Text>`, `link:<href>`). A step with two or more
   ways on has `options`, and Next opens a menu of them. A step's `path` is exact, or
   uses `*` (one segment in the middle, the rest at the end). A scenario that needs
   sample AVs changed lists them in `avs` (matched by id). When the user's own

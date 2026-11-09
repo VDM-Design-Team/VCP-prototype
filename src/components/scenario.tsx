@@ -142,7 +142,7 @@ const nameOf = (el: Element) =>
       .join(" ")
   ).trim();
 
-/** See `ScenarioStep.target`: `step:<name>`, `group:<Label>` or `button:<Text>`. */
+/** See `ScenarioStep.target`: `step:<name>`, `group:<Label>`, `button:<Text>` or `link:<href>`. */
 function findTarget(target: string): HTMLElement | null {
   const at = target.indexOf(":");
   const kind = target.slice(0, at);
@@ -156,6 +156,8 @@ function findTarget(target: string): HTMLElement | null {
     );
   if (kind === "group")
     return [...document.querySelectorAll<HTMLElement>('[role="group"]')].find((g) => nameOf(g).startsWith(value)) ?? null;
+  if (kind === "link")
+    return [...document.querySelectorAll<HTMLElement>("a")].find((a) => outsideBar(a) && a.getAttribute("href") === value) ?? null;
   return null;
 }
 
