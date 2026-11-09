@@ -16,6 +16,13 @@ import { CYCLES, TODAY } from "./gantt";
 /** Who the prototype is signed in as — the name in the top bar. */
 export const VIEWER = { id: "u-eve", name: "Eve Kestrel" };
 
+/**
+ * References kept free for Added Values created in the prototype. The site is
+ * static, so each needs its page built ahead (see generateStaticParams on
+ * /added-values/[id]): the first twenty new AVs get vcp-1211 … vcp-1230.
+ */
+export const NEW_AV_IDS = Array.from({ length: 20 }, (_, i) => `vcp-${1211 + i}`);
+
 export type AVDomain = "development" | "design";
 
 /* Each domain's own steps after In Progress. A domain names these itself,

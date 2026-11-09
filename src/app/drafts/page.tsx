@@ -1,4 +1,5 @@
-import { Button, EmptyState, Icon, PageTitle } from "@vdm-design-team/vcp-design-system";
+import { EmptyState, Icon, PageTitle } from "@vdm-design-team/vcp-design-system";
+import { CreateAVButton } from "@/components/create-av-button";
 import { Screen } from "@/components/screen";
 
 /* Drafts with nothing in it yet. */
@@ -11,7 +12,7 @@ export default function DraftsScreen() {
           icon={<Icon name="file" size="lg" />}
           title="No drafts"
           description="An Added Value you start and don't submit waits here."
-          action={<Button>Create Added Value</Button>}
+          action={<CreateAVButton />}
         />
       </div>
     </Screen>

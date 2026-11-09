@@ -48,6 +48,34 @@ app from them. `main` is the prototype everyone clicks through.
 - Sample data lives in the screen's file, or in `src/data/` once more than
   one screen shares it. No real customer data, ever.
 
+## Flows and scenarios
+
+Two ways in, one set of screens: **Explore** (the Dashboard, with the sample
+data) and the **Flows & Scenarios catalogue** (`/flows`). A flow is a user's
+task; a scenario is one set of conditions inside it.
+
+- `flows/<flow-id>.md`: the flow doc (goal, entry points, steps, failures and
+  recovery, exit, open questions). The approved behaviour.
+- `src/flows/<flow-id>.ts`: the flow's scenarios. **One definition per
+  scenario** feeds both its catalogue card and its start. A scenario changes the
+  data a screen starts with, never the screen.
+- `src/flows/catalogue.ts`: every flow, in the FigJam Index's order. Planned
+  flows stay listed with no Start.
+- Each scenario has **guided steps** (`steps` in its definition): the
+  reviewer card walks through them with Back and Next, outlining the part of
+  the screen each step is about (`target`: `step:<name>` for an element marked
+  `data-flow-step`, `group:<Label>`, `button:<Text>`). A step with two or more
+  ways on has `options`, and Next opens a menu of them. When the user's own
+  click opens another page, the walk follows to the step for that page. The
+  participant view has no guidance. **Reset, Finish and Leave scenario** put
+  everything back: the sample data (anything the scenario created or changed),
+  its toasts, the role and the rail. Finish and Leave return to the list.
+- `/flows/<flow-id>/<scenario>` is a scenario's shareable link. Opening it
+  resets the sample data, the role and the rail, then opens its screen.
+  `?view=participant` hides the reviewer controls for a usability session.
+- A flow change updates the doc, its scenarios, the catalogue and the screens
+  in the same PR. If its FigJam page also needs changing, say so.
+
 ## It's a static site
 
 `next build` writes plain files to `out/` (`output: "export"`), which
