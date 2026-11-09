@@ -205,6 +205,19 @@ export function AVScreen({ id }: { id: string }) {
               </Banner>
             </div>
           )}
+          {/* AV · 08 (Figma 1144:46613): a copy rejected or backlogged in its own
+              domain says so on the original, whose own status stays. */}
+          {av.duplicates?.map((d) =>
+            d.status === "Rejected" ? (
+              <Banner key={d.domain} tone="critical" title={`This Task was rejected in ${d.domain} Domain`}>
+                {d.rejection ?? "No reason was given"}
+              </Banner>
+            ) : d.status === "Backlog" ? (
+              <Banner key={d.domain} tone="warning" title={`This Task was backlogged in ${d.domain} Domain`}>
+                {d.remarks ?? "No feedback was given"}
+              </Banner>
+            ) : null,
+          )}
           <DescriptionCardTitle reference={av.ref} title={av.title} />
           {av.problems.length > 0 && (
             <DescriptionSection type="problem">
@@ -251,28 +264,33 @@ export function AVScreen({ id }: { id: string }) {
         </div>
 
         <div className="col-span-1 flex min-w-0 flex-col gap-4">
-          <DetailCard
-            type="viewing"
-            domain={av.domain}
-            value={{
-              initiators: [{ name: av.initiator }],
-              /* An empty list would still draw the Assignee heading. */
-              assignees: av.assignees.length ? av.assignees : undefined,
-              startDate: av.startDate,
-              dueDate: av.dueDate,
-              cycle: av.cycle,
-              status: stageLabel(av),
-              urgency: av.urgency,
-              type: av.type,
-              projects: av.project ? [av.project] : undefined,
-              category: av.category,
-              tags: av.tags,
-              capacityPoints: av.capacityPoints,
-              dateInitiated: av.dateInitiated,
-              dateAccepted: av.dateAccepted,
-            }}
-            options={{ cycles: CYCLE_OPTIONS }}
-          />
+          {/* Initiated to other domains (AV · 08): Figma's "Viewing Initiated AV"
+              uses the duplicate card, with each copy's domain and status. */}
+          <div data-flow-step="details">
+            <DetailCard
+              type={av.duplicates?.length ? "duplicate" : "viewing"}
+              domain={av.domain}
+              value={{
+                initiators: [{ name: av.initiator }],
+                /* An empty list would still draw the Assignee heading. */
+                assignees: av.assignees.length ? av.assignees : undefined,
+                startDate: av.startDate,
+                dueDate: av.dueDate,
+                cycle: av.cycle,
+                status: stageLabel(av),
+                urgency: av.urgency,
+                type: av.type,
+                projects: av.project ? [av.project] : undefined,
+                category: av.category,
+                tags: av.tags,
+                capacityPoints: av.capacityPoints,
+                dateInitiated: av.dateInitiated,
+                dateAccepted: av.dateAccepted,
+                duplicates: av.duplicates?.map(({ domain, status }) => ({ domain, status })),
+              }}
+              options={{ cycles: CYCLE_OPTIONS }}
+            />
+          </div>
           {!["Draft", "Pending", "Rejected"].includes(av.status) && (
             <DeliverablesCard domain={av.domain} mode="view" links={av.links} files={av.files} />
           )}
