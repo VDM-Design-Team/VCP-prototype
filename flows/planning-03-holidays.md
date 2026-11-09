@@ -11,7 +11,7 @@ Keep public holidays, team days off and personal leave in one place, so everyone
 
 ## Actor, entry points and starting conditions
 - **An admin** adds, edits and removes entries. **A user** reads them (Figma's Normal User table: no Add, Import or Actions).
-- Planning → **Holiday Registry**. The admin's rail has it; **a user's rail doesn't yet** (see Unresolved).
+- An admin: Planning → **Holiday Registry**. A user: **Holiday Registry**, a top-level row of their rail (decided 9 Nov 2026; DS #337), the same page.
 - Sample entries: Google Calendar's public holidays (New Year's Day, Labour Day, Christmas; yearly), personal leave (Noah 16–20/11, Lena 21–31/12), a partial day (Alice, 12/11), a team offsite (18/12), and Jack's leave twice, once by hand and once from Hubstaff.
 
 ## Main steps and decision points
@@ -31,17 +31,20 @@ Keep public holidays, team days off and personal leave in one place, so everyone
 ## Completion or exit
 - **Done:** the registry is right, and the Planning List's availability follows it.
 
-## The prototype's own rules (Figma doesn't say)
-- **Who an entry covers:** Public and Team cover everyone. **A new Individual entry covers no one**, because the dialog has no field to choose (see Unresolved); the samples name their person.
-- **New entries are all-day:** the dialog has no partial-day choice.
+## The prototype's own rules (until #285 has the decided fields)
+- **Who an entry covers** (stand-in): Public covers everyone (decided). Until the dialog's **Applies to** field lands in #285, a Team entry covers everyone and **a new Individual entry covers no one**; the samples name their person.
+- **New entries are all-day** (stand-in) until #285's **All day** toggle and times land.
 - **Availability:** all-day leave or a holiday that covers someone → Unavailable (cannot be assigned); a partial day → Busy (can be). Yearly entries count every year.
 - **Estimates skip public holidays**, as they skip weekends.
 
+## Decided (9 Nov 2026)
+- **Applies to:** the dialog gets the field: **Team picks teams, Individual picks people, Public covers everyone.** Asked of Eve in #285; the prototype keeps its stand-in until it lands, then uses it.
+- **Partial days:** the dialog gets an **All day** toggle with **from / to times**; a partial day makes someone **Busy**, not Unavailable (as built). Also asked of Eve in #285.
+- **A user's rail:** Holiday Registry is a **top-level row** (DS #337).
+- **Holiday types:** Public, Team and Individual, all three.
+- **Deleting a synced entry** (Google Calendar, Hubstaff): **deleted stays deleted**; a later sync must not bring it back. (The prototype has no sync.)
+- **Import from Hubstaff:** stays a toast for now.
+- **Public holidays only push dates**; they don't cut a cycle's capacity.
+
 ## Unresolved questions
-- **Who an Individual or Team entry covers:** "Applies to" is a column, but neither dialog has a field for it. Add an Applies to field (people, or a team) to `HolidayModal`?
-- **Partial days:** the column shows All Day / Partial Day, but nothing sets it, and nothing says which hours. Needed?
-- **A user's rail:** Figma's user screen shows "Holiday Registry" twice and no Planning group. Add Holiday Registry to the user's rail (a DS `Sidebar` change), and where?
-- **Holiday types:** Figma's badges show Public and Individual, its dropdown also Team. Keep all three?
-- **Deleting a system entry** (Google Calendar, Hubstaff): does it come back on the next sync?
-- **Import from Hubstaff:** not drawn.
-- **Do public holidays reduce a cycle's capacity**, or only push due dates (as now)?
+- None for this flow, beyond #285 landing the two fields.
