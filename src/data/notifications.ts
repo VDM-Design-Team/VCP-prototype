@@ -12,16 +12,18 @@ export interface AppNotification {
   /** For comment kinds: which comment the row previews. */
   commentId?: string;
   time: string;
+  /** The day it happened (ISO): the inbox groups by it (decided 9 Nov 2026). */
+  on: string;
   unread: boolean;
 }
 
 export const NOTIFICATIONS: readonly AppNotification[] = [
-  { id: "n1", kind: "commented", actor: "Alice Carter", avId: "vcp-1205", commentId: "c2", time: "a few minutes ago", unread: true },
+  { id: "n1", kind: "commented", actor: "Alice Carter", avId: "vcp-1205", commentId: "c2", time: "a few minutes ago", on: "2026-11-05", unread: true },
   /* Decided 9 Nov 2026 (Activity · 01): the author hears of a reaction to their comment. */
-  { id: "n2", kind: "reacted", actor: "Marvin Ode", avId: "vcp-1205", commentId: "c1-r1", time: "an hour ago", unread: true },
-  { id: "n3", kind: "mention", actor: "Lena Novak", avId: "vcp-1205", commentId: "c0", time: "2 days ago", unread: true },
-  { id: "n4", kind: "handoff", actor: "Jack Morgan", avId: "vcp-1207", time: "3 days ago", unread: true },
-  { id: "n5", kind: "moved", actor: "Alice Carter", avId: "vcp-1204", status: "In QA", time: "2 days ago", unread: false },
-  { id: "n6", kind: "assigned", actor: "Marvin Ode", avId: "vcp-1203", time: "a week ago", unread: false },
-  { id: "n7", kind: "commented", actor: "Marvin Ode", avId: "vcp-1201", commentId: "c1", time: "2 days ago", unread: false },
+  { id: "n2", kind: "reacted", actor: "Marvin Ode", avId: "vcp-1205", commentId: "c1-r1", time: "an hour ago", on: "2026-11-05", unread: true },
+  { id: "n3", kind: "mention", actor: "Lena Novak", avId: "vcp-1205", commentId: "c0", time: "2 days ago", on: "2026-11-03", unread: true },
+  { id: "n4", kind: "handoff", actor: "Jack Morgan", avId: "vcp-1207", time: "3 days ago", on: "2026-11-02", unread: true },
+  { id: "n5", kind: "moved", actor: "Alice Carter", avId: "vcp-1204", status: "In QA", time: "Yesterday", on: "2026-11-04", unread: false },
+  { id: "n6", kind: "assigned", actor: "Marvin Ode", avId: "vcp-1203", time: "a week ago", on: "2026-10-29", unread: false },
+  { id: "n7", kind: "commented", actor: "Marvin Ode", avId: "vcp-1201", commentId: "c1", time: "2 days ago", on: "2026-11-03", unread: false },
 ];

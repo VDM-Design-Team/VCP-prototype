@@ -77,10 +77,13 @@ export function Screen({
   active,
   header,
   children,
+  rail = true,
 }: {
   active: string;
   header?: React.ReactNode;
   children: React.ReactNode;
+  /** `false`: no left menu, and the top bar's logo instead of Create Added Value (Figma's inbox, decided 9 Nov 2026). */
+  rail?: boolean;
 }) {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
@@ -91,23 +94,36 @@ export function Screen({
   return (
     <AppShell
       sidebar={
-        <Sidebar
-          userType={railFor(role)}
-          active={active}
-          onNavigate={(key) => router.push(routeFor(key))}
-          collapsed={collapsed}
-          onToggleCollapse={() => setCollapsed(!collapsed)}
-        />
+        rail && (
+          <Sidebar
+            userType={railFor(role)}
+            active={active}
+            onNavigate={(key) => router.push(routeFor(key))}
+            collapsed={collapsed}
+            onToggleCollapse={() => setCollapsed(!collapsed)}
+          />
+        )
       }
       topBar={
-        <TopBar
-          primaryAction={<CreateAVButton />}
-          notificationPopover={<Bell />}
-          theme={mounted && resolvedTheme === "dark" ? "dark" : "light"}
-          onThemeChange={setTheme}
-          user={{ name: "Eve Kestrel" }}
-          onUserMenu={() => {}}
-        />
+        /* The logo is a real link home; a plain click stays in the app, so the prototype keeps its state. */
+        <div
+          onClick={(e) => {
+            const a = (e.target as Element).closest("a[href='/']");
+            if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+            e.preventDefault();
+            router.push("/");
+          }}
+        >
+          <TopBar
+            primaryAction={rail ? <CreateAVButton /> : undefined}
+            homeHref={rail ? undefined : "/"}
+            notificationPopover={<Bell />}
+            theme={mounted && resolvedTheme === "dark" ? "dark" : "light"}
+            onThemeChange={setTheme}
+            user={{ name: "Eve Kestrel" }}
+            onUserMenu={() => {}}
+          />
+        </div>
       }
       header={header}
     >

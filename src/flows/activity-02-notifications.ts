@@ -109,11 +109,11 @@ export const NOTIFICATION_SCENARIOS: readonly ScenarioDef[] = [
     steps: [
       press("Press the bell.", "Notifications, 4 unread"),
       say("At the foot: View notifications inbox. Press it. Then Next."),
-      { text: "The inbox (Figma 1030:173233): every notification, without the comment previews, with Show unread only and Mark all as read, and the pager.", target: "step:inbox", path: INBOX },
+      { text: "The inbox (Figma 1030:173233): full width, no left menu (decided 9 Nov 2026), the logo takes you home. Every notification, grouped by day (Today, Yesterday, 3 November …; decided), without the comment previews, with Show unread only, Mark all as read and the pager.", target: "step:inbox", path: INBOX },
       { text: "Switch Show unread only on, then press Mark all as read: the list empties (\"No unread notifications\") and the bell's dot goes.", target: "step:inbox", path: INBOX },
     ],
     name: "The inbox",
-    demonstrates: "The inbox page the popover's footer opens.",
+    demonstrates: "The inbox page the popover's footer opens: full width, grouped by day.",
     conditions,
     simulated: "Nothing is saved; one page of seven.",
     expected: "The inbox; all read after Mark all as read.",

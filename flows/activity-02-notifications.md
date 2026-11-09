@@ -1,7 +1,7 @@
 # Activity · 02 Notifications
 
 **ID:** `activity-02-notifications` (stable; never reused)
-**Status:** Implemented in the prototype · Not approved as product behaviour yet · **Depends on DS #342** (`TopBar` takes a `NotificationPopover`) and **#341** (the "reacted" kind), not released
+**Status:** Implemented in the prototype · Not approved as product behaviour yet · **Depends on DS #342** (`TopBar` takes a `NotificationPopover`), **#341** (the "reacted" kind, and who hears of a comment) and **#343** (the inbox by day), not released
 **FigJam:** [Activity · 02 Notifications](https://www.figma.com/board/Jl6ANWtBbRbTTo4ItjtdoQ/VCP-Flows---Scenarios?node-id=68-211) (decision diagram, then screen by screen, drawn from the prototype's screens)
 **Figma sources:** VCP Pages - Flows: Notification Popover `474:23419`: on the AV page `474:24855`, sheets `1192:36357` / `1192:36363`, Flows `475:1238` (mark-as-read tooltip `477:56332`, mark read / unread `477:56333`, show more / less `1200:39428`, replying `1218:150788`), comment previews `1192:36373`, replying states `1210:146426` · Notification Inbox `1030:173233`
 **Scenarios:** [`src/flows/activity-02-notifications.ts`](../src/flows/activity-02-notifications.ts), runnable from the Flows & Scenarios catalogue (`/flows`)
@@ -20,12 +20,13 @@ Know what happened to your Added Values and comments, and act on it without hunt
 4. **"reacted to your comment"** (decided 9 Nov 2026; DS #341): the row shows your comment with its reactions. No Reply on it (it's your own).
 5. **Mark one read or unread**: on hover or focus the dot becomes a check, "Mark as Read"; read, it's a filled check, "Mark as Unread" (Figma `477:56333`).
 6. **Open a row**: its AV opens, and the popover closes.
-7. **View notifications inbox** (the footer) opens **the inbox** (Figma `1030:173233`): every notification, without the comment previews, with **Show unread only**, **Mark all as read**, and the pager.
+7. **View notifications inbox** (the footer) opens **the inbox** (Figma `1030:173233`): **full width, no left menu**, the logo top bar (decided 9 Nov 2026); every notification **grouped by day**, "Today", "Yesterday", "3 November" (decided; DS #343), without the comment previews, with **Show unread only**, **Mark all as read**, and the pager. The popover stays one list.
 
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
 |---|---|---|
 | Nothing unread | The bell without its dot | — |
+| No notifications at all | "No notifications" (the DS's empty state; a default, not asked) | — |
 | Unread only, and all read | "No unread notifications" | Switch it off |
 | A reply deleted | The notification is unread again (Figma: the dot comes back) | — |
 
@@ -33,14 +34,18 @@ Know what happened to your Added Values and comments, and act on it without hunt
 - **Done:** what's new has been seen, answered, or opened; the dot goes when nothing is unread.
 
 ## The prototype's own rules (Figma doesn't say)
-- **Opening a row reads it**, and goes to its AV. **Replying reads it** (Figma shows the dot gone); deleting the reply makes it unread again (Figma shows the dot back).
 - **Mentions** shows the "mentioned you" rows.
-- **The inbox keeps the rail**: Figma draws it with the top bar only, no rail.
-- The footer link and a row open in the app (the prototype keeps its state); a modifier-click opens a new tab.
+- Deleting your reply makes the notification unread again (Figma shows the dot back).
+- The footer link, a row and the inbox's logo open in the app (the prototype keeps its state); a modifier-click opens a new tab.
+
+## Decided (9 Nov 2026)
+- **What reads a notification:** opening it, or replying to it. Opening the popover or reading the AV elsewhere doesn't.
+- **The inbox:** full width, no left menu, as Figma draws it.
+- **Who hears of a new comment:** the initiator(s), assignee(s), anyone @mentioned, and anyone who has commented on the AV before (in the DS's "Who gets it", #341). Never the author.
+- **Grouping by day:** in the inbox only (DS #343); the popover stays one list.
+
+## Defaults (not asked)
+- **An empty popover** keeps the DS's "No notifications" state.
 
 ## Unresolved questions
-- **Does opening the popover, or reading the AV, mark anything read?** The prototype reads a row only when it's opened or replied to.
-- **The inbox page without the rail** (as Figma draws it), or with it (as built)?
-- **Which events notify whom**: Figma implies it ("you"); the DS doc has the rules for the status kinds. Confirm "commented" goes to the initiator and assignees only.
-- **An empty popover** (no notifications at all): Figma doesn't draw it; the DS says "No notifications".
-- **Grouping by day** in the popover or the inbox: not drawn. Needed?
+- None for this flow.
