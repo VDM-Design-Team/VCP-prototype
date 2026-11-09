@@ -46,3 +46,6 @@ export function missedFor(avs: readonly AddedValue[], admin: boolean): InCaseYou
   /* Figma's order: overdue, due soon, awaiting review, pending; the longest wait first within each. */
   return items.sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type) || b.days - a.days);
 }
+
+/** What a dismissal remembers: the AV's status, step and due date. A change to any brings the card back. */
+export const stateKey = (av: Pick<AddedValue, "status" | "step" | "dueDate">) => `${av.status}|${av.step ?? ""}|${av.dueDate ?? ""}`;

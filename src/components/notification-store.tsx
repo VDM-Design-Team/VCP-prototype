@@ -10,9 +10,13 @@ interface NotificationStore {
   unread: number;
   setRead: (id: string, read: boolean) => void;
   markAllRead: () => void;
-  /** Activity · 03: cards dismissed from "In Case You Missed it", for this session. */
-  dismissed: readonly string[];
-  dismiss: (id: string) => void;
+  /**
+   * Activity · 03: cards dismissed from "In Case You Missed it", each with the AV's state when it was
+   * dismissed (`stateKey`). Decided 9 Nov 2026: it comes back only when that state changes.
+   */
+  dismissed: readonly { id: string; key: string }[];
+  dismiss: (id: string, key: string) => void;
+  undoDismiss: (id: string) => void;
   reset: () => void;
 }
 
@@ -20,7 +24,7 @@ const Ctx = React.createContext<NotificationStore | null>(null);
 
 export function NotificationStoreProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = React.useState<readonly AppNotification[]>(NOTIFICATIONS);
-  const [dismissed, setDismissed] = React.useState<readonly string[]>([]);
+  const [dismissed, setDismissed] = React.useState<readonly { id: string; key: string }[]>([]);
   const store = React.useMemo<NotificationStore>(
     () => ({
       notifications,
@@ -28,7 +32,8 @@ export function NotificationStoreProvider({ children }: { children: React.ReactN
       setRead: (id, read) => setNotifications((list) => list.map((n) => (n.id === id ? { ...n, unread: !read } : n))),
       markAllRead: () => setNotifications((list) => list.map((n) => ({ ...n, unread: false }))),
       dismissed,
-      dismiss: (id) => setDismissed((list) => [...list, id]),
+      dismiss: (id, key) => setDismissed((list) => [...list.filter((d) => d.id !== id), { id, key }]),
+      undoDismiss: (id) => setDismissed((list) => list.filter((d) => d.id !== id)),
       reset: () => {
         setNotifications(NOTIFICATIONS);
         setDismissed([]);
