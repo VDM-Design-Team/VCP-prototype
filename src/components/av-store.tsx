@@ -41,7 +41,7 @@ export function AVStoreProvider({ children }: { children: React.ReactNode }) {
     return {
       avs,
       get: (id) => avs.find((av) => av.id === id),
-      moveTo: (id, to, change) =>
+      moveTo: (id, to, change) => {
         touch(id, (av) => {
           /* `to` is a chain step's id or a spine status. */
           const isStep = CHAINS[av.domain].some((s) => s.id === to);
@@ -56,7 +56,29 @@ export function AVStoreProvider({ children }: { children: React.ReactNode }) {
               ...av.history,
             ],
           };
-        }),
+        });
+        /* AV · 10, decided 9 Nov 2026: a multipart parent completes when its last part does. */
+        if (to === "Completed")
+          setAvs((list) => {
+            const parentId = list.find((av) => av.id === id)?.parent;
+            const parent = parentId ? list.find((av) => av.id === parentId) : undefined;
+            if (!parent?.parts || parent.status === "Completed") return list;
+            const done = parent.parts.every((p) => list.find((av) => av.id === p)?.status === "Completed");
+            if (!done) return list;
+            return list.map((av) =>
+              av.id === parent.id
+                ? {
+                    ...av,
+                    status: "Completed" as AVStatus,
+                    step: undefined,
+                    history: [{ actor: VIEWER.name, from: stageLabel(av), to: "Completed", when: "Just now" }, ...av.history],
+                    updatedAt: new Date().toISOString(),
+                    updatedLabel: "Just now",
+                  }
+                : av,
+            );
+          });
+      },
       update: (id, change) => touch(id, (av) => ({ ...av, ...change })),
       addComment: (id, comment) => touch(id, (av) => ({ ...av, comments: [comment, ...av.comments] })),
       remove: (id) => setAvs((list) => list.filter((av) => av.id !== id)),

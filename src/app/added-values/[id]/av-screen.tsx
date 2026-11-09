@@ -423,6 +423,11 @@ export function AVScreen({ id }: { id: string }) {
             },
           ]);
           const wasCompleted = av.status === "Completed";
+          /* Decided 9 Nov 2026: default titles are renumbered to the new count; typed ones stay. */
+          (av.parts ?? []).forEach((id, i) => {
+            const p = get(id);
+            if (p && /^\(\d+\/\d+\) /.test(p.title) && p.title.endsWith(av.title)) update(id, { title: defaultPartTitle(i + 1, total, av.title) });
+          });
           if (wasCompleted) moveTo(av.id, "In Progress", { parts: [...(av.parts ?? []), part.id] });
           else update(av.id, { parts: [...(av.parts ?? []), part.id] });
           close();
