@@ -85,6 +85,8 @@ export interface AddedValue {
   /** Set when something changes in the prototype: "Just now". */
   updatedLabel?: string;
   rejection?: { reason: string; detail?: string };
+  /** The Feedback given when it was moved to the Backlog (AV · 05), shown as Remarks. */
+  remarks?: string;
   handoff?: Handoff;
 }
 
@@ -466,6 +468,7 @@ export const ADDED_VALUES: AddedValue[] = [
     desiredOutcome: "Emails look right in every mail client.",
     files: [],
     links: [],
+    remarks: "Parked until the design domain has capacity next quarter.",
     history: [{ actor: "Alice Carter", from: "Pending", to: "Backlog", when: "A month ago" }],
     comments: [],
     updatedAt: "2026-10-05T10:00:00Z",

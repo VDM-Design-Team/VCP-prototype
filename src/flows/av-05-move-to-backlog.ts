@@ -1,0 +1,109 @@
+import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
+
+/**
+ * AV · 05 Move to backlog — the flow doc is `flows/av-05-move-to-backlog.md`,
+ * the FigJam page is "AV · 05 Move to backlog". Figma `1090:27191`: from the
+ * ⋮ menu, the Feedback dialog (DS #286, `MoveToBacklogModal`), then the AV
+ * stays open, now Backlog, with the feedback as Remarks. The dialog makes the
+ * rest of the page inert, the walk's card included, so its steps are answered
+ * in the dialog and Next is pressed after.
+ */
+
+const menu = (text: string, id: string): ScenarioStep => ({ text, target: "step:av-menu", path: `/added-values/${id}` });
+
+const base = { status: "Implemented", testing: "Not tested", setup: undefined } as const;
+
+export const BACKLOG_SCENARIOS: readonly ScenarioDef[] = [
+  {
+    ...base,
+    id: "av-05-move-to-backlog.own-draft",
+    role: "user",
+    start: "/added-values/vcp-1199",
+    steps: [
+      menu("VCP-1199 is Eve's draft. On a draft, the ⋮ menu has Move to Backlog.", "vcp-1199"),
+      menu("Open ⋮ and choose Move to Backlog. The dialog asks for Feedback (optional).", "vcp-1199"),
+      menu("Type why (\"Waiting for the filter bar redesign\"), press Move to Backlog in the dialog, then Next.", "vcp-1199"),
+      {
+        text: "It stays open, now Backlog. Remarks shows the feedback (Figma 1090:27191); the toast's link opens the archive.",
+        target: "step:remarks",
+        path: "/added-values/vcp-1199",
+      },
+      menu("In the Backlog, Eve's ⋮ menu has Edit and Delete only. Getting it back is an open question.", "vcp-1199"),
+      {
+        text: "Open Archive → Backlogs in the sidebar.",
+        path: "/added-values/vcp-1199",
+      },
+      { text: "It's listed in Archive → Backlogs, and gone from Drafts.", target: "step:av-list", path: "/archive/backlogs" },
+    ],
+    name: "Move your draft to the backlog",
+    demonstrates: "The initiator parks a draft in the Backlog, with a reason that shows as Remarks.",
+    conditions: "Eve (User) on her draft VCP-1199.",
+    simulated: "The move always succeeds.",
+    expected: "The Feedback dialog, then the AV in Backlog with a Remarks banner, a toast, and the AV listed in Archive → Backlogs.",
+    task: "You won't work on your saved-filters draft for a while. Park it, and say why.",
+  },
+  {
+    ...base,
+    id: "av-05-move-to-backlog.no-feedback",
+    role: "user",
+    start: "/added-values/vcp-1199",
+    steps: [
+      menu("Open ⋮ and choose Move to Backlog.", "vcp-1199"),
+      menu("Type something, then press Cancel: nothing moves. Then Next.", "vcp-1199"),
+      menu("Open it again: the field is empty; it resets every time. Leave it empty and press Move to Backlog, then Next.", "vcp-1199"),
+      menu("Moved, with no Remarks banner: Feedback is optional (no feedback, no banner, inferred).", "vcp-1199"),
+    ],
+    name: "No feedback, and Cancel",
+    demonstrates: "Feedback is optional; Cancel moves nothing, and the dialog starts empty each time.",
+    conditions: "Eve (User) on her draft VCP-1199.",
+    simulated: "The move always succeeds.",
+    expected: "Cancel closes the dialog with nothing changed. Moving with no feedback works, with no Remarks banner.",
+    task: "Park your saved-filters draft in the backlog. You don't need to say why.",
+  },
+  {
+    ...base,
+    id: "av-05-move-to-backlog.admin-pending",
+    role: "admin",
+    start: "/added-values/vcp-1201",
+    steps: [
+      menu("Admin view. VCP-1201 is Marvin's, Pending. An admin's ⋮ on Pending has Move to Backlog and Move to Draft.", "vcp-1201"),
+      menu("Open ⋮ → Move to Backlog, type a reason, press Move to Backlog, then Next.", "vcp-1201"),
+      {
+        text: "Backlog, with Remarks. Figma draws Accept and Reject here for an admin; the DS's status buttons offer none on Backlog.",
+        target: "step:remarks",
+        path: "/added-values/vcp-1201",
+      },
+      {
+        text: "An admin's ⋮ on Backlog has Move to Pending and Move to Draft. Which one?",
+        target: "step:av-menu",
+        path: "/added-values/vcp-1201",
+        options: [
+          { label: "Move to Pending", goto: "pending" },
+          { label: "Move to Draft", goto: "draft" },
+        ],
+      },
+      { id: "pending", text: "Open ⋮ → Move to Pending: back in the admins' queue; the Remarks go.", target: "step:av-menu", path: "/added-values/vcp-1201", next: "end" },
+      { id: "draft", text: "Open ⋮ → Move to Draft: back with Marvin, on his Drafts; the Remarks go.", target: "step:av-menu", path: "/added-values/vcp-1201" },
+      { id: "end", text: "Status History logs each move." },
+    ],
+    name: "Admin parks a Pending AV",
+    demonstrates: "An admin moves someone's Pending AV to the Backlog, and back out of it.",
+    conditions: "Eve as Admin, on Marvin's Pending AV VCP-1201.",
+    simulated: "The moves always succeed.",
+    expected: "The Feedback dialog, the AV in Backlog with Remarks; then Move to Pending or Move to Draft from the ⋮ menu brings it back.",
+    task: "As an admin, park Marvin's supplier scorecard in the backlog, then put it back in the queue.",
+  },
+];
+
+export const BACKLOG_FLOW: FlowDef = {
+  id: "av-05-move-to-backlog",
+  area: "AV",
+  number: "05",
+  name: "Move to backlog",
+  actor: "The initiator (own Draft); an admin (Draft, Pending)",
+  goal: "Park an Added Value that won't be worked on for now, saying why.",
+  figjam: "https://www.figma.com/board/Jl6ANWtBbRbTTo4ItjtdoQ/VCP-Flows---Scenarios?node-id=32-72",
+  doc: "flows/av-05-move-to-backlog.md",
+  status: "Implemented",
+  scenarios: BACKLOG_SCENARIOS,
+};
