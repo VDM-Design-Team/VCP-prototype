@@ -394,7 +394,11 @@ const SAMPLE_AVS: AddedValue[] = [
         author: { id: "u-lena", name: "Lena Novak" },
         time: "2 days ago",
         createdAt: "2026-11-03T11:00:00Z",
-        body: text("Shipped the first cut of the filters to staging. Have a look."),
+        body: [
+          { type: "text" as const, text: "Shipped the first cut of the filters to staging. " },
+          { type: "mention" as const, id: VIEWER.id, label: VIEWER.name },
+          { type: "text" as const, text: ", have a look?" },
+        ],
         reactions: [
           { emoji: "🎉", count: 5, people: ["Alice Carter", "Marvin Ode", "Jack Morgan", "Maya Bennett", "Noah Foster"] },
           { emoji: "🚀", count: 2, people: ["Jack Morgan", "Noah Foster"] },

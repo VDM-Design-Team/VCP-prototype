@@ -34,7 +34,7 @@ import {
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { useShellState } from "@/components/shell-state";
-import type { CommentData } from "@vdm-design-team/vcp-design-system";
+import { MEMBERS, forViewer } from "@/components/comments";
 import { useAddedValues } from "@/components/av-store";
 import { TODAY } from "@/data/gantt";
 import { CHAINS, CYCLE_OPTIONS, VIEWER, daysOverdue, stageLabel, type AddedValue } from "@/data/added-values";
@@ -47,10 +47,6 @@ const MULTIPART_HINT =
 /** A part's default title, Figma's "(3/3) Parent AV Title" (ChildPartModal: a blank title means this). */
 const defaultPartTitle = (position: number, total: number, parentTitle: string) => `(${position}/${total}) ${parentTitle}`;
 
-const PEOPLE = [VIEWER, ...["Marvin Ode", "Alice Carter", "Jack Morgan", "Lena Novak", "Noah Foster"].map((name) => ({
-  id: `u-${name.split(" ")[0].toLowerCase()}`,
-  name,
-}))];
 
 /** "05-11-2026" — the handoff dialog's date format. */
 const ddmmyyyy = (iso: string) => iso.split("-").reverse().join("-");
@@ -73,16 +69,6 @@ function headerRole(av: AddedValue, admin: boolean): AVProgressionRole | undefin
  * right. The status buttons open the design system's dialogs — accept,
  * reject, hand off, review — and the AV moves when they are answered.
  */
-/* The viewer's own reactions read "You", first, and tinted (Figma's Own Reaction). */
-const forViewer = (comments: readonly CommentData[]): CommentData[] =>
-  comments.map((c) => ({
-    ...c,
-    reactions: c.reactions?.map((r) => {
-      const mine = !!r.people?.includes(VIEWER.name);
-      return { ...r, mine, people: mine ? ["You", ...r.people!.filter((p) => p !== VIEWER.name)] : r.people };
-    }),
-    replies: c.replies && forViewer(c.replies),
-  }));
 
 export function AVScreen({ id }: { id: string }) {
   const router = useRouter();
@@ -311,7 +297,7 @@ export function AVScreen({ id }: { id: string }) {
           <div data-flow-step="comments">
             <CommentSection
               currentUser={VIEWER}
-              members={PEOPLE}
+              members={MEMBERS}
               comments={forViewer(av.comments)}
               /* Activity · 01: the reaction row (Figma 634:68928). A pick and a pill toggle are the same thing:
                  yours is added, or taken back (Figma's "Removing Your Reaction", from a pill or the popover). */

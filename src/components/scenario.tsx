@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button, Menu, useToast } from "@vdm-design-team/vcp-design-system";
 import { useAddedValues } from "./av-store";
 import { useHolidays } from "./holiday-store";
+import { useNotifications } from "./notification-store";
 import { useShellState } from "./shell-state";
 import { findScenario } from "@/flows/catalogue";
 import type { FlowDef, ScenarioDef, ScenarioStep } from "@/flows/types";
@@ -50,6 +51,7 @@ const onPage = (step: ScenarioStep, scenario: ScenarioDef, pathname: string) => 
 export function ScenarioProvider({ children }: { children: React.ReactNode }) {
   const { reset } = useAddedValues();
   const { reset: resetHolidays } = useHolidays();
+  const { reset: resetNotifications } = useNotifications();
   const { setRole, setCollapsed } = useShellState();
   const { dismissAll } = useToast();
   const pathname = usePathname();
@@ -95,6 +97,7 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         /* Isolation: nothing carries over from what ran before, shell state included. */
         reset(found.scenario.avs);
         resetHolidays();
+        resetNotifications();
         dismissAll();
         setRole(found.scenario.role);
         setCollapsed(false);
@@ -108,6 +111,7 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         /* Nothing a scenario did outlives it: what it created or changed, its toasts, its role. */
         reset();
         resetHolidays();
+        resetNotifications();
         dismissAll();
         setRole("user");
         setCollapsed(false);
@@ -116,7 +120,7 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         setTrail([0]);
       },
     }),
-    [active, view, run, trail, reset, resetHolidays, dismissAll, setRole, setCollapsed],
+    [active, view, run, trail, reset, resetHolidays, resetNotifications, dismissAll, setRole, setCollapsed],
   );
 
   return <ScenarioContext.Provider value={value}>{children}</ScenarioContext.Provider>;

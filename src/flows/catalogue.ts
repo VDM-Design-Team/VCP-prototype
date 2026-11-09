@@ -11,6 +11,7 @@ import { GANTT_FLOW } from "./planning-01-gantt";
 import { CYCLES_FLOW } from "./planning-02-cycles";
 import { HOLIDAYS_FLOW } from "./planning-03-holidays";
 import { REACTIONS_FLOW } from "./activity-01-reactions";
+import { NOTIFICATIONS_FLOW } from "./activity-02-notifications";
 import type { FlowDef } from "./types";
 
 /* Every VCP flow, in the FigJam Index's order. A flow with no scenarios yet is
@@ -41,7 +42,7 @@ export const FLOWS: readonly FlowDef[] = [
   CYCLES_FLOW,
   HOLIDAYS_FLOW,
   REACTIONS_FLOW,
-  planned("Activity", "02", "Notifications", "All users"),
+  NOTIFICATIONS_FLOW,
   planned("Activity", "03", "In case you missed it", "All users"),
   planned("Admin", "01", "Domain budgets", "Super Admin edits, Admin views"),
   planned("Admin", "02", "Admin dashboard", "Admin"),

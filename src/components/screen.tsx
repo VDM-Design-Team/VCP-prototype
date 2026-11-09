@@ -3,11 +3,13 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { AppShell, Sidebar, TopBar } from "@vdm-design-team/vcp-design-system";
+import { AppShell, NotificationPopover, Sidebar, TopBar } from "@vdm-design-team/vcp-design-system";
 import { useShellState } from "./shell-state";
 import { CreateAVButton } from "./create-av-button";
 import { useScenario } from "./scenario";
 import { railFor } from "./roles";
+import { useNotifications } from "./notification-store";
+import { NotificationRow } from "./notification-rows";
 
 /** The rail reports a row's key — `drafts`, or a sub-row's `planning/gantt-chart` —
     and every key is a route of the same name, except Dashboard. */
@@ -20,6 +22,50 @@ const useMounted = () =>
     () => true,
     () => false,
   );
+
+/**
+ * Activity · 02: the bell opens the latest notifications (DS NotificationPopover in TopBar's
+ * `notificationPopover`, DS #342). All / Mentions and Unread only filter here; Mark all as read is in
+ * its menu; a row opens its AV, and the footer link the inbox, both without leaving the app.
+ */
+function Bell() {
+  const router = useRouter();
+  const { notifications, unread, markAllRead } = useNotifications();
+  const [open, setOpen] = React.useState(false);
+  const [filter, setFilter] = React.useState<"all" | "mentions">("all");
+  const [unreadOnly, setUnreadOnly] = React.useState(false);
+  const rows = notifications
+    .filter((n) => filter === "all" || n.kind === "mention")
+    .filter((n) => !unreadOnly || n.unread);
+  /* The footer is a real link; a plain click stays in the app, so the prototype keeps its state. */
+  const inApp = (e: React.MouseEvent) => {
+    const a = (e.target as Element).closest("a");
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    e.preventDefault();
+    setOpen(false);
+    router.push(a.getAttribute("href")!);
+  };
+  return (
+    <span onClick={inApp} data-flow-step="bell">
+      <NotificationPopover
+        count={unread}
+        open={open}
+        onOpenChange={setOpen}
+        filter={filter}
+        onFilterChange={setFilter}
+        unreadOnly={unreadOnly}
+        onUnreadOnlyChange={setUnreadOnly}
+        onMarkAllRead={markAllRead}
+        inboxHref="/notifications"
+        emptyLabel={unreadOnly ? "No unread notifications" : "No notifications"}
+      >
+        {rows.map((n) => (
+          <NotificationRow key={n.id} n={n} withComment onOpened={() => setOpen(false)} />
+        ))}
+      </NotificationPopover>
+    </span>
+  );
+}
 
 /**
  * Every screen sits in this: VCP's AppShell with the rail, the app bar and the
@@ -56,8 +102,7 @@ export function Screen({
       topBar={
         <TopBar
           primaryAction={<CreateAVButton />}
-          notifications={3}
-          onNotifications={() => {}}
+          notificationPopover={<Bell />}
           theme={mounted && resolvedTheme === "dark" ? "dark" : "light"}
           onThemeChange={setTheme}
           user={{ name: "Eve Kestrel" }}

@@ -19,6 +19,10 @@ interface AVStore {
    * A new emoji goes after the others (Figma: in the order first added); one at 0 goes away.
    */
   react: (id: string, commentId: string, emoji: string) => void;
+  /** Activity · 02: a reply to a comment (from the notification popover), and editing or deleting one. */
+  replyTo: (id: string, parentId: string, reply: CommentData) => void;
+  editComment: (id: string, commentId: string, body: CommentData["body"]) => void;
+  deleteComment: (id: string, commentId: string) => void;
   remove: (id: string) => void;
   /** Add a new AV (created in the prototype) under the next free reference, and return it. */
   create: (av: Omit<AddedValue, "id" | "ref">) => AddedValue;
@@ -32,6 +36,16 @@ interface AVStore {
 }
 
 const AVStoreContext = React.createContext<AVStore | null>(null);
+
+/* One comment (or reply) changed, wherever it sits in the tree. */
+function mapComment(comments: readonly CommentData[], id: string, change: (c: CommentData) => CommentData): CommentData[] {
+  return comments.map((c) =>
+    c.id === id ? change(c) : c.replies ? { ...c, replies: mapComment(c.replies, id, change) } : c,
+  );
+}
+function dropComment(comments: readonly CommentData[], id: string): CommentData[] {
+  return comments.filter((c) => c.id !== id).map((c) => (c.replies ? { ...c, replies: dropComment(c.replies, id) } : c));
+}
 
 /* Reactions keep who reacted by name; the count is how many. The page shows the viewer as "You". */
 function toggleReaction(comments: readonly CommentData[], commentId: string, emoji: string): CommentData[] {
@@ -104,6 +118,20 @@ export function AVStoreProvider({ children }: { children: React.ReactNode }) {
       addComment: (id, comment) => touch(id, (av) => ({ ...av, comments: [comment, ...av.comments] })),
       react: (id, commentId, emoji) =>
         setAvs((list) => list.map((av) => (av.id === id ? { ...av, comments: toggleReaction(av.comments, commentId, emoji) } : av))),
+      replyTo: (id, parentId, reply) =>
+        setAvs((list) =>
+          list.map((av) =>
+            av.id === id
+              ? { ...av, comments: mapComment(av.comments, parentId, (c) => ({ ...c, replies: [...(c.replies ?? []), reply] })) }
+              : av,
+          ),
+        ),
+      editComment: (id, commentId, body) =>
+        setAvs((list) =>
+          list.map((av) => (av.id === id ? { ...av, comments: mapComment(av.comments, commentId, (c) => ({ ...c, body })) } : av)),
+        ),
+      deleteComment: (id, commentId) =>
+        setAvs((list) => list.map((av) => (av.id === id ? { ...av, comments: dropComment(av.comments, commentId) } : av))),
       remove: (id) => setAvs((list) => list.filter((av) => av.id !== id)),
       createMany: (list) => {
         const taken = new Set(avs.map((av) => av.id));
