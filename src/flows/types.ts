@@ -1,4 +1,5 @@
 import type { Role } from "@/components/roles";
+import type { AddedValue } from "@/data/added-values";
 
 /**
  * The Flows & Scenarios model (see "VCP Flows & Scenarios: how we manage them").
@@ -24,7 +25,11 @@ export interface ScenarioStep {
   /** One short line: what to do or notice. */
   text: string;
   target?: string;
-  /** The page the step happens on: exact ("/" is the Dashboard), or a prefix ending in "*". Default: the scenario's start. */
+  /**
+   * The page the step happens on: exact ("/" is the Dashboard). A `*` at the
+   * end matches the rest ("/added-values/*"); one in the middle matches one
+   * segment ("/added-values/*\/edit"). Default: the scenario's start.
+   */
   path?: string;
   /**
    * Two or more ways forward: Next opens a menu of them, each going to its own
@@ -65,6 +70,8 @@ export interface ScenarioDef<Setup = unknown> {
   steps: readonly ScenarioStep[];
   /** The screen's starting data. Read by the screen the scenario opens. */
   setup: Setup;
+  /** Sample AVs this scenario starts with changed (matched by id). The rest stay as they are. */
+  avs?: readonly AddedValue[];
 }
 
 export interface FlowDef {

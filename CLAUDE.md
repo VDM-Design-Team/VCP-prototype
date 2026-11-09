@@ -65,7 +65,9 @@ task; a scenario is one set of conditions inside it.
   reviewer card walks through them with Back and Next, outlining the part of
   the screen each step is about (`target`: `step:<name>` for an element marked
   `data-flow-step`, `group:<Label>`, `button:<Text>`). A step with two or more
-  ways on has `options`, and Next opens a menu of them. When the user's own
+  ways on has `options`, and Next opens a menu of them. A step's `path` is exact, or
+  uses `*` (one segment in the middle, the rest at the end). A scenario that needs
+  sample AVs changed lists them in `avs` (matched by id). When the user's own
   click opens another page, the walk follows to the step for that page. The
   participant view has no guidance. **Reset, Finish and Leave scenario** put
   everything back: the sample data (anything the scenario created or changed),

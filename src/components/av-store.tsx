@@ -17,8 +17,11 @@ interface AVStore {
   remove: (id: string) => void;
   /** Add a new AV (created in the prototype) under the next free reference, and return it. */
   create: (av: Omit<AddedValue, "id" | "ref">) => AddedValue;
-  /** Back to the sample data: what starting a scenario does, so nothing carries over. */
-  reset: () => void;
+  /**
+   * Back to the sample data: what starting a scenario does, so nothing carries
+   * over. A scenario's own AVs replace the sample ones with the same id.
+   */
+  reset: (overrides?: readonly AddedValue[]) => void;
 }
 
 const AVStoreContext = React.createContext<AVStore | null>(null);
@@ -61,7 +64,8 @@ export function AVStoreProvider({ children }: { children: React.ReactNode }) {
         setAvs((list) => [created, ...list]);
         return created;
       },
-      reset: () => setAvs(ADDED_VALUES),
+      reset: (overrides = []) =>
+        setAvs(ADDED_VALUES.map((av) => overrides.find((o) => o.id === av.id) ?? av)),
     };
   }, [avs]);
 

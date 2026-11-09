@@ -33,10 +33,13 @@ interface ScenarioState {
 
 const ScenarioContext = React.createContext<ScenarioState | null>(null);
 
-/** Whether a step happens on this page. */
+/** Whether a step happens on this page. A `*` at the end matches the rest; one in the middle, one segment. */
 const onPage = (step: ScenarioStep, scenario: ScenarioDef, pathname: string) => {
   const path = step.path ?? scenario.start;
-  return path.endsWith("*") ? pathname.startsWith(path.slice(0, -1)) : pathname === path;
+  if (!path.includes("*")) return pathname === path;
+  const parts = path.split("*").map((p) => p.replace(/[.+?^${}()|[\]\\]/g, "\\$&"));
+  const last = path.endsWith("*") ? ".*" : "";
+  return new RegExp(`^${parts.slice(0, path.endsWith("*") ? -1 : undefined).join("[^/]+")}${last}$`).test(pathname);
 };
 
 /**
@@ -88,7 +91,7 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         const found = findScenario(flowId, scenarioKey);
         if (!found) return undefined;
         /* Isolation: nothing carries over from what ran before, shell state included. */
-        reset();
+        reset(found.scenario.avs);
         dismissAll();
         setRole(found.scenario.role);
         setCollapsed(false);

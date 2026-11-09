@@ -16,7 +16,7 @@ Get a new Added Value in front of an admin: from Draft to Pending.
 ## Main steps and decision points
 1. Fill in the **Title**.
 2. Fill in **Problems**, **Solutions**, **Acceptance Criteria / Deliverables** and **Desired Outcome**. Each problem needs its solution.
-3. In the details card: **Tags** (one global tag and at least one tag of the AV's domain). Assignees, dates and the rest are optional here.
+3. In the details card: **Projects** (Figma `1026:166742`) and **Tags** (one global tag and at least one tag of the AV's domain). Assignees, dates and the rest are optional here.
 4. Press **Submit**. Every check runs at once:
    - every required field filled;
    - every problem paired with a solution;
@@ -29,6 +29,7 @@ Get a new Added Value in front of an admin: from Draft to Pending.
 |---|---|---|
 | A required field is empty | A critical **"Missing Input"** toast per empty field (✕, stays until dismissed, `announce: false`), and "You need to fill in this field before submitting the Added Value" under each field | Fill the field: its error clears at once. Submit again |
 | A problem without its solution (or the reverse) | "Problem and solution should be filled together" under both cards of the pair | Fill the other card, or remove the problem |
+| No project | "Please select a project tag before submitting" under Projects, and a toast (Figma `1026:166742`; added with AV · 04) | Pick a project |
 | No tags | "Please select at least one tag before submitting" under Tags, and a toast | Add a global and a domain tag |
 | Tags but the rule unmet | "Add one global tag / at least one Development tag before submitting" *(wording inferred)* | Add the missing kind of tag |
 | An assignee is unavailable during the AV's dates | A critical **Assignee unavailable** banner over the details card, and a toast | Change the AV's dates, or remove that assignee |

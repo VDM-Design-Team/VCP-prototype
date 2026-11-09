@@ -1,5 +1,6 @@
 import { SUBMIT_FLOW } from "./av-01-submit";
 import { DRAFT_FLOW } from "./av-03-save-as-draft";
+import { EDIT_FLOW } from "./av-04-edit";
 import type { FlowDef } from "./types";
 
 /* Every VCP flow, in the FigJam Index's order. A flow with no scenarios yet is
@@ -19,7 +20,7 @@ export const FLOWS: readonly FlowDef[] = [
   SUBMIT_FLOW,
   planned("AV", "02", "Discard", "All users"),
   DRAFT_FLOW,
-  planned("AV", "04", "Edit an AV", "All users"),
+  EDIT_FLOW,
   planned("AV", "05", "Move to backlog", "User (own draft), Admin"),
   planned("AV", "06", "Accept / Reject", "Admin"),
   planned("AV", "07", "Hand off", "All users"),

@@ -32,6 +32,7 @@ import { useShellState } from "@/components/shell-state";
 import { useAddedValues } from "@/components/av-store";
 import { TODAY } from "@/data/gantt";
 import { CHAINS, CYCLE_OPTIONS, VIEWER, daysOverdue, stageLabel, type AddedValue } from "@/data/added-values";
+import { EDITABLE } from "@/flows/av-04-edit";
 
 type Dialog = "accept" | "reject" | "handoff" | "review" | "delete" | null;
 
@@ -163,7 +164,13 @@ export function AVScreen({ id }: { id: string }) {
                 role={admin ? "admin" : "user"}
                 status={av.status}
                 onEdit={() =>
-                  toast({ tone: "info", title: "Editing is its own flow", description: "AV · 04 Edit an AV isn't in the prototype yet." })
+                  EDITABLE.includes(av.status)
+                    ? router.push(`/added-values/${av.id}/edit`)
+                    : toast({
+                        tone: "info",
+                        title: "Editing past Pending isn't designed yet",
+                        description: "Figma draws the edit page for a Draft or Pending Added Value only.",
+                      })
                 }
                 onDelete={() => setDialog("delete")}
                 onMoveToBacklog={() => {
@@ -251,7 +258,7 @@ export function AVScreen({ id }: { id: string }) {
               status: stageLabel(av),
               urgency: av.urgency,
               type: av.type,
-              projects: [av.project],
+              projects: av.project ? [av.project] : undefined,
               category: av.category,
               tags: av.tags,
               capacityPoints: av.capacityPoints,
