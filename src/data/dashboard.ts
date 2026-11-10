@@ -3,7 +3,7 @@ import type { AddedValue } from "./added-values";
 import { VIEWER } from "./added-values";
 import { CYCLES, PEOPLE, TODAY } from "./gantt";
 import { holidaysFor, publicDays, type Holiday } from "./holidays";
-import { inCycle, pointsOf } from "./planning";
+import { capacityOf, inCycle, pointsOf } from "./planning";
 
 /* Admin · 02: the numbers on the Development admin's dashboard (Figma's Dashboard Page, 947:304368). Figma
    draws the screens, not the sums, so every rule here is the prototype's until the product says otherwise
@@ -77,29 +77,57 @@ export function capacityFor(name: string, c: Cycle, holidays: readonly Holiday[]
   return { days: days.length, leave, capacity: days.length - leave };
 }
 
-/** Cycle Summary: points committed and completed, those carried over (late, so they go on into the next cycle), and the rate. */
-export function cycleSummary(avs: readonly AddedValue[], cycleId: string, team: TeamId) {
+/**
+ * A team's Total Capacity for a cycle: the Planning List's fixed number (decided 10 Nov 2026, so the two pages
+ * agree); a team's is its people's share of it.
+ */
+export function totalCapacity(cycleId: string, team: TeamId) {
+  const all = capacityOf(cycleId);
+  return team === "all" ? all : Math.round((all * peopleOf(team).length) / PEOPLE.length);
+}
+
+/** The cycle's working days up to today: how far through it is, for the even burn. */
+const progress = (c: Cycle, holidays: readonly Holiday[]) => {
+  const days = workingDays(c, holidays);
+  const gone = days.filter((d) => d <= TODAY).length;
+  return { days: days.length, gone };
+};
+
+/**
+ * Cycle Summary (decided 10 Nov 2026): points committed and completed; Carried Over, only what was still
+ * unfinished when the cycle ended (a running cycle carries 0); and Completion. A finished cycle's is completed ÷
+ * committed. A running cycle's is completed against what the even burn says should be done by today, so on track
+ * is green from the first days; it reads "Of plan to date" then. A cycle that hasn't started has none.
+ */
+export function cycleSummary(avs: readonly AddedValue[], cycleId: string, team: TeamId, holidays: readonly Holiday[]) {
   const c = cycleById(cycleId);
   const day = asOf(c);
   const items = work(avs, cycleId, team);
   const committed = items.reduce((s, w) => s + w.points, 0);
   const completed = items.filter((w) => standing(w.av, day) === "completed").reduce((s, w) => s + w.points, 0);
-  /* Carried over: unfinished and past its due date (a cycle that's over carries everything unfinished). */
-  const carriedOver = items
-    .filter((w) => standing(w.av, day) !== "completed" && (c.end < TODAY || standing(w.av, day) === "overdue"))
-    .reduce((s, w) => s + w.points, 0);
-  return { committed, completed, carriedOver, completion: committed ? (completed / committed) * 100 : null };
+  const over = c.end < TODAY;
+  const running = !over && c.start <= TODAY;
+  const carriedOver = over ? items.filter((w) => standing(w.av, day) !== "completed").reduce((s, w) => s + w.points, 0) : 0;
+  let completion: number | null = null;
+  if (over) completion = committed ? (completed / committed) * 100 : null;
+  else if (running) {
+    const { days, gone } = progress(c, holidays);
+    /* The even line: everything committed burns to zero over the cycle's working days (as the burndown draws it). */
+    const due = Math.round((committed * Math.max(gone - 1, 0)) / Math.max(days - 1, 1));
+    completion = due ? Math.min((completed / due) * 100, 100) : committed ? (completed ? 100 : null) : null;
+  }
+  return { committed, completed, carriedOver, completion, running };
 }
 
 const segment = (series: ChartSeries, value: number): CapacitySegment[] => (value > 0 ? [{ series, value }] : []);
 
-/** Team Capacity: the team's points by how they stand, then what's left of their capacity. */
-export function teamCapacity(avs: readonly AddedValue[], cycleId: string, team: TeamId, holidays: readonly Holiday[]) {
+/** Team Capacity: the team's points by how they stand, then what's left of its Total Capacity (the Planning List's). */
+export function teamCapacity(avs: readonly AddedValue[], cycleId: string, team: TeamId) {
   const c = cycleById(cycleId);
   const day = asOf(c);
   const items = work(avs, cycleId, team);
   const by = (s: string) => items.filter((w) => standing(w.av, day) === s).reduce((sum, w) => sum + w.points, 0);
-  const capacity = peopleOf(team).reduce((sum, name) => sum + capacityFor(name, c, holidays).capacity, 0);
+  const capacity = totalCapacity(cycleId, team);
   const used = items.reduce((s, w) => s + w.points, 0);
   return {
     segments: [...segment("completed", by("completed")), ...segment("committed", by("committed")), ...segment("overdue", by("overdue")), ...segment("available", capacity - used)],
@@ -107,7 +135,7 @@ export function teamCapacity(avs: readonly AddedValue[], cycleId: string, team: 
   };
 }
 
-/** User Capacity: one row per person, with their leave. */
+/** User Capacity: one row per person: their working days, less their leave (shown as Leave). */
 export function userCapacity(avs: readonly AddedValue[], cycleId: string, team: TeamId, holidays: readonly Holiday[]) {
   const c = cycleById(cycleId);
   const day = asOf(c);
@@ -135,7 +163,7 @@ const shortDate = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateStri
 export const cycleRange = (c: Cycle) => `${shortDate(c.start)} - ${shortDate(c.end)}`;
 
 /** Sprint Metrics: the chosen cycle and the three before it (Figma draws four). */
-export function sprintMetrics(avs: readonly AddedValue[], cycleId: string, team: TeamId, holidays: readonly Holiday[]) {
+export function sprintMetrics(avs: readonly AddedValue[], cycleId: string, team: TeamId) {
   const i = CYCLES.findIndex((c) => c.id === cycleId);
   return CYCLES.slice(Math.max(i - 3, 0), i + 1).map((c) => {
     const day = asOf(c);
@@ -145,7 +173,7 @@ export function sprintMetrics(avs: readonly AddedValue[], cycleId: string, team:
       key: c.id,
       label: cycleRange(c),
       values: {
-        available: peopleOf(team).reduce((sum, name) => sum + capacityFor(name, c, holidays).capacity, 0),
+        available: totalCapacity(c.id, team),
         committed: items.reduce((s, w) => s + w.points, 0),
         completed: by("completed"),
         overdue: by("overdue"),
@@ -196,7 +224,7 @@ export const cyclesInQuarter = (year: number, quarter: Quarter) =>
   CYCLES.filter((c) => Number(c.start.slice(0, 4)) === year && Math.ceil(Number(c.start.slice(5, 7)) / 3) === quarter);
 
 /** Cycle Performance: each of the quarter's cycles, its capacity against what was completed and what ran late. */
-export function cyclePerformance(avs: readonly AddedValue[], year: number, quarter: Quarter, team: TeamId, holidays: readonly Holiday[]) {
+export function cyclePerformance(avs: readonly AddedValue[], year: number, quarter: Quarter, team: TeamId) {
   return cyclesInQuarter(year, quarter).map((c) => {
     const day = asOf(c);
     const items = work(avs, c.id, team);
@@ -206,7 +234,7 @@ export function cyclePerformance(avs: readonly AddedValue[], year: number, quart
       key: c.id,
       label: `${month} ${c.short}`,
       values: {
-        available: peopleOf(team).reduce((sum, name) => sum + capacityFor(name, c, holidays).capacity, 0),
+        available: totalCapacity(c.id, team),
         overdue: by("overdue"),
         completed: by("completed"),
       },

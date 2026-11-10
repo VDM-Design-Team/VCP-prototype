@@ -146,8 +146,8 @@ export default function DashboardScreen() {
         />
       </div>
     );
-    const summary = cycleSummary(avs, cycleId, team);
-    const capacity = teamCapacity(avs, cycleId, team, holidays);
+    const summary = cycleSummary(avs, cycleId, team, holidays);
+    const capacity = teamCapacity(avs, cycleId, team);
     const burn = burndown(avs, cycleId, team, holidays);
     return (
       <Screen
@@ -191,14 +191,19 @@ export default function DashboardScreen() {
                       { key: "pdf", label: "PDF (.pdf)" },
                       { key: "csv", label: "CSV (.csv)" },
                     ]}
-                    /* No file in the prototype: the toast stands in for the download. */
-                    onExport={(key) =>
+                    /* No file in the prototype: the toast says what the file would hold (decided 10 Nov 2026). */
+                    onExport={(key) => {
+                      const c = cycleById(cycleId).short;
+                      const who = TEAMS.find((t) => t.value === team)!.label;
                       toast({
                         tone: "success",
                         title: "Cycle Report exported",
-                        description: `${cycleById(cycleId).short}, ${TEAMS.find((t) => t.value === team)!.label}, as ${key === "csv" ? "CSV" : "PDF"}.`,
-                      })
-                    }
+                        description:
+                          key === "csv"
+                            ? `CSV: one row per Added Value in ${c} (${who}), with its status, points, assignees and dates.`
+                            : `PDF: the ${c} dashboard as shown, for ${who}.`,
+                      });
+                    }}
                   />
                 ) : undefined
               }
@@ -210,7 +215,14 @@ export default function DashboardScreen() {
           {view === "cycle" ? (
             <>
               <div className="pb-6" data-flow-step="cycle-summary">
-                <CycleSummary committed={summary.committed} completed={summary.completed} carriedOver={summary.carriedOver} completion={summary.completion} />
+                <CycleSummary
+                  committed={summary.committed}
+                  completed={summary.completed}
+                  carriedOver={summary.carriedOver}
+                  completion={summary.completion}
+                  /* A running cycle is measured against the even burn to date (decided 10 Nov 2026). */
+                  completionLabel={summary.running ? "Of plan to date" : "Completion"}
+                />
               </div>
               {cards}
               {strip}
@@ -218,7 +230,7 @@ export default function DashboardScreen() {
                 <TeamCapacity
                   segments={capacity.segments}
                   remaining={capacity.remaining}
-                  hint="The team's points this cycle by where they stand, and what's left of its capacity: each person's working days, less their leave."
+                  hint="The team's points this cycle by where they stand, and what's left of its Total Capacity, the Planning List's for the cycle."
                 />
               </div>
               <div className="pb-6" data-flow-step="user-capacity">
@@ -228,7 +240,7 @@ export default function DashboardScreen() {
                 />
               </div>
               <div className="pb-6" data-flow-step="sprint-metrics">
-                <SprintMetrics data={sprintMetrics(avs, cycleId, team, holidays)} description={`Current: ${cycleById(cycleId).short}`} />
+                <SprintMetrics data={sprintMetrics(avs, cycleId, team)} description={`Current: ${cycleById(cycleId).short}`} />
               </div>
               <div className="pb-6" data-flow-step="burndown">
                 <CycleBurndown
@@ -247,7 +259,7 @@ export default function DashboardScreen() {
               {dev ? (
                 <div className="pb-6" data-flow-step="cycle-performance">
                   <CyclePerformance
-                    data={cyclePerformance(avs, perf.year, perf.quarter, perf.team, holidays)}
+                    data={cyclePerformance(avs, perf.year, perf.quarter, perf.team)}
                     filters={[
                       { key: "team", label: "Show", value: perf.team, options: TEAMS.map((t) => ({ value: t.value, label: t.value === "all" ? "All" : t.label })), onChange: (v) => setPerf((p) => ({ ...p, team: v as TeamId })) },
                       { key: "quarter", label: "Quarter", value: `Q${perf.quarter}`, options: ["Q1", "Q2", "Q3", "Q4"], onChange: (v) => setPerf((p) => ({ ...p, quarter: Number(v.slice(1)) as Quarter })) },
