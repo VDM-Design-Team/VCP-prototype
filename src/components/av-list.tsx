@@ -14,7 +14,7 @@ import {
 import { Screen } from "./screen";
 import { BulkActions } from "./bulk-actions";
 import { useAddedValues } from "./av-store";
-import { TODAY } from "@/data/gantt";
+import { PEOPLE, TODAY } from "@/data/gantt";
 import { stageLabel, updatedLabel, type AddedValue } from "@/data/added-values";
 
 const DAY = 86_400_000;
@@ -33,6 +33,24 @@ function multipartOf(av: AddedValue, all: readonly AddedValue[]): AVTableRow["mu
   return undefined;
 }
 
+/**
+ * A person's home domain, for the members' tooltips (Admin · 03, Figma 2007:182516: "Jack (Development) —
+ * Assignee"). The prototype's rule: the planning team (the Gantt's people) is Development's; anyone else is Design
+ * (Figma writes "Design").
+ */
+const homeDomain = (name: string) => (PEOPLE.some((p) => p.name === name) ? "Development" : "Design");
+
+/** Members, as Figma's Manage table lists them: the initiator first, then the assignees; someone who is both says so. */
+function membersOf(av: AddedValue): NonNullable<AVTableRow["members"]> {
+  const assignees = av.assignees.map((a) => a.name);
+  const people = [av.initiator, ...assignees.filter((n) => n !== av.initiator)];
+  return people.map((name) => ({
+    name,
+    domain: homeDomain(name),
+    role: name === av.initiator ? (assignees.includes(name) ? "Initiator, Assignee" : "Initiator") : "Assignee",
+  }));
+}
+
 /** One AV as AVTable draws it. */
 function toRow(av: AddedValue, all: readonly AddedValue[] = []): AVTableRow {
   const left = av.dueDate ? dayOf(av.dueDate) - dayOf(TODAY) : undefined;
@@ -49,11 +67,16 @@ function toRow(av: AddedValue, all: readonly AddedValue[] = []): AVTableRow {
     urgency: av.urgency,
     type: av.type,
     status: av.step ? { custom: stageLabel(av) } : { status: av.status },
-    members: (av.assignees.length ? av.assignees.map((a) => a.name) : [av.initiator]) as string[],
+    members: membersOf(av),
     lastUpdated: updatedLabel(av),
     multipart: multipartOf(av, all),
   };
 }
+
+/** Figma's Assignee list starts with "Unassigned". */
+const UNASSIGNED = "__unassigned";
+/* "All priorities": its own value, since `""` is the field's placeholder. */
+const ALL = "__all";
 
 const compare: Record<string, (a: AddedValue, b: AddedValue) => number> = {
   title: (a, b) => a.title.localeCompare(b.title),
@@ -73,6 +96,7 @@ export function AVListScreen({
   empty,
   emptyAction,
   bulk,
+  manage,
 }: {
   active: string;
   title: string;
@@ -83,6 +107,11 @@ export function AVListScreen({
   emptyAction?: React.ReactNode;
   /** Row checkboxes and the bulk bar (AV · 09). */
   bulk?: boolean;
+  /**
+   * Manage's extras (Admin · 03, Figma 940:167946): Priority, Tags, Date, Assignee and Initiator filters, and
+   * pages with the Items select.
+   */
+  manage?: boolean;
 }) {
   const router = useRouter();
   const { avs } = useAddedValues();
@@ -90,30 +119,83 @@ export function AVListScreen({
   const [statuses, setStatuses] = React.useState<string[]>([]);
   const [sort, setSort] = React.useState<DataTableSort>({ key: "lastUpdated", direction: "desc" });
   const [selected, setSelected] = React.useState<string[]>([]);
+  const [priority, setPriority] = React.useState("");
+  const [tags, setTags] = React.useState<string[]>([]);
+  const [period, setPeriod] = React.useState<{ start?: string; end?: string }>({});
+  const [assignee, setAssignee] = React.useState("");
+  const [initiator, setInitiator] = React.useState("");
+  const [page, setPage] = React.useState(1);
+  /* The prototype's default is 10 a page, so its few AVs still show the pages (Figma's default is 50). */
+  const [pageSize, setPageSize] = React.useState(10);
 
   const mine = avs.filter(include);
   const statusOptions = [...new Set(mine.map(stageLabel))];
   const q = search.trim().toLowerCase();
-  const rows = mine
+  const all = mine
     .filter((av) => !q || av.title.toLowerCase().includes(q) || av.ref.toLowerCase().includes(q))
     .filter((av) => !statuses.length || statuses.includes(stageLabel(av)))
-    .sort((a, b) => compare[sort.key](a, b) * (sort.direction === "asc" ? 1 : -1))
-    .map((av) => toRow(av, avs));
-  const filtered = !!q || statuses.length > 0;
+    .filter((av) => !priority || priority === ALL || av.urgency === priority)
+    .filter((av) => !tags.length || tags.some((t) => av.tags.includes(t)))
+    /* Date: the due date in the period picked (the prototype's reading of Figma's "Select period"). */
+    .filter((av) => !period.start || (!!av.dueDate && av.dueDate >= period.start && av.dueDate <= (period.end ?? period.start)))
+    .filter((av) => !assignee || (assignee === UNASSIGNED ? !av.assignees.length : av.assignees.some((a) => a.name === assignee)))
+    .filter((av) => !initiator || av.initiator === initiator)
+    .sort((a, b) => compare[sort.key](a, b) * (sort.direction === "asc" ? 1 : -1));
+  const pageCount = Math.max(Math.ceil(all.length / pageSize), 1);
+  const shownPage = Math.min(page, pageCount);
+  const rows = (manage ? all.slice((shownPage - 1) * pageSize, shownPage * pageSize) : all).map((av) => toRow(av, avs));
+  const filtered = !!q || statuses.length > 0 || (!!priority && priority !== ALL) || tags.length > 0 || !!period.start || !!assignee || !!initiator;
+  /* Every filter change starts again from page 1. */
+  const filter = <T,>(set: (v: T) => void) => (v: T) => {
+    set(v);
+    setPage(1);
+  };
+  const people = (pick: (av: AddedValue) => string[]) =>
+    [...new Set(mine.flatMap(pick))].sort().map((name) => ({ value: name, label: name }));
 
+  const filterBar = (
+    <FilterBar
+      search={search}
+      onSearchChange={filter(setSearch)}
+      status={{ options: statusOptions, value: statuses, onChange: filter(setStatuses) }}
+      {...(manage && {
+        priority: {
+          options: [{ value: ALL, label: "All priorities" }, ...["Urgent", "High", "Normal", "Low"].map((u) => ({ value: u, label: u }))],
+          value: priority,
+          onChange: filter(setPriority),
+          placeholder: "Search priority",
+        },
+        tags: { options: [...new Set(mine.flatMap((av) => av.tags))].sort(), value: tags, onChange: filter(setTags), placeholder: "Select tags" },
+        period: { value: period, onChange: filter(setPeriod), placeholder: "Select period" },
+        users: [
+          {
+            label: "Assignee",
+            placeholder: "Select User",
+            options: [{ value: UNASSIGNED, label: "Unassigned" }, ...people((av) => av.assignees.map((a) => a.name))],
+            value: assignee,
+            onChange: filter(setAssignee),
+          },
+          { label: "Initiator", placeholder: "Select User", options: people((av) => [av.initiator]), value: initiator, onChange: filter(setInitiator) },
+        ],
+      })}
+      onReset={() => {
+        setSearch("");
+        setStatuses([]);
+        setPriority("");
+        setTags([]);
+        setPeriod({});
+        setAssignee("");
+        setInitiator("");
+        setPage(1);
+      }}
+      resetLabel="Reset Filters"
+    />
+  );
   return (
     <Screen active={active} header={<PageTitle title={title} />}>
       <div className="flex flex-col gap-6 py-6">
-        <FilterBar
-          search={search}
-          onSearchChange={setSearch}
-          status={{ options: statusOptions, value: statuses, onChange: setStatuses }}
-          onReset={() => {
-            setSearch("");
-            setStatuses([]);
-          }}
-          resetLabel="Reset Filters"
-        />
+        {/* Manage draws its filters in the table's card (Figma 940:167946); the other lists, above it. */}
+        {!manage && filterBar}
         {/* Where a guided scenario's step points: see src/flows/types.ts. */}
         <div data-flow-step="av-list">
           <AVTable
@@ -127,6 +209,19 @@ export function AVListScreen({
             }}
             caption={title}
             {...(bulk ? { selectable: true, selected, onSelectedChange: setSelected } : {})}
+            {...(manage && {
+              filters: filterBar,
+              page: shownPage,
+              pageCount,
+              onPageChange: setPage,
+              itemCount: all.length,
+              pageSize,
+              pageSizeOptions: [10, 25, 50, 100],
+              onPageSizeChange: (size: number) => {
+                setPageSize(size);
+                setPage(1);
+              },
+            })}
             empty={
               <EmptyState
                 headingLevel={2}
