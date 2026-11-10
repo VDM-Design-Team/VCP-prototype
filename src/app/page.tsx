@@ -9,6 +9,7 @@ import { useAddedValues } from "@/components/av-store";
 import { useNotifications } from "@/components/notification-store";
 import { useShellState } from "@/components/shell-state";
 import { missedFor, stateKey } from "@/data/missed";
+import { DOMAINS } from "@/data/added-values";
 import { useBudgets } from "@/components/budget-store";
 import { CURRENT, YEARS, consumedFor, periodOf, quarterKey } from "@/data/budgets";
 
@@ -18,9 +19,10 @@ export default function DashboardScreen() {
   const router = useRouter();
   const { avs } = useAddedValues();
   const { dismissed, dismiss, undoDismiss } = useNotifications();
-  const { role } = useShellState();
+  const { role, domain } = useShellState();
+  const domainValue: string = DOMAINS.find((d) => d.name === domain)?.value ?? "development";
   const { toast } = useToast();
-  /* Admin · 01: an admin's own domain's budget (Figma 696:55584). The prototype's admin is Development's. */
+  /* Admin · 01: the budget of the domain picked in the rail's switcher (Figma 696:55584), with the super admin's note. */
   const { budgets } = useBudgets();
   const [budgetQ, setBudgetQ] = React.useState<{ year: number; quarter: Quarter }>(CURRENT);
   const budgetKey = quarterKey(budgetQ.year, budgetQ.quarter);
@@ -29,7 +31,8 @@ export default function DashboardScreen() {
     return av ? stateKey(av) : "";
   };
   /* Decided 9 Nov 2026: a dismissed card stays away until its AV's status or due date changes. */
-  const missed = missedFor(avs, role !== "user").filter(
+  /* An admin's strip is their domain's (decided 10 Nov 2026: the switcher picks the lists). */
+  const missed = missedFor(role === "admin" ? avs.filter((av) => av.domain === domainValue) : avs, role !== "user").filter(
     (item) => !dismissed.some((d) => d.id === item.id && d.key === keyOf(item.id)),
   );
   /* Undo brings the card back; the toast's button goes with the toast, so focus goes to the card. */
@@ -58,8 +61,9 @@ export default function DashboardScreen() {
         /* Where a guided scenario's step points (Admin · 01): see src/flows/types.ts. */
         <div className="pb-6" data-flow-step="budget-card">
           <DomainBudgetSummary
-            allocated={budgets[budgetKey]?.development?.allocated ?? 0}
-            consumed={consumedFor("development", budgetKey, avs)}
+            allocated={budgets[budgetKey]?.[domainValue]?.allocated ?? 0}
+            consumed={consumedFor(domainValue, budgetKey, avs)}
+            note={budgets[budgetKey]?.[domainValue]?.notes}
             quarter={budgetQ.quarter}
             year={budgetQ.year}
             years={YEARS}

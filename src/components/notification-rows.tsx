@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { NotificationItem, type MentionSegment } from "@vdm-design-team/vcp-design-system";
 import { useAddedValues } from "@/components/av-store";
 import { useNotifications } from "@/components/notification-store";
+import { useGuardedPush } from "@/components/shell-state";
 import { MEMBERS, findComment, forViewer, plainText } from "@/components/comments";
 import { VIEWER } from "@/data/added-values";
 import type { AppNotification } from "@/data/notifications";
@@ -25,7 +25,7 @@ export function NotificationRow({
   /** After the row opened its AV: the popover closes. */
   onOpened?: () => void;
 }) {
-  const router = useRouter();
+  const push = useGuardedPush();
   const { get, react, replyTo, editComment, deleteComment } = useAddedValues();
   const { setRead } = useNotifications();
   const av = get(n.avId);
@@ -45,7 +45,7 @@ export function NotificationRow({
     onSelect: () => {
       setRead(n.id, true);
       onOpened?.();
-      router.push(`/added-values/${n.avId}`);
+      push(`/added-values/${n.avId}`);
     },
     ...(comment && {
       preview: plainText(comment.body),

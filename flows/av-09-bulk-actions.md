@@ -11,6 +11,7 @@ Change several Added Values at once, instead of opening each one.
 
 ## Actor, entry points and starting conditions
 - Anyone on an AV list with checkboxes: **Assigned** (a user) and **Manage** (an admin). The bar is the same for both (Figma).
+- An admin's **Manage** lists one domain at a time, the one picked in the rail's switcher (Admin · 01, decided 10 Nov 2026). So a selection across domains happens on **Assigned**, which lists a person's AVs from every domain; the scenarios for it start there.
 - Tick rows in the table (`AVTable` `selectable`).
 
 ## Main steps and decision points
