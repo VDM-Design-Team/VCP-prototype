@@ -1,4 +1,4 @@
-import type { DomainAccessRow } from "@vdm-design-team/vcp-design-system";
+import type { DomainAccessRow, ManualRow } from "@vdm-design-team/vcp-design-system";
 import { CHAINS, DOMAINS } from "./added-values";
 import { PEOPLE, PROJECTS } from "./gantt";
 
@@ -104,6 +104,14 @@ export const TEAMS: Team[] = [
   { id: "platform", name: "Team Platform", people: ["Eve Kestrel", "John Mason Smith", "Alice Carter"] },
   { id: "finance", name: "Team Finance", people: ["Jack Morgan", "Noah Foster"] },
   { id: "warehouse", name: "Team Warehouse", people: ["Lena Novak", "Maya Bennett"] },
+];
+
+/** Figma's Manuals Tab (1046:242262): sample manuals, with who uploaded them. Every user in the domain reads them;
+    an admin's Add Manual puts one on top (decided 10 Nov 2026). */
+export const MANUALS: ManualRow[] = [
+  { id: "m1", name: "Writing a good Added Value", uploadedBy: { name: "Eve Kestrel", email: "eve.kestrel@example.com" }, attachmentCount: 2, dateAdded: "2 months ago" },
+  { id: "m2", name: "How planning cycles work", uploadedBy: { name: "John Mason Smith", email: "john.mason.smith@example.com" }, attachmentCount: 1, dateAdded: "4 months ago" },
+  { id: "m3", name: "Handing off for review", uploadedBy: { name: "Alice Carter", email: "alice.carter@example.com" }, attachmentCount: 3, dateAdded: "6 months ago" },
 ];
 
 /** The super admin's Domains page (Figma 808:104308): the domains, and the projects an AV belongs to. */

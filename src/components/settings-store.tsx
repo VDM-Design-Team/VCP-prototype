@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { ACCOUNTS, DOMAIN_LIST, PANEL, PROJECT_LIST, TEAMS, chainOf, type Account, type PanelItem, type Team } from "@/data/settings";
+import { ACCOUNTS, DOMAIN_LIST, MANUALS, PANEL, PROJECT_LIST, TEAMS, chainOf, type Account, type PanelItem, type Team } from "@/data/settings";
+import type { ManualRow } from "@vdm-design-team/vcp-design-system";
 import { CHAINS_AS_SHIPPED, setChain } from "@/data/added-values";
 
 /* Admin · 04: what Settings, Accounts and Domains edit. In the root layout, so a change survives moving
@@ -20,6 +21,8 @@ interface SettingsStore {
   setDomains: (items: PanelItem[]) => void;
   projects: PanelItem[];
   setProjects: (items: PanelItem[]) => void;
+  manuals: ManualRow[];
+  addManual: (manual: ManualRow) => void;
   reset: () => void;
 }
 
@@ -31,6 +34,7 @@ export function SettingsStoreProvider({ children }: { children: React.ReactNode 
   const [teams, setTeams] = React.useState(TEAMS);
   const [domains, setDomains] = React.useState(DOMAIN_LIST);
   const [projects, setProjects] = React.useState(PROJECT_LIST);
+  const [manuals, setManuals] = React.useState(MANUALS);
   const store = React.useMemo<SettingsStore>(
     () => ({
       accounts,
@@ -49,6 +53,8 @@ export function SettingsStoreProvider({ children }: { children: React.ReactNode 
       setDomains,
       projects,
       setProjects,
+      manuals,
+      addManual: (manual) => setManuals((all) => [manual, ...all]),
       reset: () => {
         setAccounts(ACCOUNTS);
         setChain("development", CHAINS_AS_SHIPPED.development);
@@ -57,9 +63,10 @@ export function SettingsStoreProvider({ children }: { children: React.ReactNode 
         setTeams(TEAMS);
         setDomains(DOMAIN_LIST);
         setProjects(PROJECT_LIST);
+        setManuals(MANUALS);
       },
     }),
-    [accounts, panel, teams, domains, projects],
+    [accounts, panel, teams, domains, projects, manuals],
   );
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }
