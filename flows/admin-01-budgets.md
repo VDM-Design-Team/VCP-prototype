@@ -11,7 +11,7 @@ Give each domain a budget of development points per quarter, and let its admin s
 
 ## Actor, entry points and starting conditions
 - **A super admin** sets the budgets: **Domain Budget** in their rail (DS #347), every domain in one table.
-- **An admin** reads their domain's on the **Dashboard**, under the Value Cards. An admin can look after **several domains** and picks one with the **domain switcher** at the top of the rail (Figma's admin menu; DS `Sidebar`'s `showDomainSelector`). The prototype's admin has Development, Design (BESA) and Content.
+- **An admin** reads their domain's on the **Dashboard**: for Development on its **Quarter** view (Admin · 02, Figma `961:372017`), for a domain without cycles on its only view. An admin can look after **several domains** and picks one with the **domain switcher** at the top of the rail (Figma's admin menu; DS `Sidebar`'s `showDomainSelector`). The prototype's admin has Development, Design (BESA) and Content.
 - A budget is **points, per domain, per quarter** (Q1–Q4 of a year). Today is 05/11/2026: Q4 2026 is current.
 
 ## Main steps and decision points

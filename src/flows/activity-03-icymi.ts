@@ -13,7 +13,7 @@ const on = (text: string, target = "step:icymi", path = HOME): ScenarioStep => (
 const press = (text: string, button: string): ScenarioStep => ({ text, target: `button:${button}`, path: HOME, action: true });
 
 const base = { status: "Implemented", testing: "Not tested", role: "admin", start: HOME, setup: undefined } as const;
-const conditions = "Eve as Admin on the Dashboard: the team's AVs, today 05/11/2026.";
+const conditions = "Eve as Admin of Development on the Dashboard: the domain's AVs, today 05/11/2026.";
 
 export const ICYMI_SCENARIOS: readonly ScenarioDef[] = [
   {
@@ -29,7 +29,7 @@ export const ICYMI_SCENARIOS: readonly ScenarioDef[] = [
     demonstrates: "What the strip shows, its ⓘ, and scrolling it (Figma's Tooltip and Arrow Button Scroll flows).",
     conditions,
     simulated: "The cards come from the sample AVs by the prototype's rules (the flow doc).",
-    expected: "11 cards: 4 overdue, 3 due soon, 1 awaiting review, 3 pending.",
+    expected: "10 cards, Development's (Admin · 01: the rail's domain picks the strip): 4 overdue, 3 due soon, 1 awaiting review, 2 pending.",
     task: "See what's been waiting too long across the team.",
   },
   {
@@ -93,7 +93,7 @@ export const ICYMI_SCENARIOS: readonly ScenarioDef[] = [
     demonstrates: "Whose AVs the strip shows, by role.",
     conditions: "Eve as a User on the Dashboard.",
     simulated: "The prototype's rules; Figma only draws the admin's.",
-    expected: "3 cards as a user, 11 as an admin.",
+    expected: "3 cards as a user, 10 as Development's admin.",
     task: "See what's waiting on you.",
   },
 ];
