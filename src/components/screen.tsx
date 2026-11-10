@@ -77,12 +77,15 @@ export function Screen({
   header,
   children,
   rail = true,
+  primaryAction,
 }: {
   active: string;
   header?: React.ReactNode;
   children: React.ReactNode;
   /** `false`: no left menu, and the top bar's logo instead of Create Added Value (Figma's inbox, decided 9 Nov 2026). */
   rail?: boolean;
+  /** The top bar's button, instead of Create Added Value (the super admin's Accounts: Add Account, Figma 921:152559). */
+  primaryAction?: React.ReactNode;
 }) {
   const push = useGuardedPush();
   const { resolvedTheme, setTheme } = useTheme();
@@ -122,13 +125,16 @@ export function Screen({
           }}
         >
           <TopBar
-            primaryAction={rail ? <CreateAVButton /> : undefined}
+            primaryAction={primaryAction ?? (rail ? <CreateAVButton /> : undefined)}
             homeHref={rail ? undefined : "/"}
             notificationPopover={<Bell />}
             theme={mounted && resolvedTheme === "dark" ? "dark" : "light"}
             onThemeChange={setTheme}
             user={{ name: "Eve Kestrel" }}
-            onUserMenu={() => {}}
+            /* The user menu: Settings opens Admin · 04's page; Logout has nowhere to go in the prototype. */
+            onUserMenuSelect={(key) => {
+              if (key === "settings") push("/settings");
+            }}
           />
         </div>
       }

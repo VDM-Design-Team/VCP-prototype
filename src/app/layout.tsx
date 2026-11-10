@@ -7,6 +7,7 @@ import { AVStoreProvider } from "@/components/av-store";
 import { HolidayStoreProvider } from "@/components/holiday-store";
 import { NotificationStoreProvider } from "@/components/notification-store";
 import { BudgetStoreProvider } from "@/components/budget-store";
+import { SettingsStoreProvider } from "@/components/settings-store";
 import { ScenarioBar, ScenarioProvider } from "@/components/scenario";
 import "./globals.css";
 
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <HolidayStoreProvider>
                 <NotificationStoreProvider>
                   <BudgetStoreProvider>
+                  <SettingsStoreProvider>
                     <ToastProvider>
                       <ScenarioProvider>
                         {children}
@@ -34,6 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                         <ScenarioBar />
                       </ScenarioProvider>
                     </ToastProvider>
+                  </SettingsStoreProvider>
                   </BudgetStoreProvider>
                 </NotificationStoreProvider>
               </HolidayStoreProvider>

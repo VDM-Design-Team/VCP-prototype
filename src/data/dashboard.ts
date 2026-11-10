@@ -10,15 +10,13 @@ import { capacityOf, inCycle, pointsOf } from "./planning";
    (see flows/admin-02-dashboard.md). Everything is worked out from the sample AVs, the cycles and the
    Holiday Registry, so the dashboard agrees with the Planning List and the Gantt Chart. */
 
-/** Figma's team filter lists teams by name; these are the prototype's people, grouped. */
-export const TEAMS = [
-  { value: "all", label: "All Teams", people: PEOPLE.map((p) => p.name) },
-  { value: "platform", label: "Team Platform", people: ["Eve Kestrel", "John Mason Smith", "Alice Carter"] },
-  { value: "finance", label: "Team Finance", people: ["Jack Morgan", "Noah Foster"] },
-  { value: "warehouse", label: "Team Warehouse", people: ["Lena Novak", "Maya Bennett"] },
-] as const;
-export type TeamId = (typeof TEAMS)[number]["value"];
-const peopleOf = (team: TeamId) => TEAMS.find((t) => t.value === team)!.people as readonly string[];
+/**
+ * A team is its people. The teams are the ones an admin sets in Settings (Admin · 04, decided 10 Nov 2026); All
+ * Teams is the whole planning team (the Gantt's people). The page picks; these sums take the people.
+ */
+export type TeamId = readonly string[];
+const peopleOf = (team: TeamId) => team;
+export const ALL_PEOPLE: TeamId = PEOPLE.map((p) => p.name);
 
 type Cycle = (typeof CYCLES)[number];
 export const cycleById = (id: string) => CYCLES.find((c) => c.id === id)!;
@@ -83,7 +81,7 @@ export function capacityFor(name: string, c: Cycle, holidays: readonly Holiday[]
  */
 export function totalCapacity(cycleId: string, team: TeamId) {
   const all = capacityOf(cycleId);
-  return team === "all" ? all : Math.round((all * peopleOf(team).length) / PEOPLE.length);
+  return team.length >= PEOPLE.length ? all : Math.round((all * team.length) / PEOPLE.length);
 }
 
 /** The cycle's working days up to today: how far through it is, for the even burn. */
@@ -248,13 +246,14 @@ export const WHOSE = ["All", "Initiated", "Assigned", "Team"] as const;
 export type Whose = (typeof WHOSE)[number];
 
 /** Value Cards: the domain's Added Values by where they stand, for whose the admin picked (Figma's four). */
-export function valueCards(avs: readonly AddedValue[], domain: string, whose: Whose) {
-  const team = TEAMS.find((t) => t.value !== "all" && (t.people as readonly string[]).includes(VIEWER.name));
+export function valueCards(avs: readonly AddedValue[], domain: string, whose: Whose, teams: readonly { people: readonly string[] }[] = []) {
+  /* "Team": the viewer's own team, from Settings. */
+  const team = teams.find((t) => t.people.includes(VIEWER.name));
   const mine = avs.filter((av) => {
     if (av.domain !== domain) return false;
     if (whose === "Initiated") return av.initiator === VIEWER.name;
     if (whose === "Assigned") return av.assignees.some((a) => a.name === VIEWER.name);
-    if (whose === "Team") return av.assignees.some((a) => (team?.people as readonly string[] | undefined)?.includes(a.name));
+    if (whose === "Team") return av.assignees.some((a) => team?.people.includes(a.name));
     return true;
   });
   const open = (av: AddedValue) => !["Completed", "Rejected", "Draft", "Backlog"].includes(av.status);
