@@ -17,24 +17,15 @@ import { BUDGETS_FLOW } from "./admin-01-budgets";
 import { DASHBOARD_FLOW } from "./admin-02-dashboard";
 import { MANAGE_FLOW } from "./admin-03-manage";
 import { SETTINGS_FLOW } from "./admin-04-settings";
+import { DISCARD_FLOW } from "./av-02-discard";
 import type { FlowDef } from "./types";
 
-/* Every VCP flow, in the FigJam Index's order. A flow with no scenarios yet is
-   Planned: it stays in the catalogue, marked unavailable, with no Start. */
-const planned = (area: FlowDef["area"], number: string, name: string, actor: string): FlowDef => ({
-  id: `${area.toLowerCase()}-${number}-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-$/, "")}`,
-  area,
-  number,
-  name,
-  actor,
-  goal: "",
-  status: "Planned",
-  scenarios: [],
-});
+/* Every VCP flow, in the FigJam Index's order. All are built (10 Nov 2026); a new one that has no scenarios
+   yet would be Planned: in the catalogue, marked unavailable, with no Start. */
 
 export const FLOWS: readonly FlowDef[] = [
   SUBMIT_FLOW,
-  planned("AV", "02", "Discard", "All users"),
+  DISCARD_FLOW,
   DRAFT_FLOW,
   EDIT_FLOW,
   BACKLOG_FLOW,
