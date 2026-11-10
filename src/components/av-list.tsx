@@ -6,6 +6,7 @@ import {
   AVTable,
   EmptyState,
   FilterBar,
+  formatDate,
   Icon,
   PageTitle,
   type AVTableRow,
@@ -19,8 +20,6 @@ import { stageLabel, updatedLabel, type AddedValue } from "@/data/added-values";
 
 const DAY = 86_400_000;
 const dayOf = (iso: string) => Math.floor(Date.parse(`${iso}T00:00:00Z`) / DAY);
-const formatDate = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 
 /** A multipart AV's tag (AV · 10, DS #275): the parent's progress, or a part's place and parent. */
 function multipartOf(av: AddedValue, all: readonly AddedValue[]): AVTableRow["multipart"] {
@@ -73,6 +72,32 @@ function toRow(av: AddedValue, all: readonly AddedValue[] = []): AVTableRow {
   };
 }
 
+/**
+ * An Added Value's life: from the day it was initiated to the day it was completed or rejected (its history's
+ * date, else its due date, else its last update); an open one is still live. It is in a period's filter when
+ * that life overlaps the period, not by its due or start date alone (the user, 10 Nov 2026).
+ */
+function lifeOf(av: AddedValue): { start: string; end?: string } {
+  if (av.status !== "Completed" && av.status !== "Rejected") return { start: av.dateInitiated };
+  const closed = [...av.history].reverse().find((h) => h.to === av.status);
+  const when = typeof closed?.when === "string" ? closed.when.match(/^(\d{2})\/(\d{2})\/(\d{4})$/) : null;
+  return { start: av.dateInitiated, end: when ? `${when[3]}-${when[2]}-${when[1]}` : (av.dueDate ?? av.updatedAt.slice(0, 10)) };
+}
+const liveDuring = (av: AddedValue, start: string, end: string) => {
+  const life = lifeOf(av);
+  return life.start <= end && (life.end === undefined || life.end >= start);
+};
+
+/* Quick picks for the Date field, from the prototype's today (05/11/2026). The prototype's, not Figma's. */
+const PERIODS = [
+  { label: "This month", value: `${TODAY.slice(0, 7)}-01`, rangeEnd: new Date(Date.UTC(Number(TODAY.slice(0, 4)), Number(TODAY.slice(5, 7)), 0)).toISOString().slice(0, 10) },
+  {
+    label: "Last month",
+    value: new Date(Date.UTC(Number(TODAY.slice(0, 4)), Number(TODAY.slice(5, 7)) - 2, 1)).toISOString().slice(0, 10),
+    rangeEnd: new Date(Date.UTC(Number(TODAY.slice(0, 4)), Number(TODAY.slice(5, 7)) - 1, 0)).toISOString().slice(0, 10),
+  },
+];
+
 /** Figma's Assignee list starts with "Unassigned". */
 const UNASSIGNED = "__unassigned";
 /* "All priorities": its own value, since `""` is the field's placeholder. */
@@ -96,7 +121,7 @@ export function AVListScreen({
   empty,
   emptyAction,
   bulk,
-  manage,
+  omit = [],
 }: {
   active: string;
   title: string;
@@ -108,10 +133,11 @@ export function AVListScreen({
   /** Row checkboxes and the bulk bar (AV · 09). */
   bulk?: boolean;
   /**
-   * Manage's extras (Admin · 03, Figma 940:167946): Priority, Tags, Date, Assignee and Initiator filters, and
-   * pages with the Items select.
+   * Filters that make no sense on this list (decided 10 Nov 2026: every list has Manage's filters and pages,
+   * less these): Status where every row has one status, Assignee on your own Assigned list, Initiator on your
+   * Drafts.
    */
-  manage?: boolean;
+  omit?: readonly ("status" | "assignee" | "initiator")[];
 }) {
   const router = useRouter();
   const { avs } = useAddedValues();
@@ -125,7 +151,7 @@ export function AVListScreen({
   const [assignee, setAssignee] = React.useState("");
   const [initiator, setInitiator] = React.useState("");
   const [page, setPage] = React.useState(1);
-  /* The prototype's default is 10 a page, so its few AVs still show the pages (Figma's default is 50). */
+  /* Real data starts at 50 a page (Figma, decided 10 Nov 2026); the prototype starts at 10 so its few AVs still show the pages. */
   const [pageSize, setPageSize] = React.useState(10);
 
   const mine = avs.filter(include);
@@ -136,14 +162,14 @@ export function AVListScreen({
     .filter((av) => !statuses.length || statuses.includes(stageLabel(av)))
     .filter((av) => !priority || priority === ALL || av.urgency === priority)
     .filter((av) => !tags.length || tags.some((t) => av.tags.includes(t)))
-    /* Date: the due date in the period picked (the prototype's reading of Figma's "Select period"). */
-    .filter((av) => !period.start || (!!av.dueDate && av.dueDate >= period.start && av.dueDate <= (period.end ?? period.start)))
+    /* Date (decided 10 Nov 2026): the Added Values that were live during the period picked. */
+    .filter((av) => !period.start || liveDuring(av, period.start, period.end ?? period.start))
     .filter((av) => !assignee || (assignee === UNASSIGNED ? !av.assignees.length : av.assignees.some((a) => a.name === assignee)))
     .filter((av) => !initiator || av.initiator === initiator)
     .sort((a, b) => compare[sort.key](a, b) * (sort.direction === "asc" ? 1 : -1));
   const pageCount = Math.max(Math.ceil(all.length / pageSize), 1);
   const shownPage = Math.min(page, pageCount);
-  const rows = (manage ? all.slice((shownPage - 1) * pageSize, shownPage * pageSize) : all).map((av) => toRow(av, avs));
+  const rows = all.slice((shownPage - 1) * pageSize, shownPage * pageSize).map((av) => toRow(av, avs));
   const filtered = !!q || statuses.length > 0 || (!!priority && priority !== ALL) || tags.length > 0 || !!period.start || !!assignee || !!initiator;
   /* Every filter change starts again from page 1. */
   const filter = <T,>(set: (v: T) => void) => (v: T) => {
@@ -157,8 +183,8 @@ export function AVListScreen({
     <FilterBar
       search={search}
       onSearchChange={filter(setSearch)}
-      status={{ options: statusOptions, value: statuses, onChange: filter(setStatuses) }}
-      {...(manage && {
+      {...(!omit.includes("status") && { status: { options: statusOptions, value: statuses, onChange: filter(setStatuses) } })}
+      {...{
         priority: {
           options: [{ value: ALL, label: "All priorities" }, ...["Urgent", "High", "Normal", "Low"].map((u) => ({ value: u, label: u }))],
           value: priority,
@@ -166,18 +192,24 @@ export function AVListScreen({
           placeholder: "Search priority",
         },
         tags: { options: [...new Set(mine.flatMap((av) => av.tags))].sort(), value: tags, onChange: filter(setTags), placeholder: "Select tags" },
-        period: { value: period, onChange: filter(setPeriod), placeholder: "Select period" },
+        period: { value: period, onChange: filter(setPeriod), placeholder: "Select period", presets: PERIODS },
         users: [
-          {
-            label: "Assignee",
-            placeholder: "Select User",
-            options: [{ value: UNASSIGNED, label: "Unassigned" }, ...people((av) => av.assignees.map((a) => a.name))],
-            value: assignee,
-            onChange: filter(setAssignee),
-          },
-          { label: "Initiator", placeholder: "Select User", options: people((av) => [av.initiator]), value: initiator, onChange: filter(setInitiator) },
+          ...(omit.includes("assignee")
+            ? []
+            : [
+                {
+                  label: "Assignee",
+                  placeholder: "Select User",
+                  options: [{ value: UNASSIGNED, label: "Unassigned" }, ...people((av) => av.assignees.map((a) => a.name))],
+                  value: assignee,
+                  onChange: filter(setAssignee),
+                },
+              ]),
+          ...(omit.includes("initiator")
+            ? []
+            : [{ label: "Initiator", placeholder: "Select User", options: people((av) => [av.initiator]), value: initiator, onChange: filter(setInitiator) }]),
         ],
-      })}
+      }}
       onReset={() => {
         setSearch("");
         setStatuses([]);
@@ -194,8 +226,6 @@ export function AVListScreen({
   return (
     <Screen active={active} header={<PageTitle title={title} />}>
       <div className="flex flex-col gap-6 py-6">
-        {/* Manage draws its filters in the table's card (Figma 940:167946); the other lists, above it. */}
-        {!manage && filterBar}
         {/* Where a guided scenario's step points: see src/flows/types.ts. */}
         <div data-flow-step="av-list">
           <AVTable
@@ -209,7 +239,8 @@ export function AVListScreen({
             }}
             caption={title}
             {...(bulk ? { selectable: true, selected, onSelectedChange: setSelected } : {})}
-            {...(manage && {
+            {...{
+              /* Every list draws its filters in the table's card, as Manage does (Figma 940:167946). */
               filters: filterBar,
               page: shownPage,
               pageCount,
@@ -221,7 +252,7 @@ export function AVListScreen({
                 setPageSize(size);
                 setPage(1);
               },
-            })}
+            }}
             empty={
               <EmptyState
                 headingLevel={2}

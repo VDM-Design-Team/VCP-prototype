@@ -8,6 +8,7 @@ export default function ArchiveBacklogsScreen() {
     <AVListScreen
       active="archive/backlogs"
       title="Backlogs"
+      omit={["status"]}
       include={(av) => av.status === "Backlog"}
       empty={{ title: "Nothing here yet", description: "Added Values moved to the backlog wait here." }}
     />

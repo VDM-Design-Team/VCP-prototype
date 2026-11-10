@@ -15,7 +15,6 @@ export default function ManageScreen() {
       active="manage"
       title="Manage Added Values"
       bulk
-      manage
       include={(av) => av.domain === value && av.status !== "Draft" && !ARCHIVED.includes(av.status)}
       empty={{ title: "No open Added Values", description: "New Added Values wait here for an admin to accept them." }}
     />

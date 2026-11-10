@@ -8,6 +8,7 @@ export default function ArchiveRejectedScreen() {
     <AVListScreen
       active="archive/rejected"
       title="Rejected"
+      omit={["status"]}
       include={(av) => av.status === "Rejected"}
       empty={{ title: "Nothing here yet", description: "Added Values rejected while Pending show here, with the reason." }}
     />

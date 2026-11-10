@@ -8,6 +8,7 @@ export default function ArchiveCompletedScreen() {
     <AVListScreen
       active="archive/completed"
       title="Completed"
+      omit={["status"]}
       include={(av) => av.status === "Completed"}
       empty={{ title: "Nothing here yet", description: "Added Values that were handed off and accepted show here." }}
     />

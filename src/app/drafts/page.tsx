@@ -11,6 +11,7 @@ export default function DraftsScreen() {
     <AVListScreen
       active="drafts"
       title="Drafts"
+      omit={["status", "initiator"]}
       include={(av) => av.status === "Draft" && av.initiator === VIEWER.name}
       empty={{ title: "No drafts", description: "An Added Value you start and don't submit waits here." }}
       emptyAction={<CreateAVButton />}
