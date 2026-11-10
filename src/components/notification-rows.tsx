@@ -29,6 +29,18 @@ export function NotificationRow({
   const { get, react, replyTo, editComment, deleteComment } = useAddedValues();
   const { setRead } = useNotifications();
   const av = get(n.avId);
+  /* AV · 02: a discarded Added Value has no page; the row says so and opens nothing (decided 10 Nov 2026). */
+  if (n.kind === "discarded")
+    return (
+      <NotificationItem
+        kind="discarded"
+        actor={{ name: n.actor }}
+        subject={n.title ?? av?.title ?? "an Added Value"}
+        time={n.time}
+        unread={n.unread}
+        onToggleRead={() => setRead(n.id, n.unread)}
+      />
+    );
   if (!av) return null;
   const comment = withComment && n.commentId && COMMENT_KINDS.has(n.kind) ? findComment(forViewer(av.comments), n.commentId) : undefined;
   const mine = comment?.replies?.find((r) => r.author.id === VIEWER.id);

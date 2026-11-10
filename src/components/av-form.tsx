@@ -25,6 +25,8 @@ import { Screen } from "@/components/screen";
 import { useAddedValues } from "@/components/av-store";
 import { useScenario, useScenarioSetup } from "@/components/scenario";
 import { TODAY } from "@/data/gantt";
+import { useShellState } from "@/components/shell-state";
+import { useNotifications } from "@/components/notification-store";
 import { CYCLE_OPTIONS, DOMAINS, VIEWER, stageLabel, type AddedValue, type AVDomain, type Duplicate } from "@/data/added-values";
 import {
   availabilityClash,
@@ -215,11 +217,19 @@ function Form({ editing }: { editing?: AddedValue }) {
   const [askLeave, setAskLeave] = React.useState(false);
   /* AV · 02 Discard (Figma 1026:166776): the confirm before an AV is removed for good. */
   const [askDiscard, setAskDiscard] = React.useState(false);
-  /* Figma: Discard is there while the AV is a Draft or Pending, and on a new one not yet saved. */
-  const canDiscard = !editing || editing.status === "Draft" || editing.status === "Pending";
+  const { role } = useShellState();
+  const { markDiscarded } = useNotifications();
+  /* Figma: Discard is there while the AV is a Draft or Pending, and on a new one not yet saved.
+     Decided 10 Nov 2026: only for whoever raised it and the domain's admins. */
+  const canDiscard =
+    !editing || ((editing.status === "Draft" || editing.status === "Pending") && (editing.initiator === VIEWER.name || role === "admin"));
   const discard = () => {
     setAskDiscard(false);
-    if (editing) remove(editing.id);
+    if (editing) {
+      remove(editing.id);
+      /* Decided 10 Nov 2026: whoever was told of it keeps the row, which now says it was discarded and opens nothing. */
+      markDiscarded(editing.id, editing.title, "You");
+    }
     dismissAll();
     /* Figma: with an ID the toast names it; a new AV has none yet. */
     toast({
