@@ -91,7 +91,9 @@ export default function DashboardScreen() {
   const [cycleId, setCycleId] = React.useState(CURRENT_CYCLE.id);
   const [team, setTeam] = React.useState("all");
   /* Teams are the admin's, from Settings (Admin · 04); All Teams is the whole planning team. */
-  const { teams } = useSettings();
+  const { teams, accounts } = useSettings();
+  /* Each person's cap, from Settings (Admin · 04). */
+  const caps = Object.fromEntries(accounts.map((a) => [a.name, a.capacityPoints]));
   const teamOptions = [{ value: "all", label: "All Teams" }, ...teams.map((t) => ({ value: t.id, label: t.name }))];
   const peopleFor = (id: string) => (id === "all" ? ALL_PEOPLE : (teams.find((t) => t.id === id)?.people ?? ALL_PEOPLE));
   const teamName = (id: string) => teamOptions.find((t) => t.value === id)?.label ?? "All Teams";
@@ -239,7 +241,7 @@ export default function DashboardScreen() {
               </div>
               <div className="pb-6" data-flow-step="user-capacity">
                 <UserCapacity
-                  members={userCapacity(avs, cycleId, peopleFor(team), holidays)}
+                  members={userCapacity(avs, cycleId, peopleFor(team), holidays, caps)}
                   hint="Each person's points this cycle, their leave from the Holiday Registry, and what's left."
                 />
               </div>

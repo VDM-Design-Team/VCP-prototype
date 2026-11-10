@@ -1,5 +1,5 @@
 import type { DomainAccessRow } from "@vdm-design-team/vcp-design-system";
-import { DOMAINS } from "./added-values";
+import { CHAINS, DOMAINS } from "./added-values";
 import { PEOPLE, PROJECTS } from "./gantt";
 
 /* Admin · 04: the Settings data (Figma's Settings Pages (Admin) 806:102049, Accounts 921:123385, Domains
@@ -56,6 +56,18 @@ const locked = (labels: string[]): PanelItem[] => labels.map((label) => ({ id: s
 const shared = ["Pending", "Accepted", "Initiated"];
 const after = ["Review", "Rejected", "Backlog", "Draft", "Completed"];
 
+/** The status list as Figma draws it: the shared steps locked, In Progress and the domain's own steps (its chain) movable. */
+const statusesFor = (domain: "development" | "design" | "content"): PanelItem[] => [
+  ...locked(shared),
+  { id: IN_PROGRESS, label: "In Progress", variant: "draggable" },
+  ...(domain === "content" ? [] : CHAINS[domain].map((s) => ({ id: s.id, label: s.label, variant: "draggable" as const }))),
+  ...locked(after),
+];
+/** In Progress is on the shared spine, not a domain's own step, though Figma lets it move with them. */
+export const IN_PROGRESS = "in-progress";
+/** A domain's own steps, from its status list: the movable ones but In Progress. */
+export const chainOf = (statuses: readonly PanelItem[]) => statuses.filter((i) => i.variant === "draggable" && i.id !== IN_PROGRESS).map((i) => ({ id: i.id, label: i.label }));
+
 export const PANEL: Record<string, { roles: PanelItem[]; statuses: PanelItem[]; assigneeTypes: PanelItem[] }> = {
   development: {
     roles: [
@@ -63,11 +75,7 @@ export const PANEL: Record<string, { roles: PanelItem[]; statuses: PanelItem[]; 
       { id: "developer", label: "Developer" },
       { id: "senior-developer", label: "Senior Developer" },
     ],
-    statuses: [
-      ...locked(shared),
-      ...["In Progress", "For review", "For QA", "In QA", "Ready for deploy", "Confirmed prod"].map((label) => ({ id: slug(label), label, variant: "draggable" as const })),
-      ...locked(after),
-    ],
+    statuses: statusesFor("development"),
     assigneeTypes: [...locked(["Assignee", "Viewer"]), { id: "qa", label: "QA" }],
   },
   design: {
@@ -76,12 +84,12 @@ export const PANEL: Record<string, { roles: PanelItem[]; statuses: PanelItem[]; 
       { id: "product-designer", label: "Product Designer" },
       { id: "senior-product-designer", label: "Senior Product Designer" },
     ],
-    statuses: [...locked(shared), ...["In Progress", "Design Review"].map((label) => ({ id: slug(label), label, variant: "draggable" as const })), ...locked(after)],
+    statuses: statusesFor("design"),
     assigneeTypes: [...locked(["Assignee", "Viewer"]), { id: "qa", label: "QA" }],
   },
   content: {
     roles: [{ id: "writer", label: "Writer" }, { id: "editor", label: "Editor" }],
-    statuses: [...locked(shared), { id: "in.progress", label: "In Progress", variant: "draggable" }, ...locked(after)],
+    statuses: statusesFor("content"),
     assigneeTypes: locked(["Assignee", "Viewer"]),
   },
 };

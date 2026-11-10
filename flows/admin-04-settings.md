@@ -11,7 +11,7 @@ Keep each domain's people, lists and teams right (an admin), and everyone's acco
 
 ## Actor, entry points and starting conditions
 - **An admin**, from **Settings** in the menu under their name (top right). Users and Admin Panel are the domain picked in the rail's switcher (Admin · 01).
-- **Anyone else** gets Settings with Personal Info and Password only.
+- **Anyone else** gets Settings with Personal Info, **Manuals** (read-only), **Changelog** (the System Changelog) and Password (decided 10 Nov 2026).
 - **The super admin**, from **Accounts** and **Domains** in their rail.
 
 ## Main steps and decision points
@@ -19,8 +19,10 @@ Keep each domain's people, lists and teams right (an admin), and everyone's acco
 2. **Users** (DS `UsersTable`, Figma `992:3002`): the domain's people, their status (DS `AccountStatusTag`) and when they were added; a search, sorting, pages.
    - **+ New User** (DS `UserAccountModal`, "Create New User"): Status, Name, Email, Roles. Submit: "User created".
    - **View** (the same dialog, filled): Status, Name, Email, **Capacity Points** with its own **Save** (it saves the points alone), Roles. Submit: "Changes Saved".
+   - **Capacity Points are a per-person cap** (decided 10 Nov 2026): the most that person can take in one cycle. The cycle's fixed total stays separate. **The Planning List warns** when someone's work in an open cycle goes past their cap ("Jack Morgan: 12 of 8 points in C44"); the dashboard's User Capacity row is capped by it.
 3. **Admin Panel** (DS `DomainCard`, Figma `806:102342`): **Roles**, **Status** and **Assignee Types**, each with Add New, a pencil (rename) and a bin (delete).
-   - **Status**: the shared steps are locked ("Default"); the domain's own steps have a grip and move by dragging, or by Space, ↑ ↓, Space.
+   - **Status**: the shared steps are locked ("Default"); the domain's own steps have a grip and move by dragging, or by Space, ↑ ↓, Space. **Renaming or reordering them shows on every Added Value in the domain at once**, and on the AV page's progression (decided 10 Nov 2026).
+   - **Something in use can't be deleted** (decided): a role someone holds ("held by 3 people"), a step Added Values are on ("used by 1 Added Value"), a project Added Values belong to. The message says what uses it; move them first.
    - **Add New / rename** (DS `TagManagementModal`, "Add a new Tag", Figma `985:377854`); a new status lands after the domain's last step.
    - **Teams** (Development; decided 10 Nov 2026, not in Figma): a name and its people (DS `Modal`, `Field`, `Input`, `SearchSelect`). The dashboard's team filter (Admin · 02) reads them.
 4. **Accounts** (super admin; DS `AccountsTable`, Figma `921:152559`): everyone, their domains, when they were added; **Edit** and **Delete** per row; **Add Account** in the top bar.
@@ -45,13 +47,13 @@ Keep each domain's people, lists and teams right (an admin), and everyone's acco
 ## The prototype's own rules (Figma doesn't say)
 - **Who's on Users**: everyone with access to the domain, and pending accounts no domain has taken yet.
 - **Roles are per domain**: each domain has its own list; a user's roles are per domain.
-- **The Admin Panel's lists live in Settings only**: renaming or reordering a status doesn't change it on Added Values yet.
-- **Capacity Points** are saved in Settings only; the planning pages keep their own figures (Admin · 02's Total Capacity).
+- **Statuses**: In Progress moves with the domain's own steps, as Figma draws it, but it stays on the shared spine; a new status lands after the domain's last step and becomes one of its steps.
+- **The cap's warning** counts a person's own points (or an even share) in Development's open cycles, against their Capacity Points.
 - **Teams** are Development's (the domain that plans in cycles). People are those with access to Development.
 - **A delete by bin** has Undo; **a delete after a confirm** has none, because the confirm says it can't be undone.
 - **Focus after a delete** moves on purpose: the next row's Delete, else the previous one's, else Add New or the search (the DS rule, `docs/accounts-table.md`).
 - **Domains and projects** live on the Domains page only: the rail's domain switcher and the AV forms keep their own lists.
-- **Personal Info, Manuals, Password** are the DS forms and table with sample data; saving shows a toast. **Announcements** shows "Not in the prototype yet".
+- **Personal Info, Manuals, Changelog, Password** are the DS forms, table and changelog with sample data; saving shows a toast. **Announcements** shows "Not in the prototype yet". **Add Manual** is in the admin's top bar on Manuals (Figma `1046:242262`); its dialog isn't drawn, so it says so.
 
 ## What Figma shows, and what the prototype uses
 | Where | Figma | Prototype |
@@ -63,9 +65,12 @@ Keep each domain's people, lists and teams right (an admin), and everyone's acco
 | Domains page title | "Page Title" | "Domains"; Accounts: "Accounts" |
 | Emails | `@vdm.technology` | `@example.com` (sample people) |
 
+## Decided (10 Nov 2026)
+- **Teams' dialog stays in the prototype**, page-level, until Figma settles the Teams design. No DS piece.
+- **Status steps: renamed or reordered, they show everywhere at once**, on every Added Value in the domain and on the AV page's progression.
+- **Deleting something in use is blocked, with why** ("Used by 1 Added Value"); the admin moves them first.
+- **Capacity Points are a per-person cap** for one cycle; the cycle's total stays separate; the Planning List warns when someone goes over.
+- **Everyone reads Manuals and the System Changelog**: users read-only (no Add Manual), admins also manage them.
+
 ## Unresolved questions
-- **Teams' dialog**: keep it composed from DS parts in the prototype, or make it a DS piece (a `TeamModal`)?
-- **Statuses**: should renaming or reordering a domain's status change it on its Added Values (and the AV page's progression)?
-- **Deleting a tag** that Added Values use (a role, a status step, a project): allowed? What happens to them?
-- **Capacity Points**: is the View User figure the same as the Planning List's capacity, or a per-person cap inside it?
-- **Who sees which tabs**: is Manuals for admins only, and do users get the changelog in Settings?
+- **Add Manual**: Figma draws the button but not its dialog. What does adding a manual ask for (a name, files, who sees it)?

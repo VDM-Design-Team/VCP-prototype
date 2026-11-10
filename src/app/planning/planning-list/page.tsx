@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
+  Banner,
   MoveAVToCycleModal,
   PageTitle,
   PlanningFilters,
@@ -20,6 +21,8 @@ import {
 import { Screen } from "@/components/screen";
 import { useAddedValues } from "@/components/av-store";
 import { useHolidays } from "@/components/holiday-store";
+import { useSettings } from "@/components/settings-store";
+import { pointsIn } from "@/data/dashboard";
 import { publicDays } from "@/data/holidays";
 import { CYCLE_OPTIONS, stageLabel, type AddedValue } from "@/data/added-values";
 import { CYCLES, PEOPLE, TODAY } from "@/data/gantt";
@@ -56,6 +59,9 @@ export default function PlanningListScreen() {
   const { toast } = useToast();
   /* Leave and holidays come from the Holiday Registry (Planning · 03). */
   const { holidays } = useHolidays();
+  /* Admin · 04 (decided 10 Nov 2026): a person's Capacity Points are the most they can take in one cycle;
+     the Planning List warns when someone's work in an open cycle goes past it. */
+  const { accounts } = useSettings();
   const daysOff = React.useMemo(() => publicDays(holidays), [holidays]);
   const [filters, setFilters] = React.useState(NO_FILTERS);
   const [sort, setSort] = React.useState<DataTableSort | undefined>();
@@ -102,6 +108,17 @@ export default function PlanningListScreen() {
     sort
       ? [...list].sort((a, b) => a.title.localeCompare(b.title) * (sort.direction === "asc" ? 1 : -1))
       : [...list].sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? ""));
+
+  const overCap = shownCycles(avs)
+    .filter((c) => c.end >= TODAY)
+    .flatMap((c) =>
+      accounts
+        .filter((a) => a.capacityPoints != null && a.access.development?.access)
+        .map((a) => ({ name: a.name, cycle: c.short ?? c.label, points: pointsIn(avs, c.id, a.name), cap: a.capacityPoints! }))
+        .filter((o) => o.points > o.cap),
+    );
+
+  const overPeople = new Set(overCap.map((o) => o.name)).size;
 
   const sections: PlanningSection[] = [
     ...shownCycles(avs).map((c) => {
@@ -299,6 +316,14 @@ export default function PlanningListScreen() {
           statusOptions={statusOptions}
           onReset={() => setFilters(NO_FILTERS)}
         />
+        {overCap.length > 0 && (
+          <div data-flow-step="over-cap">
+            <Banner tone="warning" title={overPeople === 1 ? "Someone is over their cap" : `${overPeople} people are over their cap`}>
+              {overCap.map((o) => `${o.name}: ${o.points} of ${o.cap} points in ${o.cycle}`).join(" · ")}. A person&apos;s cap is their
+              Capacity Points in Settings; move work to another cycle or person.
+            </Banner>
+          </div>
+        )}
         {/* Where a guided scenario's step points (Planning · 02): see src/flows/types.ts. */}
         <div data-flow-step="planning" className="flex flex-col gap-6">
           <PlanningTable

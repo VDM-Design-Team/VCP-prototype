@@ -10,6 +10,8 @@ import {
   Icon,
   Input,
   ManualsTable,
+  Button,
+  SystemChangelog,
   Modal,
   PageTitle,
   PersonalInfoForm,
@@ -28,9 +30,10 @@ import { Screen } from "@/components/screen";
 import { neighbours, useFocusAfterRemove } from "@/components/focus-after-remove";
 import { useShellState } from "@/components/shell-state";
 import { useSettings } from "@/components/settings-store";
+import { useAddedValues } from "@/components/av-store";
 import { DOMAINS, VIEWER } from "@/data/added-values";
 import { TODAY } from "@/data/gantt";
-import { ago, type Account, type PanelItem, type Team } from "@/data/settings";
+import { IN_PROGRESS, ago, type Account, type PanelItem, type Team } from "@/data/settings";
 
 /* Admin · 04: Settings (Figma's Settings Pages (Admin), 806:102049). An admin's tabs: Personal Info, Users, Admin
    Panel, Announcements, Manuals, Password; anyone else's: Personal Info and Password. Users and Admin Panel are the
@@ -44,7 +47,13 @@ const ADMIN_TABS = [
   { key: "manuals", label: "Manuals" },
   { key: "password", label: "Password" },
 ];
-const OWN_TABS = [ADMIN_TABS[0], ADMIN_TABS[5]];
+/* Decided 10 Nov 2026: everyone reads the manuals and the System Changelog; only admins manage them. */
+const OWN_TABS = [ADMIN_TABS[0], ADMIN_TABS[4], { key: "changelog", label: "Changelog" }, ADMIN_TABS[5]];
+const RELEASES = [
+  { id: "r3", title: "Domain budgets", version: "v1.20.0", kind: "feature" as const, date: "2026-11-02", description: "A super admin sets each domain's points for a quarter; an admin sees what's left.", features: ["Domain Budget page", "The budget card on the dashboard"] },
+  { id: "r2", title: "Bulk actions on lists", version: "v1.19.2", kind: "update" as const, date: "2026-10-19", description: "Change the status, urgency or cycle of several Added Values at once.", features: ["The bulk bar on Assigned and Manage", "A summary of what couldn't change"] },
+  { id: "r1", title: "Gantt chart", version: "v1.19.0", kind: "experimental" as const, date: "2026-10-05", description: "Planned work over time, by person.", features: ["Cycle, month and year views"] },
+];
 const PAGE_SIZE = 10;
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -57,7 +66,16 @@ export default function SettingsScreen() {
   const { toast } = useToast();
 
   return (
-    <Screen active="settings" header={<PageTitle title="Settings" />}>
+    <Screen
+      active="settings"
+      header={<PageTitle title="Settings" />}
+      /* Figma's admin Manuals tab has Add Manual in the top bar (1046:242262); its dialog isn't drawn yet. */
+      primaryAction={
+        role === "admin" && shown === "manuals" ? (
+          <Button onClick={() => toast({ tone: "info", title: "Add Manual", description: "Its dialog isn't designed yet (Figma draws the button, not the dialog)." })}>Add Manual</Button>
+        ) : undefined
+      }
+    >
       <div className="flex flex-col gap-6 py-6">
         <Tabs aria-label="Settings" tabs={tabs} value={shown} onChange={setTab} idPrefix="settings" />
         <div role="tabpanel" id={tabPanelId("settings", shown)} aria-labelledby={tabId("settings", shown)} data-flow-step="settings">
@@ -79,6 +97,7 @@ export default function SettingsScreen() {
             />
           )}
           {shown === "manuals" && <ManualsTab />}
+          {shown === "changelog" && <SystemChangelog releases={RELEASES} />}
           {shown === "password" && (
             <ChangePasswordForm onSubmit={() => toast({ tone: "success", title: "Password changed", description: "Use the new one next time you sign in." })} />
           )}
@@ -113,7 +132,8 @@ function UsersTab({ domainValue }: { domainValue: string }) {
   const editing = open && open !== "new" ? open : null;
 
   const onSubmit = (draft: UserAccountDraft) => {
-    const base: Account = editing ?? {
+    /* The latest saved copy: the capacity's own Save may have changed it since the dialog opened. */
+    const base: Account = (editing && accounts.find((a) => a.id === editing.id)) ?? editing ?? {
       id: `u-${Date.now()}`,
       name: "",
       email: "",
@@ -170,7 +190,7 @@ function UsersTab({ domainValue }: { domainValue: string }) {
         onSubmit={onSubmit}
         onSaveCapacity={(points) => {
           if (!editing) return;
-          saveAccount({ ...editing, capacityPoints: points });
+          saveAccount({ ...(accounts.find((a) => a.id === editing.id) ?? editing), capacityPoints: points });
           toast({ tone: "success", title: "Capacity saved", description: `${editing.name}: ${points ?? 0} points a cycle in this domain.` });
         }}
       />
@@ -195,7 +215,25 @@ function AdminPanel({ domainValue }: { domainValue: string }) {
   const area = React.useRef<HTMLDivElement>(null);
   const focusAfter = useFocusAfterRemove(area);
 
+  const { avs } = useAddedValues();
+  /* Decided 10 Nov 2026: what's still in use can't be deleted; the message says what uses it. */
+  const inUse = (list: PanelList, item: PanelItem): string | null => {
+    if (list === "roles") {
+      const n = accounts.filter((a) => a.roles[domainValue]?.includes(item.id)).length;
+      return n ? `${item.label} is held by ${n} ${n === 1 ? "person" : "people"}. Take it off them first.` : null;
+    }
+    if (list === "statuses") {
+      const n = avs.filter((av) => av.domain === domainValue && (item.id === IN_PROGRESS ? av.status === "In Progress" && !av.step : av.step === item.id)).length;
+      return n ? `${item.label} is used by ${n} Added ${n === 1 ? "Value" : "Values"}. Move them to another step first.` : null;
+    }
+    return null;
+  };
   const remove = (list: PanelList, item: PanelItem) => {
+    const why = inUse(list, item);
+    if (why) {
+      toast({ tone: "critical", title: `Can't delete ${item.label}`, description: why });
+      return;
+    }
     const before = lists[list];
     /* Only rows with a bin: the locked ones have none. */
     focusAfter(neighbours(before.filter((i) => i.variant !== "locked").map((i) => i.label), item.label, "Add New"));

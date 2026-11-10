@@ -5,6 +5,7 @@ import { DomainCard, PageTitle, TagManagementModal, useToast } from "@vdm-design
 import { Screen } from "@/components/screen";
 import { neighbours, useFocusAfterRemove } from "@/components/focus-after-remove";
 import { useSettings } from "@/components/settings-store";
+import { useAddedValues } from "@/components/av-store";
 import type { PanelItem } from "@/data/settings";
 
 /* Admin · 04: the super admin's Domains (Figma 808:104308): the domains and the projects, each with Add New, a
@@ -15,6 +16,7 @@ type Dialog = { kind: "domain" | "project"; item?: PanelItem; deleting?: boolean
 
 export default function DomainsScreen() {
   const { domains, setDomains, projects, setProjects } = useSettings();
+  const { avs } = useAddedValues();
   const { toast } = useToast();
   const [dialog, setDialog] = React.useState<Dialog>(null);
   /* Never drop focus: after a delete, the next row's Delete, the previous one's, or the list's Add New. */
@@ -39,6 +41,12 @@ export default function DomainsScreen() {
           onAdd={() => setDialog({ kind: "project" })}
           onEdit={(item) => setDialog({ kind: "project", item: projects.find((p) => p.id === item.id) })}
           onDelete={(item) => {
+            /* Decided 10 Nov 2026: a project Added Values still belong to can't be deleted. */
+            const n = avs.filter((av) => av.project === item.label).length;
+            if (n) {
+              toast({ tone: "critical", title: `Can't delete ${item.label}`, description: `${item.label} is used by ${n} Added ${n === 1 ? "Value" : "Values"}. Move them to another project first.` });
+              return;
+            }
             /* Figma draws a confirm for a domain only; a project goes with an Undo. */
             const before = projects;
             focusAfter(neighbours(projects.map((p) => p.label), item.label, "Add New"));

@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { ACCOUNTS, DOMAIN_LIST, PANEL, PROJECT_LIST, TEAMS, type Account, type PanelItem, type Team } from "@/data/settings";
+import { ACCOUNTS, DOMAIN_LIST, PANEL, PROJECT_LIST, TEAMS, chainOf, type Account, type PanelItem, type Team } from "@/data/settings";
+import { CHAINS_AS_SHIPPED, setChain } from "@/data/added-values";
 
 /* Admin · 04: what Settings, Accounts and Domains edit. In the root layout, so a change survives moving
    around the app (the dashboard's team filter reads the teams); a scenario starting puts the samples back. */
@@ -37,8 +38,11 @@ export function SettingsStoreProvider({ children }: { children: React.ReactNode 
         setAccounts((all) => (all.some((a) => a.id === account.id) ? all.map((a) => (a.id === account.id ? account : a)) : [account, ...all])),
       removeAccount: (id) => setAccounts((all) => all.filter((a) => a.id !== id)),
       panel,
-      setPanelList: (domain, list, items) =>
-        setPanel((all) => ({ ...all, [domain]: { ...(all[domain] ?? { roles: [], statuses: [], assigneeTypes: [] }), [list]: items } })),
+      setPanelList: (domain, list, items) => {
+        /* A domain's own steps show on its Added Values at once (decided 10 Nov 2026). */
+        if (list === "statuses") setChain(domain, chainOf(items));
+        setPanel((all) => ({ ...all, [domain]: { ...(all[domain] ?? { roles: [], statuses: [], assigneeTypes: [] }), [list]: items } }));
+      },
       teams,
       setTeams,
       domains,
@@ -47,6 +51,8 @@ export function SettingsStoreProvider({ children }: { children: React.ReactNode 
       setProjects,
       reset: () => {
         setAccounts(ACCOUNTS);
+        setChain("development", CHAINS_AS_SHIPPED.development);
+        setChain("design", CHAINS_AS_SHIPPED.design);
         setPanel(PANEL);
         setTeams(TEAMS);
         setDomains(DOMAIN_LIST);

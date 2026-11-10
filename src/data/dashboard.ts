@@ -44,6 +44,10 @@ const share = (av: AddedValue, name: string) => {
   return a.points ?? Math.round(pointsOf(av) / Math.max(av.assignees.length, 1));
 };
 
+/** A person's points in a cycle (Development's AVs accepted onwards), for their cap (Admin · 04). */
+export const pointsIn = (avs: readonly AddedValue[], cycleId: string, name: string) =>
+  avs.filter((av) => inCycle(av) && av.cycle === cycleId).reduce((sum, av) => sum + share(av, name), 0);
+
 /** When it was completed: the history's "to Completed" date, or its due date. */
 const completedOn = (av: AddedValue) => {
   const h = [...av.history].reverse().find((e) => e.to === "Completed");
@@ -134,12 +138,18 @@ export function teamCapacity(avs: readonly AddedValue[], cycleId: string, team: 
 }
 
 /** User Capacity: one row per person: their working days, less their leave (shown as Leave). */
-export function userCapacity(avs: readonly AddedValue[], cycleId: string, team: TeamId, holidays: readonly Holiday[]) {
+/**
+ * User Capacity. A person's row is their working days less leave, capped by their Capacity Points (decided
+ * 10 Nov 2026: the most one person can take in a cycle, set in Settings; the cycle's total stays separate).
+ */
+export function userCapacity(avs: readonly AddedValue[], cycleId: string, team: TeamId, holidays: readonly Holiday[], caps: Record<string, number | null> = {}) {
   const c = cycleById(cycleId);
   const day = asOf(c);
   const items = avs.filter((av) => inCycle(av) && av.cycle === cycleId);
   return peopleOf(team).map((name) => {
-    const { leave, capacity } = capacityFor(name, c, holidays);
+    const { leave, capacity: days } = capacityFor(name, c, holidays);
+    const cap = caps[name];
+    const capacity = cap == null ? days : Math.min(cap, days);
     const mine = items.map((av) => ({ av, points: share(av, name) })).filter((w) => w.points > 0);
     const by = (s: string) => mine.filter((w) => standing(w.av, day) === s).reduce((sum, w) => sum + w.points, 0);
     const used = mine.reduce((s, w) => s + w.points, 0);

@@ -45,7 +45,8 @@ export default function AccountsScreen() {
   const rows = all.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((a) => ({ id: a.id, name: a.name, email: a.email, domains: domainsOf(a), dateAdded: ago(a.added, TODAY) }));
 
   const onSubmit = (draft: UserAccountDraft) => {
-    const base: Account = editing ?? { id: `u-${Date.now()}`, name: "", email: "", status: "pending", added: TODAY, proficiency: "Junior", capacityPoints: null, roles: {}, access: {} };
+    /* The latest saved copy: the capacity's own Save may have changed it since the dialog opened. */
+    const base: Account = (editing && accounts.find((a) => a.id === editing.id)) ?? editing ?? { id: `u-${Date.now()}`, name: "", email: "", status: "pending", added: TODAY, proficiency: "Junior", capacityPoints: null, roles: {}, access: {} };
     saveAccount({
       ...base,
       name: draft.name,
@@ -100,7 +101,7 @@ export default function AccountsScreen() {
         onSubmit={onSubmit}
         onSaveCapacity={(points) => {
           if (!editing) return;
-          saveAccount({ ...editing, capacityPoints: points });
+          saveAccount({ ...(accounts.find((a) => a.id === editing.id) ?? editing), capacityPoints: points });
           toast({ tone: "success", title: "Capacity saved", description: `${editing.name}: ${points ?? 0} points a cycle.` });
         }}
       />
