@@ -9,7 +9,9 @@ import {
   Field,
   Icon,
   Input,
+  AddManualModal,
   ManualsTable,
+  type ManualRow,
   Button,
   SystemChangelog,
   Modal,
@@ -64,15 +66,20 @@ export default function SettingsScreen() {
   const [tab, setTab] = React.useState("personal-info");
   const shown = tabs.some((t) => t.key === tab) ? tab : "personal-info";
   const { toast } = useToast();
+  const { manuals, addManual: saveManual } = useSettings();
+  const [addManual, setAddManual] = React.useState(false);
 
   return (
     <Screen
       active="settings"
       header={<PageTitle title="Settings" />}
-      /* Figma's admin Manuals tab has Add Manual in the top bar (1046:242262); its dialog isn't drawn yet. */
+      /* Figma's admin Manuals tab has Add Manual in the top bar (1046:242262). Its dialog, decided 10 Nov 2026:
+         a name and one or more files (DS AddManualModal). */
       primaryAction={
         role === "admin" && shown === "manuals" ? (
-          <Button onClick={() => toast({ tone: "info", title: "Add Manual", description: "Its dialog isn't designed yet (Figma draws the button, not the dialog)." })}>Add Manual</Button>
+          <Button onClick={() => setAddManual(true)} data-flow-step="add-manual">
+            Add Manual
+          </Button>
         ) : undefined
       }
     >
@@ -96,13 +103,25 @@ export default function SettingsScreen() {
               description="Not in the prototype yet: the announcements table and its dialog are still being built."
             />
           )}
-          {shown === "manuals" && <ManualsTab />}
+          {shown === "manuals" && <ManualsTab rows={manuals} />}
           {shown === "changelog" && <SystemChangelog releases={RELEASES} />}
           {shown === "password" && (
             <ChangePasswordForm onSubmit={() => toast({ tone: "success", title: "Password changed", description: "Use the new one next time you sign in." })} />
           )}
         </div>
       </div>
+      <AddManualModal
+        open={addManual}
+        onClose={() => setAddManual(false)}
+        accept=".pdf,.docx,.pptx,.png,.jpg"
+        hint="PDF, DOCX, PPTX or images"
+        onSubmit={({ name, files }) => {
+          /* Nothing is uploaded in the prototype. Every user in the domain reads it (decided 10 Nov 2026). */
+          saveManual({ id: `m-${Date.now()}`, name, uploadedBy: { name: VIEWER.name, email: "eve.kestrel@example.com" }, attachmentCount: files.length, dateAdded: "Today" });
+          setAddManual(false);
+          toast({ tone: "success", title: "Manual added", description: `“${name}” is on Manuals for everyone in ${domain}.` });
+        }}
+      />
     </Screen>
   );
 }
@@ -356,13 +375,8 @@ function TeamModal({ team, people, onClose, onSave }: { team?: Team; people: str
   );
 }
 
-/** Figma's Manuals Tab (1046:242262): the manuals, with who uploaded them. Sample rows; nothing opens. */
-function ManualsTab() {
+/** The manuals; nothing opens in the prototype. */
+function ManualsTab({ rows }: { rows: readonly ManualRow[] }) {
   const [page, setPage] = React.useState(1);
-  const rows = [
-    { id: "m1", name: "Writing a good Added Value", uploadedBy: { name: "Eve Kestrel", email: "eve.kestrel@example.com" }, attachmentCount: 2, dateAdded: "2 months ago" },
-    { id: "m2", name: "How planning cycles work", uploadedBy: { name: "John Mason Smith", email: "john.mason.smith@example.com" }, attachmentCount: 1, dateAdded: "4 months ago" },
-    { id: "m3", name: "Handing off for review", uploadedBy: { name: "Alice Carter", email: "alice.carter@example.com" }, attachmentCount: 3, dateAdded: "6 months ago" },
-  ];
   return <ManualsTable rows={rows} page={page} pageCount={1} onPageChange={setPage} />;
 }
