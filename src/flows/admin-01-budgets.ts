@@ -24,7 +24,7 @@ export const BUDGET_SCENARIOS: readonly ScenarioDef[] = [
     id: "admin-01-budgets.admin-view",
     steps: [
       card("Admin view, on the Dashboard's Quarter view (Admin · 02): Domain Budget, for Development, the admin's domain (Figma 696:55584). Allocated, Consumed and Remaining, the quarter's days left, and Budget Usage."),
-      card("Point at an ⓘ: what each figure is, in Figma's words (\"for the selected cycle\"). The bar is Figma's: blue, amber from 75%, red at 100%. Under it, the super admin's note for the domain (decided 10 Nov 2026)."),
+      card("Point at an ⓘ: what each figure is (\"for the selected quarter\": a budget is per quarter, never per cycle). The bar is Figma's: blue, amber from 75%, red at 100%. Under it, the super admin's note for the domain (decided 10 Nov 2026)."),
       card("Pick Q3: a past quarter, with its dates and \"Go to Current Quarter\". Pick 2027, then Q1: an upcoming one, with no budget set yet (0 pts)."),
       card("\"Go to Current Quarter\" brings Q4 2026 back."),
     ],
