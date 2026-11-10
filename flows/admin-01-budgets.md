@@ -47,7 +47,8 @@ Give each domain a budget of development points per quarter, and let its admin s
 - **Amounts:** zero is allowed, and so is a number below what's already consumed (the domain shows over budget). **No decimals**: whole points only (the DS number field already refuses them).
 - **An admin can switch between several domains**, with the domain switcher in the rail, as in Figma's admin menu. It picks which domain's budget card and lists show.
 - **The admin's card shows the super admin's note** for that domain (DS #351).
-- **Wording and colours follow Figma everywhere** (below).
+- **Colours follow Figma** on each surface (below).
+- **Wording: "quarter" and "cycle" are different things** and never stand in for each other (the user, 10 Nov 2026). A budget is per quarter, so everything about its period says "quarter"; "cycle" is only a planning cycle. Where Figma's budget tooltips say "cycle" but mean the quarter, the prototype and the design system say "quarter" (DS #350): see Figma wording fixes below.
 
 ### What Figma shows, and what the prototype uses
 Read from VCP Pages - Flows; correct it here if any of it is misread.
@@ -62,7 +63,17 @@ Read from VCP Pages - Flows; correct it here if any of it is misread.
 | Super admin table bar | blue `surface/brand/strong`; red `accent/critical/outline/border` when over; **no amber** | amber from 75% | blue up to 100%, red over (#350) |
 | Table bar track | white `surface/neutral/base`; `surface/neutral/faint` with nothing consumed | as Figma | unchanged |
 | Table Remaining | `text/primary`; red `accent/critical/outline/content` when negative | as Figma | unchanged |
-| Tooltips (same on both pages) | "Total development points assigned for the selected cycle. Unused points do not roll over." · "Development points used by planned AVs, calculated automatically from their points and active dates." · "Remaining = Allocated - Consumed points for the cycle. Negative values indicate overspend." | card said "for the cycle" | Figma's, word for word (#350) |
+| Tooltips (same on both pages) | Allocated: "…assigned for the selected cycle…"; Consumed: "…calculated automatically from their points and active dates."; Remaining: "…Consumed points for the cycle…" | "quarter" in Allocated and Remaining (DS #350); Consumed as Figma |
+
+### Figma wording fixes
+Each says "cycle" but means the budget's quarter. None of the budget tooltips means a planning cycle.
+
+| Figma | Where | Figma says | Should say |
+|---|---|---|---|
+| Domain Budget Edit, table `701:67744` (tooltips `701:67769`) | Allocated Points ⓘ | "Total development points assigned for the selected cycle. Unused points do not roll over." | "…for the selected quarter…" |
+| Domain Budget Edit, table | Remaining ⓘ | "Remaining = Allocated - Consumed points for the cycle. Negative values indicate overspend." | "…points for the quarter…" |
+| Domain Budget Dashboard View, card `696:55584` | Allocated ⓘ | as the table's | "…for the selected quarter…" |
+| Domain Budget Dashboard View, card | Remaining ⓘ | as the table's | "…points for the quarter…" |
 
 The red bar (red-500 on white) is 3.09:1 in light and 2.17:1 in dark: it clears 3:1 in light only. The words carry the figure, so the bar isn't the only signal.
 
