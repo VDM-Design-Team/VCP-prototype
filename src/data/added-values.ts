@@ -9,6 +9,7 @@ import type {
   StatusHistoryEntry,
 } from "@vdm-design-team/vcp-design-system";
 import { CYCLES, TODAY } from "./gantt";
+import { PLANNING_AVS } from "./planning-avs";
 
 /* Sample Added Values for the AV pages and the lists that lead to them.
    No real people or work. "Today" is the Gantt chart's: 5 November 2026. */
@@ -149,7 +150,7 @@ export const CYCLE_OPTIONS = CYCLES.map((c) => ({ value: c.id, code: c.short ?? 
 
 const text = (s: string) => [{ type: "text" as const, text: s }];
 
-export const ADDED_VALUES: AddedValue[] = [
+const SAMPLE_AVS: AddedValue[] = [
   /* Eve's own: a draft she started and a Pending AV she submitted (AV · 03, AV · 04). */
   {
     id: "vcp-1199",
@@ -507,3 +508,6 @@ export const ADDED_VALUES: AddedValue[] = [
     updatedAt: "2026-10-05T10:00:00Z",
   },
 ];
+
+/** The sample AVs, then the rest of the team's planned work (the Gantt Chart's bars). */
+export const ADDED_VALUES: AddedValue[] = [...SAMPLE_AVS, ...PLANNING_AVS];
