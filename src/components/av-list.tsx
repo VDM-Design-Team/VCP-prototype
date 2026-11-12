@@ -12,6 +12,7 @@ import {
   type DataTableSort,
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "./screen";
+import { BulkActions } from "./bulk-actions";
 import { useAddedValues } from "./av-store";
 import { TODAY } from "@/data/gantt";
 import { stageLabel, updatedLabel, type AddedValue } from "@/data/added-values";
@@ -57,6 +58,7 @@ export function AVListScreen({
   include,
   empty,
   emptyAction,
+  bulk,
 }: {
   active: string;
   title: string;
@@ -65,12 +67,15 @@ export function AVListScreen({
   empty: { title: string; description: string };
   /** Under the empty state when there's nothing yet (not when filters hide everything). */
   emptyAction?: React.ReactNode;
+  /** Row checkboxes and the bulk bar (AV · 09). */
+  bulk?: boolean;
 }) {
   const router = useRouter();
   const { avs } = useAddedValues();
   const [search, setSearch] = React.useState("");
   const [statuses, setStatuses] = React.useState<string[]>([]);
   const [sort, setSort] = React.useState<DataTableSort>({ key: "lastUpdated", direction: "desc" });
+  const [selected, setSelected] = React.useState<string[]>([]);
 
   const mine = avs.filter(include);
   const statusOptions = [...new Set(mine.map(stageLabel))];
@@ -103,6 +108,7 @@ export function AVListScreen({
             onSortChange={setSort}
             onOpen={(row) => router.push(`/added-values/${row.id}`)}
             caption={title}
+            {...(bulk ? { selectable: true, selected, onSelectedChange: setSelected } : {})}
             empty={
               <EmptyState
                 headingLevel={2}
@@ -114,6 +120,8 @@ export function AVListScreen({
             }
           />
         </div>
+        {/* Mounted while the list is, so its failure summary outlives the cleared selection. */}
+        {bulk && <BulkActions selected={avs.filter((av) => selected.includes(av.id))} onClear={() => setSelected([])} />}
       </div>
     </Screen>
   );
