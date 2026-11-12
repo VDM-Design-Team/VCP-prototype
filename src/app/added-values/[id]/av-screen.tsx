@@ -162,9 +162,8 @@ export function AVScreen({ id }: { id: string }) {
               <DetailCardMenu
                 role={admin ? "admin" : "user"}
                 status={av.status}
-                onEdit={() =>
-                  toast({ tone: "info", title: "Editing is its own flow", description: "AV · 04 Edit an AV isn't in the prototype yet." })
-                }
+                /* Decided 9 Nov 2026: the same edit page at every status (AV · 04). */
+                onEdit={() => router.push(`/added-values/${av.id}/edit`)}
                 onDelete={() => setDialog("delete")}
                 onMoveToBacklog={() => {
                   moveTo(av.id, "Backlog");
@@ -251,7 +250,7 @@ export function AVScreen({ id }: { id: string }) {
               status: stageLabel(av),
               urgency: av.urgency,
               type: av.type,
-              projects: [av.project],
+              projects: av.project ? [av.project] : undefined,
               category: av.category,
               tags: av.tags,
               capacityPoints: av.capacityPoints,

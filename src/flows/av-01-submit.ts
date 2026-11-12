@@ -1,5 +1,5 @@
 import type { DetailCardValue, SearchSelectOption } from "@vdm-design-team/vcp-design-system";
-import { VIEWER } from "@/data/added-values";
+import { VIEWER, type AVDomain } from "@/data/added-values";
 import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
 
 /**
@@ -27,10 +27,18 @@ export interface SubmitDraft {
  */
 export const GLOBAL_TAGS = ["Performance", "Accessibility", "UX debt"] as const;
 export const DOMAIN_TAGS = ["Development", "Frontend", "Backend"] as const;
-export const TAG_OPTIONS: SearchSelectOption[] = [
+/** Each domain's own tags (placeholders, like the rest). */
+export const DOMAIN_TAG_SETS: Record<AVDomain, readonly string[]> = {
+  development: DOMAIN_TAGS,
+  design: ["Design", "Visual design", "UX research"],
+};
+export const DOMAIN_NAMES: Record<AVDomain, string> = { development: "Development", design: "Design" };
+/** The tags an AV of `domain` can take: the global ones and its domain's. */
+export const tagOptions = (domain: AVDomain): SearchSelectOption[] => [
   ...GLOBAL_TAGS.map((t) => ({ value: t, label: t, group: "Global" })),
-  ...DOMAIN_TAGS.map((t) => ({ value: t, label: t, group: "Development" })),
+  ...DOMAIN_TAG_SETS[domain].map((t) => ({ value: t, label: t, group: DOMAIN_NAMES[domain] })),
 ];
+export const TAG_OPTIONS = tagOptions("development");
 
 /**
  * Who can be picked, and when they're away. `unavailable` blocks Submit when it
