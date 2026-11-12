@@ -19,11 +19,14 @@ import {
   useToast,
   type DetailCardField,
   type DetailCardValue,
+  ConfirmDeleteModal,
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { useAddedValues } from "@/components/av-store";
 import { useScenario, useScenarioSetup } from "@/components/scenario";
 import { TODAY } from "@/data/gantt";
+import { useShellState } from "@/components/shell-state";
+import { useNotifications } from "@/components/notification-store";
 import { CYCLE_OPTIONS, DOMAINS, VIEWER, stageLabel, type AddedValue, type AVDomain, type Duplicate } from "@/data/added-values";
 import {
   availabilityClash,
@@ -206,12 +209,37 @@ export function AVForm({ editing }: { editing?: AddedValue }) {
 function Form({ editing }: { editing?: AddedValue }) {
   const router = useRouter();
   const { toast, dismissAll } = useToast();
-  const { create, update, moveTo } = useAddedValues();
+  const { create, update, moveTo, remove } = useAddedValues();
   const setup = useScenarioSetup<SubmitDraft>([SUBMIT_FLOW.id, DRAFT_FLOW.id]);
   const [initial] = React.useState<SubmitDraft>(() => structuredClone(editing ? fromAV(editing) : (setup ?? EMPTY_DRAFT)));
   const [draft, setDraft] = React.useState<SubmitDraft>(() => structuredClone(initial));
   /* AV · 04, decided 9 Nov 2026: the back arrow asks before dropping unsaved edits. */
   const [askLeave, setAskLeave] = React.useState(false);
+  /* AV · 02 Discard (Figma 1026:166776): the confirm before an AV is removed for good. */
+  const [askDiscard, setAskDiscard] = React.useState(false);
+  const { role } = useShellState();
+  const { markDiscarded } = useNotifications();
+  /* Figma: Discard is there while the AV is a Draft or Pending, and on a new one not yet saved.
+     Decided 10 Nov 2026: only for whoever raised it and the domain's admins. */
+  const canDiscard =
+    !editing || ((editing.status === "Draft" || editing.status === "Pending") && (editing.initiator === VIEWER.name || role === "admin"));
+  const discard = () => {
+    setAskDiscard(false);
+    if (editing) {
+      remove(editing.id);
+      /* Decided 10 Nov 2026: whoever was told of it keeps the row, which now says it was discarded and opens nothing. */
+      markDiscarded(editing.id, editing.title, "You");
+    }
+    dismissAll();
+    /* Figma: with an ID the toast names it; a new AV has none yet. */
+    toast({
+      tone: "success",
+      title: "Deleted!",
+      description: editing ? `Added Value “${editing.ref}” has been discarded successfully.` : "Added Value has been discarded successfully.",
+    });
+    /* Figma goes to My Values, which isn't built yet: the Dashboard, where Submit goes (AV · 01). */
+    router.push("/");
+  };
   /* Errors show from the first Submit (or Save as draft) on, and each clears as
      its field is fixed. Which one was pressed last decides which checks show. */
   const [attempted, setAttempted] = React.useState<"submit" | "draft">();
@@ -555,15 +583,9 @@ function Form({ editing }: { editing?: AddedValue }) {
             onRemoveLink={(_section, id) => setLinks((list) => list.filter((l) => l.id !== id))}
           />
           <div data-flow-step="actions" className="flex justify-end gap-3">
-            {/* Figma: a draft's edit page also has Discard, in red text. The DS has
-                no red text button yet; Discard is AV · 02, not drawn yet. */}
-            {editing?.status === "Draft" && (
-              <Button
-                variant="tertiary"
-                onClick={() =>
-                  toast({ tone: "info", title: "Discard is its own flow", description: "AV · 02 Discard isn't in the prototype yet." })
-                }
-              >
+            {/* AV · 02: Discard, in red text (DS critical-tertiary), while the AV is a Draft or Pending. */}
+            {canDiscard && (
+              <Button variant="critical-tertiary" onClick={() => setAskDiscard(true)}>
                 Discard
               </Button>
             )}
@@ -574,6 +596,17 @@ function Form({ editing }: { editing?: AddedValue }) {
           </div>
         </div>
       </div>
+      {/* Figma: "the same modal used to delete AVs in the AV table" (1026:169657), with the discard's words. */}
+      <ConfirmDeleteModal
+        open={askDiscard}
+        onClose={() => setAskDiscard(false)}
+        onConfirm={discard}
+        title="Are you sure you want to discard this Added Value?"
+        description="This action cannot be undone. The item will be permanently removed."
+        confirmLabel="Confirm"
+        itemLabel="Added Value"
+        itemName={editing ? `${editing.ref}: ${editing.title}` : draft.title || "Untitled Added Value"}
+      />
       {editing && (
         <Modal
           open={askLeave}

@@ -39,7 +39,7 @@ A new Submit replaces the last Submit's toasts instead of stacking more.
 
 ## Completion or exit
 - **Done:** the AV is Pending, and the user is back on the Dashboard.
-- **Leave early:** the back arrow; **Save as Draft** (AV · 03, its own flow and scenarios) keeps it a Draft on Drafts; **Discard** (AV · 02) is a separate flow, not in the prototype yet.
+- **Leave early:** the back arrow; **Save as Draft** (AV · 03, its own flow and scenarios) keeps it a Draft on Drafts; **Discard** (AV · 02) throws a new one away, after a confirm.
 
 ## Unresolved questions
 - **Which tags are global, which are a domain's?** Figma names the rule, not the tags. The prototype uses placeholders: Performance, Accessibility and UX debt as global; Development, Frontend and Backend as the Development domain's.

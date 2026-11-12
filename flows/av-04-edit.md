@@ -17,8 +17,8 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 ## Main steps and decision points
 1. Open the AV, then ⋮ → **Edit**.
 2. Change what's needed. The buttons depend on the status:
-   - **Draft:** Discard · Save as draft · Submit (Figma `1026:166675`).
-   - **Any other status:** Save as draft · Submit (Figma `1043:239669`, Pending).
+   - **Draft and Pending:** Discard · Save as draft · Submit (Figma `1026:166675`; Discard is AV · 02, allowed in Draft and Pending by its flow, `1026:168578`, though the Pending frame `1043:239669` draws none).
+   - **Any other status:** Save as draft · Submit.
 3. **Submit** runs every check AV · 01 runs, plus **Projects** (Figma `1026:166742`):
    - a **Draft** moves to **Pending**: the edit page closes and the **Dashboard** opens with the "VCP-1199 submitted" toast and its Open it (as AV · 01);
    - any other AV keeps its status: the edit page closes and the AV's page opens, with "VCP-1200: changes saved" *(inferred)*.
@@ -32,7 +32,7 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 | Any Submit check fails (empty field, unpaired problem, tag rule, assignee away) | As AV · 01: one "Missing Input" toast per problem and the field errors; the first error is scrolled to and focused | Fix the field; Submit again |
 | No project | "Please select a project tag before submitting" under Projects, and a "Missing Input" toast (Figma `1026:166742`) | Pick a project. *Applies to AV · 01 Submit too* |
 | No Title on Save as draft | As AV · 03 | Type a title |
-| Discard on a draft | An info toast: AV · 02 Discard isn't in the prototype yet | — |
+| Discard on a Draft or Pending AV | AV · 02: the confirm, then the AV is gone | Cancel keeps it |
 
 ## Completion or exit
 - **Done:** the change is saved; a submitted draft is Pending, anything else keeps its status.
@@ -47,6 +47,6 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 - **The sidebar and the browser's back** don't ask about unsaved changes yet; only the page's back arrow does.
 - **"Duplicate to other Domains"** checkboxes sit on Figma's edit pages. That's AV · 08 Initiate to another domain, not built yet.
 - **The page title.** Figma strikes through "Added Value Creation" on its edit pages; the prototype says "Edit VCP-1199".
-- **Design system:** Figma's Discard is red text; `Button` has no such variant, so the prototype uses `tertiary`. Build one in the DS when AV · 02 is approved.
+- **Design system:** Figma's Discard is red text: DS `Button` `critical-tertiary` (built for AV · 02; `danger-tertiary` before 1.0.0).
 - **Projects is now checked on Submit** for new AVs too (AV · 01), since Figma's error says "before submitting".
 - **The tag rule follows the AV's domain:** a Design AV needs a Design tag (placeholders: Design, Visual design, UX research). The sample AVs now carry a global tag, so they pass the rule when edited.

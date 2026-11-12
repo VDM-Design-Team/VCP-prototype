@@ -8,8 +8,6 @@ import { Screen } from "@/components/screen";
 const NOT_DESIGNED_YET: Record<string, string> = {
   "my-values": "My Values",
   "task-log": "Task Log Trail",
-  accounts: "Accounts",
-  domains: "Domains",
   "contact-list": "Contact List",
 };
 

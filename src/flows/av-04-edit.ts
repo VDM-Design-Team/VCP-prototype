@@ -114,7 +114,7 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
     steps: [
       { text: "VCP-1200 is Eve's, Pending: it waits for an admin.", target: "step:av-menu" },
       openEdit("vcp-1200"),
-      onEditPage("Past Draft, the edit page has Save as draft and Submit, and no Discard (Figma 1043:239669)."),
+      onEditPage("Pending: Discard, Save as draft and Submit. Figma's Pending frame (1043:239669) draws no Discard, but its Discard flow allows it in Draft and Pending (1026:168578), and AV · 02 follows the flow."),
       onEditPage("Change something: add a second acceptance criterion.", "step:deliverables"),
       {
         text: "Both buttons save the change, and it stays Pending. Which one?",
