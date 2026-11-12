@@ -10,7 +10,7 @@
 Change an Added Value: finish a saved draft and submit it, or correct one already submitted.
 
 ## Actor, entry points and starting conditions
-- The AV's initiator. An admin sees Edit in the same menu.
+- The AV's initiator, any of them when it has several *(decided 12 Nov 2026)*. An admin sees Edit in the same menu.
 - Starts from **Edit** in the ⋮ menu on the AV's page (`DetailCardMenu`). It opens **Edit VCP-1199** (`/added-values/<id>/edit`): the creation form, filled in from the AV, with its Status History under the description.
 - **The same page at every status** *(decided 9 Nov 2026)*. Figma draws it for a Draft and a Pending AV; the prototype reuses it for the rest.
 

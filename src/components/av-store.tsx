@@ -24,10 +24,14 @@ interface AVStore {
   editComment: (id: string, commentId: string, body: CommentData["body"]) => void;
   deleteComment: (id: string, commentId: string) => void;
   remove: (id: string) => void;
-  /** Add a new AV (created in the prototype) under the next free reference, and return it. */
-  create: (av: Omit<AddedValue, "id" | "ref">) => AddedValue;
-  /** Several at once (a multipart AV's parts), each under its own free reference, in order. */
-  createMany: (avs: Omit<AddedValue, "id" | "ref">[]) => AddedValue[];
+  /**
+   * Add a new AV (created in the prototype) under the next free reference, and return it. With no
+   * reference left (NEW_AV_IDS, each with a page built ahead) it creates nothing and returns undefined:
+   * say so with `NO_FREE_REFERENCE`.
+   */
+  create: (av: Omit<AddedValue, "id" | "ref">) => AddedValue | undefined;
+  /** Several at once (a multipart AV's parts), each under its own free reference, in order. All or none, as `create`. */
+  createMany: (avs: Omit<AddedValue, "id" | "ref">[]) => AddedValue[] | undefined;
   /**
    * Back to the sample data: what starting a scenario does, so nothing carries
    * over. A scenario's own AVs replace the sample ones with the same id, or are added.
@@ -36,6 +40,13 @@ interface AVStore {
 }
 
 const AVStoreContext = React.createContext<AVStore | null>(null);
+
+/** The toast when `create` or `createMany` found no free reference. */
+export const NO_FREE_REFERENCE = {
+  tone: "critical",
+  title: "No more new Added Values in this session",
+  description: `The prototype keeps a page for ${NEW_AV_IDS.length} new Added Values. Reload it to start again from the sample data.`,
+} as const;
 
 /* One comment (or reply) changed, wherever it sits in the tree. */
 function mapComment(comments: readonly CommentData[], id: string, change: (c: CommentData) => CommentData): CommentData[] {
@@ -133,18 +144,19 @@ export function AVStoreProvider({ children }: { children: React.ReactNode }) {
       deleteComment: (id, commentId) =>
         setAvs((list) => list.map((av) => (av.id === id ? { ...av, comments: dropComment(av.comments, commentId) } : av))),
       remove: (id) => setAvs((list) => list.filter((av) => av.id !== id)),
+      /* Only references kept free in NEW_AV_IDS have a page in the static export: one made up past
+         them would open a 404, so the store creates nothing instead. */
       createMany: (list) => {
         const taken = new Set(avs.map((av) => av.id));
-        const created = list.map((fields) => {
-          const id = NEW_AV_IDS.find((free) => !taken.has(free)) ?? `vcp-${1211 + taken.size}`;
-          taken.add(id);
-          return { ...fields, id, ref: id.toUpperCase() } as AddedValue;
-        });
+        const free = NEW_AV_IDS.filter((id) => !taken.has(id));
+        if (free.length < list.length) return undefined;
+        const created = list.map((fields, i) => ({ ...fields, id: free[i], ref: free[i].toUpperCase() }) as AddedValue);
         setAvs((current) => [...created, ...current]);
         return created;
       },
       create: (fields) => {
-        const id = NEW_AV_IDS.find((free) => !avs.some((av) => av.id === free)) ?? `vcp-${1211 + avs.length}`;
+        const id = NEW_AV_IDS.find((free) => !avs.some((av) => av.id === free));
+        if (!id) return undefined;
         const created: AddedValue = { ...fields, id, ref: id.toUpperCase() };
         setAvs((list) => [created, ...list]);
         return created;

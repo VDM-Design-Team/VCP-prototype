@@ -1,6 +1,6 @@
 import { formatDate, formatDateRange, type ChartSeries, type CapacitySegment, type Quarter } from "@vdm-design-team/vcp-design-system";
 import type { AddedValue } from "./added-values";
-import { VIEWER } from "./added-values";
+import { VIEWER, isInitiator } from "./added-values";
 import { CYCLES, PEOPLE, TODAY } from "./gantt";
 import { holidaysFor, publicDays, type Holiday } from "./holidays";
 import { capacityOf, inCycle, pointsOf } from "./planning";
@@ -261,7 +261,7 @@ export function valueCards(avs: readonly AddedValue[], domain: string, whose: Wh
   const team = teams.find((t) => t.people.includes(VIEWER.name));
   const mine = avs.filter((av) => {
     if (av.domain !== domain) return false;
-    if (whose === "Initiated") return av.initiator === VIEWER.name;
+    if (whose === "Initiated") return isInitiator(av, VIEWER.name);
     if (whose === "Assigned") return av.assignees.some((a) => a.name === VIEWER.name);
     if (whose === "Team") return av.assignees.some((a) => team?.people.includes(a.name));
     return true;
