@@ -3,11 +3,13 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { AppShell, Sidebar, TopBar } from "@vdm-design-team/vcp-design-system";
+import { AppShell, NotificationPopover, Sidebar, TopBar } from "@vdm-design-team/vcp-design-system";
 import { useShellState } from "./shell-state";
 import { CreateAVButton } from "./create-av-button";
 import { useScenario } from "./scenario";
 import { railFor } from "./roles";
+import { useNotifications } from "./notification-store";
+import { NotificationRow } from "./notification-rows";
 
 /** The rail reports a row's key — `drafts`, or a sub-row's `planning/gantt-chart` —
     and every key is a route of the same name, except Dashboard. */
@@ -22,6 +24,50 @@ const useMounted = () =>
   );
 
 /**
+ * Activity · 02: the bell opens the latest notifications (DS NotificationPopover in TopBar's
+ * `notificationPopover`, DS #342). All / Mentions and Unread only filter here; Mark all as read is in
+ * its menu; a row opens its AV, and the footer link the inbox, both without leaving the app.
+ */
+function Bell() {
+  const router = useRouter();
+  const { notifications, unread, markAllRead } = useNotifications();
+  const [open, setOpen] = React.useState(false);
+  const [filter, setFilter] = React.useState<"all" | "mentions">("all");
+  const [unreadOnly, setUnreadOnly] = React.useState(false);
+  const rows = notifications
+    .filter((n) => filter === "all" || n.kind === "mention")
+    .filter((n) => !unreadOnly || n.unread);
+  /* The footer is a real link; a plain click stays in the app, so the prototype keeps its state. */
+  const inApp = (e: React.MouseEvent) => {
+    const a = (e.target as Element).closest("a");
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    e.preventDefault();
+    setOpen(false);
+    router.push(a.getAttribute("href")!);
+  };
+  return (
+    <span onClick={inApp} data-flow-step="bell">
+      <NotificationPopover
+        count={unread}
+        open={open}
+        onOpenChange={setOpen}
+        filter={filter}
+        onFilterChange={setFilter}
+        unreadOnly={unreadOnly}
+        onUnreadOnlyChange={setUnreadOnly}
+        onMarkAllRead={markAllRead}
+        inboxHref="/notifications"
+        emptyLabel={unreadOnly ? "No unread notifications" : "No notifications"}
+      >
+        {rows.map((n) => (
+          <NotificationRow key={n.id} n={n} withComment onOpened={() => setOpen(false)} />
+        ))}
+      </NotificationPopover>
+    </span>
+  );
+}
+
+/**
  * Every screen sits in this: VCP's AppShell with the rail, the app bar and the
  * screen's own title band. `active` is the rail row this screen belongs to —
  * a sub-row's key (`planning/gantt-chart`) for a screen under Planning or Archive.
@@ -31,10 +77,13 @@ export function Screen({
   active,
   header,
   children,
+  rail = true,
 }: {
   active: string;
   header?: React.ReactNode;
   children: React.ReactNode;
+  /** `false`: no left menu, and the top bar's logo instead of Create Added Value (Figma's inbox, decided 9 Nov 2026). */
+  rail?: boolean;
 }) {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
@@ -45,24 +94,36 @@ export function Screen({
   return (
     <AppShell
       sidebar={
-        <Sidebar
-          userType={railFor(role)}
-          active={active}
-          onNavigate={(key) => router.push(routeFor(key))}
-          collapsed={collapsed}
-          onToggleCollapse={() => setCollapsed(!collapsed)}
-        />
+        rail && (
+          <Sidebar
+            userType={railFor(role)}
+            active={active}
+            onNavigate={(key) => router.push(routeFor(key))}
+            collapsed={collapsed}
+            onToggleCollapse={() => setCollapsed(!collapsed)}
+          />
+        )
       }
       topBar={
-        <TopBar
-          primaryAction={<CreateAVButton />}
-          notifications={3}
-          onNotifications={() => {}}
-          theme={mounted && resolvedTheme === "dark" ? "dark" : "light"}
-          onThemeChange={setTheme}
-          user={{ name: "Eve Kestrel" }}
-          onUserMenu={() => {}}
-        />
+        /* The logo is a real link home; a plain click stays in the app, so the prototype keeps its state. */
+        <div
+          onClick={(e) => {
+            const a = (e.target as Element).closest("a[href='/']");
+            if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+            e.preventDefault();
+            router.push("/");
+          }}
+        >
+          <TopBar
+            primaryAction={rail ? <CreateAVButton /> : undefined}
+            homeHref={rail ? undefined : "/"}
+            notificationPopover={<Bell />}
+            theme={mounted && resolvedTheme === "dark" ? "dark" : "light"}
+            onThemeChange={setTheme}
+            user={{ name: "Eve Kestrel" }}
+            onUserMenu={() => {}}
+          />
+        </div>
       }
       header={header}
     >

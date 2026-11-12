@@ -5,6 +5,7 @@ import { ShellStateProvider } from "@/components/shell-state";
 import { RoleSwitch } from "@/components/role-switch";
 import { AVStoreProvider } from "@/components/av-store";
 import { HolidayStoreProvider } from "@/components/holiday-store";
+import { NotificationStoreProvider } from "@/components/notification-store";
 import { ScenarioBar, ScenarioProvider } from "@/components/scenario";
 import "./globals.css";
 
@@ -23,13 +24,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <ShellStateProvider>
             <AVStoreProvider>
               <HolidayStoreProvider>
-                <ToastProvider>
-                  <ScenarioProvider>
-                    {children}
-                    <RoleSwitch />
-                    <ScenarioBar />
-                  </ScenarioProvider>
-                </ToastProvider>
+                <NotificationStoreProvider>
+                  <ToastProvider>
+                    <ScenarioProvider>
+                      {children}
+                      <RoleSwitch />
+                      <ScenarioBar />
+                    </ScenarioProvider>
+                  </ToastProvider>
+                </NotificationStoreProvider>
               </HolidayStoreProvider>
             </AVStoreProvider>
           </ShellStateProvider>
