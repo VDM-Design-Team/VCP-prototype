@@ -15,9 +15,10 @@ import {
 import { Screen } from "@/components/screen";
 import { useHolidays } from "@/components/holiday-store";
 import { useShellState } from "@/components/shell-state";
-import { CYCLES, PEOPLE } from "@/data/gantt";
+import { CYCLES, PEOPLE, TODAY } from "@/data/gantt";
 import { VIEWER } from "@/data/added-values";
 import { EVERYONE, type Holiday } from "@/data/holidays";
+import { TEAMS } from "@/data/teams";
 
 /* Planning → Holiday Registry (Planning · 03). Figma "VCP Pages - Flows",
    Holiday Registry (3:7732): the table for an admin (3:8484) and a user
@@ -59,22 +60,39 @@ export default function HolidayRegistryScreen() {
   const rows = holidays
     .filter((h) => !filters.type || h.type === filters.type)
     .filter((h) => !filters.period || overlaps(h, filters.period))
-    .filter((h) => !filters.user || h.people.includes(filters.user))
+    /* "all" is the filter's All Users. */
+    .filter((h) => !filters.user || filters.user === "all" || h.people.includes(filters.user))
     .sort((a, b) => a.start.localeCompare(b.start) * (sort.direction === "asc" ? 1 : -1))
     .map(toRow);
 
   const current = editing?.id ? holidays.find((h) => h.id === editing.id) : undefined;
-  const draftOf = (h: Holiday): HolidayDraft => ({ name: h.name, recurring: h.recurring, start: h.start, end: h.end, type: h.type });
+  /* The dialog's Applies to holds teams for a Team holiday and people for an Individual one; a Public one has none. */
+  const draftOf = (h: Holiday): HolidayDraft => ({
+    name: h.name,
+    recurring: h.recurring,
+    start: h.start,
+    end: h.end,
+    type: h.type,
+    appliesTo: h.type === "team" ? [...(h.teams ?? [])] : h.type === "individual" ? [...h.people] : [],
+    allDay: h.allDay,
+    ...(!h.allDay && { from: h.from, to: h.to }),
+  });
 
-  const submit = (d: HolidayDraft) => {
-    /* Who it covers: Figma's dialog has no field for it, so Public and Team cover everyone, and an
-       edit keeps whom it covered; a new Individual entry covers no one yet (an open question). */
-    const people = d.type === "individual" ? (current?.type === "individual" ? current.people : []) : EVERYONE;
+  const submit = ({ appliesTo, ...d }: HolidayDraft) => {
+    /* Who it covers (decided 9 Nov 2026): a Public holiday everyone, a Team one its teams' members, an Individual one the people picked. */
+    const people =
+      d.type === "public"
+        ? EVERYONE
+        : d.type === "team"
+          ? [...new Set(TEAMS.filter((t) => appliesTo.includes(t.id)).flatMap((t) => t.people))]
+          : appliesTo;
+    /* An all-day holiday keeps no times, so an edit back to All Day drops them. */
+    const entry = { ...d, from: d.from, to: d.to, people, teams: d.type === "team" ? appliesTo : undefined };
     if (current) {
-      update(current.id, { ...d, people });
+      update(current.id, entry);
       toast({ tone: "success", title: "Holiday saved", description: d.name });
     } else {
-      add({ ...d, people, allDay: true, addedBy: VIEWER.name, source: "manual" });
+      add({ ...entry, addedBy: VIEWER.name, source: "manual" });
       toast({ tone: "success", title: "Holiday added", description: d.name });
     }
     setEditing(null);
@@ -100,6 +118,8 @@ export default function HolidayRegistryScreen() {
           onFiltersChange={setFilters}
           users={PEOPLE.map((p) => ({ value: p.name, label: p.name }))}
           periodPresets={PERIODS}
+          today={TODAY}
+          onResetFilters={() => setFilters(NO_FILTERS)}
           sort={sort}
           onSortChange={setSort}
           admin={admin}
@@ -117,6 +137,8 @@ export default function HolidayRegistryScreen() {
         open={!!editing}
         onClose={() => setEditing(null)}
         holiday={current && draftOf(current)}
+        teams={TEAMS.map((t) => ({ value: t.id, label: t.name }))}
+        people={PEOPLE.map((p) => ({ value: p.name, label: p.name }))}
         onSubmit={submit}
       />
       {removing && (
