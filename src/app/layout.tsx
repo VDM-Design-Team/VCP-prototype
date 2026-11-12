@@ -4,6 +4,7 @@ import { ToastProvider } from "@vdm-design-team/vcp-design-system";
 import { ShellStateProvider } from "@/components/shell-state";
 import { RoleSwitch } from "@/components/role-switch";
 import { AVStoreProvider } from "@/components/av-store";
+import { HolidayStoreProvider } from "@/components/holiday-store";
 import { ScenarioBar, ScenarioProvider } from "@/components/scenario";
 import "./globals.css";
 
@@ -21,13 +22,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <ShellStateProvider>
             <AVStoreProvider>
-              <ToastProvider>
-                <ScenarioProvider>
-                  {children}
-                  <RoleSwitch />
-                  <ScenarioBar />
-                </ScenarioProvider>
-              </ToastProvider>
+              <HolidayStoreProvider>
+                <ToastProvider>
+                  <ScenarioProvider>
+                    {children}
+                    <RoleSwitch />
+                    <ScenarioBar />
+                  </ScenarioProvider>
+                </ToastProvider>
+              </HolidayStoreProvider>
             </AVStoreProvider>
           </ShellStateProvider>
         </ThemeProvider>

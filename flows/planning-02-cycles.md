@@ -43,7 +43,7 @@ Plan Backlog Added Values into cycles, each with dates, an assignee and points, 
 ## The prototype's own rules (Figma doesn't give the numbers)
 - **Capacity numbers:** Cycle 45 has 50 points, Cycle 46 40, every other 60 (decided: a fixed number per cycle; these stand in for what an admin sets).
 - **Estimate:** a point is a working day; plus one working day's buffer (the `PlanningTable` hint: "Due Date = Approx. Start Date + Approx. Working Days + Buffer").
-- **Availability:** busy = another open, scheduled AV in those dates; unavailable = leave. Leave is one sample entry (Noah Foster, 16–20/11/2026) until the Holiday Registry (Planning · 03) owns it.
+- **Availability:** busy = another open, scheduled AV in those dates, or a partial day off; unavailable = all-day leave or a holiday, from the Holiday Registry (Planning · 03; Noah Foster is away 16–20/11/2026). Public holidays aren't working days in the estimate.
 - **A drop opens the dialog** when the AV lacks an assignee or points (Figma never says what triggers it).
 - **Dates in a cycle that has ended** count as no dates: the AV gets the dropped-on cycle's estimate.
 - **A toast after a drop**: Figma shows none; without it, a screen-reader user hears nothing when the row moves.
