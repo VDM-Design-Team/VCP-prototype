@@ -47,6 +47,6 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 - **The sidebar and the browser's back** don't ask about unsaved changes yet; only the page's back arrow does.
 - **"Duplicate to other Domains"** checkboxes sit on Figma's edit pages. That's AV · 08 Initiate to another domain, not built yet.
 - **The page title.** Figma strikes through "Added Value Creation" on its edit pages; the prototype says "Edit VCP-1199".
-- **Design system:** Figma's Discard is red text: DS `Button` `danger-tertiary` (#365, built for AV · 02).
+- **Design system:** Figma's Discard is red text: DS `Button` `critical-tertiary` (built for AV · 02; `danger-tertiary` before 1.0.0).
 - **Projects is now checked on Submit** for new AVs too (AV · 01), since Figma's error says "before submitting".
 - **The tag rule follows the AV's domain:** a Design AV needs a Design tag (placeholders: Design, Visual design, UX research). The sample AVs now carry a global tag, so they pass the rule when edited.
