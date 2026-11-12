@@ -35,7 +35,7 @@ export function ganttTasks(avs: readonly AddedValue[]): GanttTask[] {
           title: av.title,
           status: ganttStatus(av),
           statusLabel: stageLabel(av),
-          initiator: av.initiator,
+          initiator: av.initiators.join(", "),
           points: a.points ?? 0,
           start: av.startDate!,
           end: av.dueDate!,

@@ -15,7 +15,7 @@ import { Screen } from "./screen";
 import { BulkActions } from "./bulk-actions";
 import { useAddedValues } from "./av-store";
 import { PEOPLE, TODAY } from "@/data/gantt";
-import { stageLabel, updatedLabel, type AddedValue } from "@/data/added-values";
+import { isInitiator, stageLabel, updatedLabel, type AddedValue } from "@/data/added-values";
 
 const DAY = 86_400_000;
 const dayOf = (iso: string) => Math.floor(Date.parse(`${iso}T00:00:00Z`) / DAY);
@@ -38,14 +38,14 @@ function multipartOf(av: AddedValue, all: readonly AddedValue[]): AVTableRow["mu
  */
 const homeDomain = (name: string) => (PEOPLE.some((p) => p.name === name) ? "Development" : "Design");
 
-/** Members, as Figma's Manage table lists them: the initiator first, then the assignees; someone who is both says so. */
+/** Members, as Figma's Manage table lists them: the initiators first, then the assignees; someone who is both says so. */
 function membersOf(av: AddedValue): NonNullable<AVTableRow["members"]> {
   const assignees = av.assignees.map((a) => a.name);
-  const people = [av.initiator, ...assignees.filter((n) => n !== av.initiator)];
+  const people = [...av.initiators, ...assignees.filter((n) => !isInitiator(av, n))];
   return people.map((name) => ({
     name,
     domain: homeDomain(name),
-    role: name === av.initiator ? (assignees.includes(name) ? "Initiator, Assignee" : "Initiator") : "Assignee",
+    role: isInitiator(av, name) ? (assignees.includes(name) ? "Initiator, Assignee" : "Initiator") : "Assignee",
   }));
 }
 
@@ -164,7 +164,7 @@ export function AVListScreen({
     /* Date (decided 10 Nov 2026): the Added Values that were live during the period picked. */
     .filter((av) => !period.start || liveDuring(av, period.start, period.end ?? period.start))
     .filter((av) => !assignee || (assignee === UNASSIGNED ? !av.assignees.length : av.assignees.some((a) => a.name === assignee)))
-    .filter((av) => !initiator || av.initiator === initiator)
+    .filter((av) => !initiator || isInitiator(av, initiator))
     .sort((a, b) => compare[sort.key](a, b) * (sort.direction === "asc" ? 1 : -1));
   const pageCount = Math.max(Math.ceil(all.length / pageSize), 1);
   const shownPage = Math.min(page, pageCount);
@@ -206,7 +206,7 @@ export function AVListScreen({
               ]),
           ...(omit.includes("initiator")
             ? []
-            : [{ label: "Initiator", placeholder: "Select User", options: people((av) => [av.initiator]), value: initiator, onChange: filter(setInitiator) }]),
+            : [{ label: "Initiator", placeholder: "Select User", options: people((av) => av.initiators), value: initiator, onChange: filter(setInitiator) }]),
         ],
       }}
       onReset={() => {

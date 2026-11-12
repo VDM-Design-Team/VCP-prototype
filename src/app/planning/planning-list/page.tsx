@@ -81,7 +81,8 @@ export default function PlanningListScreen() {
       title: av.title,
       urgency: av.urgency,
       type: av.type,
-      initiator: { name: av.initiator },
+      /* The table has one Initiator column: the first of them. */
+      initiator: { name: av.initiators[0] },
       ...(first && {
         assignee: {
           name: first.name,

@@ -1,5 +1,5 @@
 import type { InCaseYouMissedItItem } from "@vdm-design-team/vcp-design-system";
-import { VIEWER, daysOverdue, type AddedValue } from "./added-values";
+import { VIEWER, daysOverdue, isInitiator, type AddedValue } from "./added-values";
 import { TODAY } from "./gantt";
 
 /* Activity · 03: what "In Case You Missed it" brings back. Figma draws the four card types, not which AVs
@@ -27,10 +27,10 @@ const ago = (iso: string) => {
 };
 
 export function missedFor(avs: readonly AddedValue[], admin: boolean): InCaseYouMissedItItem[] {
-  const mine = (av: AddedValue) => av.initiator === VIEWER.name || av.assignees.some((a) => a.name === VIEWER.name);
+  const mine = (av: AddedValue) => isInitiator(av, VIEWER.name) || av.assignees.some((a) => a.name === VIEWER.name);
   const items = avs.flatMap((av): InCaseYouMissedItItem[] => {
     if (!admin && !mine(av)) return [];
-    const base = { id: av.id, title: av.title, user: { name: av.initiator }, created: ago(av.dateInitiated) };
+    const base = { id: av.id, title: av.title, user: { name: av.initiators[0] }, created: ago(av.dateInitiated) };
     if (UNDER_WAY.has(av.status) && av.dueDate) {
       const late = daysOverdue(av);
       if (late > 0) return [{ ...base, type: "overdue", days: late }];
@@ -38,7 +38,7 @@ export function missedFor(avs: readonly AddedValue[], admin: boolean): InCaseYou
       if (left <= DUE_SOON_DAYS) return [{ ...base, type: "due-soon", days: left }];
       return [];
     }
-    if (av.status === "Review" && (admin || av.initiator === VIEWER.name))
+    if (av.status === "Review" && (admin || isInitiator(av, VIEWER.name)))
       return [{ ...base, type: "awaiting-review", days: daysBetween(av.updatedAt, TODAY) }];
     if (av.status === "Pending" && admin) return [{ ...base, type: "pending", days: daysBetween(av.dateInitiated, TODAY) }];
     return [];

@@ -36,7 +36,7 @@ import { useShellState } from "@/components/shell-state";
 import { MEMBERS, forViewer } from "@/components/comments";
 import { NO_FREE_REFERENCE, useAddedValues } from "@/components/av-store";
 import { TODAY } from "@/data/gantt";
-import { CHAINS, CYCLE_OPTIONS, VIEWER, daysOverdue, stageLabel, type AddedValue } from "@/data/added-values";
+import { CHAINS, CYCLE_OPTIONS, VIEWER, anyOf, daysOverdue, isInitiator, stageLabel, type AddedValue } from "@/data/added-values";
 
 type Dialog = "accept" | "reject" | "handoff" | "review" | "delete" | "backlog" | "add-part" | "rename-part" | null;
 
@@ -54,7 +54,7 @@ const ddmmyyyy = (iso: string) => iso.split("-").reverse().join("-");
 function headerRole(av: AddedValue, admin: boolean): AVProgressionRole | undefined {
   if (admin) return "admin";
   const assignee = av.assignees.some((a) => a.name === VIEWER.name);
-  const initiator = av.initiator === VIEWER.name;
+  const initiator = isInitiator(av, VIEWER.name);
   if (assignee && initiator) return "assignee-initiator";
   if (assignee) return "assignee";
   if (initiator) return "initiator";
@@ -279,7 +279,7 @@ export function AVScreen({ id }: { id: string }) {
                     ...(p.step ? { customStatus: stageLabel(p) } : { status: p.status }),
                   }))}
                 onOpenPart={(part) => router.push(`/added-values/${part.id}`)}
-                {...(admin || av.initiator === VIEWER.name
+                {...(admin || isInitiator(av, VIEWER.name)
                   ? {
                       onEditPartTitle: (part: { id: string | number }) => {
                         setRenaming(String(part.id));
@@ -322,7 +322,7 @@ export function AVScreen({ id }: { id: string }) {
               type={av.duplicates?.length ? "duplicate" : "viewing"}
               domain={av.domain}
               value={{
-                initiators: [{ name: av.initiator }],
+                initiators: av.initiators.map((name) => ({ name })),
                 /* An empty list would still draw the Assignee heading. Each one's role is under their name. */
                 assignees: av.assignees.length
                   ? av.assignees.map(({ name, points, role }) => ({ name, points, description: role }))
@@ -500,7 +500,7 @@ export function AVScreen({ id }: { id: string }) {
           toast({
             tone: "success",
             title: publish ? `${av.ref} handed off and published` : `${av.ref} handed off`,
-            description: `${av.initiator} reviews it next.`,
+            description: `${anyOf(av.initiators)} reviews it next.`,
           });
         }}
       />

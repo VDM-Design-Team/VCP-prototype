@@ -99,7 +99,8 @@ export interface AddedValue {
   project: string;
   category: string;
   tags: string[];
-  initiator: string;
+  /** Whoever raised it. Decided 12 Nov 2026: an AV can have several, all equal — each has every initiator's rights. */
+  initiators: string[];
   /** `role` is what they do on it, picked in the details card: QA, Design or Assignee. */
   assignees: { name: string; points?: number; role?: string }[];
   startDate?: string;
@@ -145,6 +146,13 @@ export function setChain(domain: string, steps: readonly AVChainStep[]) {
   if (domain in CHAINS) (CHAINS as Record<string, readonly AVChainStep[]>)[domain] = steps;
 }
 
+/** Whether `name` is one of the AV's initiators: each counts wherever "the initiator" does. */
+export const isInitiator = (av: Pick<AddedValue, "initiators">, name: string) => av.initiators.includes(name);
+
+/** Several people as one subject: "Alice Carter", "Alice Carter or Marvin Ode", "Alice Carter, Marvin Ode or Eve Kestrel". */
+export const anyOf = (names: readonly string[]) =>
+  names.length < 2 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} or ${names[names.length - 1]}`;
+
 /** What an AV's status reads as: its chain step's name, or its spine status. */
 export const stageLabel = (av: Pick<AddedValue, "domain" | "status" | "step">) =>
   (av.step && CHAINS[av.domain].find((s) => s.id === av.step)?.label) || av.status;
@@ -184,7 +192,7 @@ const SAMPLE_AVS: AddedValue[] = [
     project: "VCP",
     category: "Improvement",
     tags: ["UX debt", "Frontend"],
-    initiator: VIEWER.name,
+    initiators: [VIEWER.name],
     assignees: [],
     dateInitiated: "2026-11-04",
     problems: ["Everyone sets the same status and assignee filters on the AV table every morning."],
@@ -208,7 +216,7 @@ const SAMPLE_AVS: AddedValue[] = [
     project: "VCP",
     category: "Improvement",
     tags: ["UX debt", "Frontend"],
-    initiator: VIEWER.name,
+    initiators: [VIEWER.name],
     assignees: [],
     dateInitiated: "2026-11-03",
     problems: ["Removing a problem or solution card can't be taken back; people retype whole paragraphs."],
@@ -232,7 +240,7 @@ const SAMPLE_AVS: AddedValue[] = [
     project: "VCP",
     category: "Improvement",
     tags: ["Performance", "Development"],
-    initiator: "Marvin Ode",
+    initiators: ["Marvin Ode"],
     assignees: [],
     dateInitiated: "2026-11-02",
     problems: ["Planners can't see which suppliers are behind until a delivery is already late."],
@@ -264,7 +272,7 @@ const SAMPLE_AVS: AddedValue[] = [
     project: "VCP",
     category: "Improvement",
     tags: ["Accessibility", "Design"],
-    initiator: "Lena Novak",
+    initiators: ["Lena Novak"],
     assignees: [],
     dateInitiated: "2026-11-04",
     problems: ["An empty archive page shows a bare table header, which reads as broken."],
@@ -288,7 +296,7 @@ const SAMPLE_AVS: AddedValue[] = [
     project: "VCP",
     category: "Improvement",
     tags: ["UX debt", "Development"],
-    initiator: "Marvin Ode",
+    initiators: ["Marvin Ode"],
     assignees: [{ name: VIEWER.name, points: 5 }],
     startDate: "2026-11-09",
     dueDate: "2026-11-20",
@@ -321,7 +329,7 @@ const SAMPLE_AVS: AddedValue[] = [
     project: "VCP",
     category: "Feature",
     tags: ["Performance", "Development"],
-    initiator: "Alice Carter",
+    initiators: ["Alice Carter"],
     assignees: [
       { name: VIEWER.name, points: 3 },
       { name: "Jack Morgan", points: 2 },
@@ -358,7 +366,7 @@ const SAMPLE_AVS: AddedValue[] = [
     project: "VCP",
     category: "Feature",
     tags: ["UX debt", "Development"],
-    initiator: "Marvin Ode",
+    initiators: ["Marvin Ode"],
     assignees: [{ name: VIEWER.name, points: 8 }],
     startDate: "2026-10-19",
     dueDate: "2026-11-02",
@@ -442,7 +450,7 @@ const SAMPLE_AVS: AddedValue[] = [
     project: "VCP",
     category: "Improvement",
     tags: ["Accessibility", "Design"],
-    initiator: "Alice Carter",
+    initiators: ["Alice Carter"],
     assignees: [{ name: VIEWER.name, points: 2 }],
     startDate: "2026-11-02",
     dueDate: "2026-11-13",
@@ -470,7 +478,7 @@ const SAMPLE_AVS: AddedValue[] = [
     project: "VCP",
     category: "Feature",
     tags: ["Performance", "Development"],
-    initiator: VIEWER.name,
+    initiators: [VIEWER.name],
     assignees: [{ name: "Jack Morgan", points: 5 }],
     startDate: "2026-10-19",
     dueDate: "2026-11-06",
@@ -500,7 +508,7 @@ const SAMPLE_AVS: AddedValue[] = [
     project: "VCP",
     category: "Feature",
     tags: ["UX debt", "Development"],
-    initiator: "Alice Carter",
+    initiators: ["Alice Carter"],
     assignees: [{ name: VIEWER.name, points: 3 }],
     startDate: "2026-10-14",
     dueDate: "2026-10-23",
@@ -529,7 +537,7 @@ const SAMPLE_AVS: AddedValue[] = [
     project: "VCP",
     category: "Feature",
     tags: ["Performance", "Development"],
-    initiator: "Lena Novak",
+    initiators: ["Lena Novak"],
     assignees: [],
     dateInitiated: "2026-10-15",
     problems: ["Offers are entered one at a time."],
@@ -554,7 +562,7 @@ const SAMPLE_AVS: AddedValue[] = [
     project: "VCP",
     category: "Improvement",
     tags: ["Accessibility", "Design"],
-    initiator: "Noah Foster",
+    initiators: ["Noah Foster"],
     assignees: [],
     dateInitiated: "2026-09-30",
     problems: ["Our emails glare in a dark mail client."],

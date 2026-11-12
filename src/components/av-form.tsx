@@ -31,7 +31,7 @@ import { useScenario, useScenarioSetup } from "@/components/scenario";
 import { TODAY } from "@/data/gantt";
 import { useShellState } from "@/components/shell-state";
 import { useNotifications } from "@/components/notification-store";
-import { CYCLE_OPTIONS, DOMAINS, VIEWER, stageLabel, type AddedValue, type AVDomain, type Duplicate } from "@/data/added-values";
+import { CYCLE_OPTIONS, DOMAINS, VIEWER, isInitiator, stageLabel, type AddedValue, type AVDomain, type Duplicate } from "@/data/added-values";
 import {
   availabilityClash,
   DOMAIN_NAMES,
@@ -166,7 +166,7 @@ function fromAV(av: AddedValue): SubmitDraft {
     deliverables: list(av.deliverables),
     desiredOutcome: av.desiredOutcome,
     details: {
-      initiators: [{ name: av.initiator }],
+      initiators: av.initiators.map((name) => ({ name })),
       assignees: av.assignees.map((a) => ({ name: a.name, description: a.role ?? "Assignee", points: a.points })),
       startDate: av.startDate,
       dueDate: av.dueDate,
@@ -180,6 +180,18 @@ function fromAV(av: AddedValue): SubmitDraft {
     },
   };
 }
+
+/** The initiators the form holds, each once; none falls back to the viewer. */
+const initiatorsOf = (d: SubmitDraft) => {
+  const names = [...new Set((d.details.initiators ?? []).map((p) => p.name))];
+  return names.length ? names : [VIEWER.name];
+};
+
+/** Who sees a draft (its initiators), with the viewer as "you" and first: "Only you can see it…", "Only you and Marvin Ode can see it…". */
+const onlyInitiatorsSee = (names: readonly string[]) => {
+  const who = [...names.filter((n) => n === VIEWER.name).map(() => "you"), ...names.filter((n) => n !== VIEWER.name)];
+  return `Only ${who.length < 2 ? who[0] : `${who.slice(0, -1).join(", ")} and ${who[who.length - 1]}`} can see it until it's submitted.`;
+};
 
 type Link = { id: string; title: string; url: string; domain: "design" | "development" };
 type LinkSection = "links" | "video";
@@ -242,7 +254,7 @@ function Form({ editing }: { editing?: AddedValue }) {
   /* Figma: Discard is there while the AV is a Draft or Pending, and on a new one not yet saved.
      Decided 10 Nov 2026: only for whoever raised it and the domain's admins. */
   const canDiscard =
-    !editing || ((editing.status === "Draft" || editing.status === "Pending") && (editing.initiator === VIEWER.name || role === "admin"));
+    !editing || ((editing.status === "Draft" || editing.status === "Pending") && (isInitiator(editing, VIEWER.name) || role === "admin"));
   const discard = () => {
     setAskDiscard(false);
     if (editing) {
@@ -341,7 +353,8 @@ function Form({ editing }: { editing?: AddedValue }) {
     project: draft.details.projects?.[0] ?? "",
     category: draft.details.category ?? "Improvement",
     tags: [...(draft.details.tags ?? [])],
-    initiator: draft.details.initiators?.[0]?.name ?? VIEWER.name,
+    /* Every initiator, all equal (decided 12 Nov 2026). With none left, whoever saves it is its initiator. */
+    initiators: initiatorsOf(draft),
     assignees: (draft.details.assignees ?? []).map((a) => ({ name: a.name, points: a.points, role: a.description })),
     startDate: draft.details.startDate,
     dueDate: draft.details.dueDate,
@@ -438,7 +451,7 @@ function Form({ editing }: { editing?: AddedValue }) {
       toast({
         tone: "success",
         title: `${av.ref} saved as a draft`,
-        description: "Only you can see it until it's submitted.",
+        description: onlyInitiatorsSee(av.initiators),
         actionLabel: "Open it",
         onAction: () => router.push(`/added-values/${av.id}`),
       });
@@ -449,13 +462,13 @@ function Form({ editing }: { editing?: AddedValue }) {
        changes and the status stays. */
     if (editing.status === "Backlog") {
       moveTo(editing.id, "Draft", { ...content(), remarks: undefined, duplicates: initiated() });
-      return backToAV(editing, `${editing.ref} moved back to Draft`, `It's out of the Backlog. Only you can see it until it's submitted.${initiatedNote}`);
+      return backToAV(editing, `${editing.ref} moved back to Draft`, `It's out of the Backlog. ${onlyInitiatorsSee(initiatorsOf(draft))}${initiatedNote}`);
     }
     update(editing.id, { ...content(), duplicates: initiated() });
     backToAV(
       editing,
       `${editing.ref}: changes saved`,
-      (editing.status === "Draft" ? "It's still a Draft. Only you can see it until it's submitted." : `It stays ${stageLabel(editing)}.`) + initiatedNote,
+      (editing.status === "Draft" ? `It's still a Draft. ${onlyInitiatorsSee(initiatorsOf(draft))}` : `It stays ${stageLabel(editing)}.`) + initiatedNote,
     );
   };
 

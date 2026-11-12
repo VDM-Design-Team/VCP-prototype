@@ -16,7 +16,7 @@ Keep an Added Value that isn't finished, to finish and submit it later.
 ## Main steps and decision points
 1. Fill in whatever is ready. Only the **Title** matters here *(inferred: a draft needs a name to be found on Drafts)*.
 2. Press **Save as draft**. One check runs: is there a Title?
-3. Yes → the AV is saved in **Draft** with the next free reference (VCP-1211), the creation page closes and **Drafts** opens, with a success toast ("VCP-1211 saved as a draft", "Only you can see it until it's submitted.") whose **Open it** shows the draft *(inferred: Figma draws no landing page; Drafts mirrors Submit's "close and go back")*.
+3. Yes → the AV is saved in **Draft** with the next free reference (VCP-1211), the creation page closes and **Drafts** opens, with a success toast ("VCP-1211 saved as a draft", "Only you can see it until it's submitted.", or "Only you and Marvin Ode…" when it has more initiators) whose **Open it** shows the draft *(inferred: Figma draws no landing page; Drafts mirrors Submit's "close and go back")*.
 4. The draft is listed on **Drafts** (its initiator's own drafts only) and opens on its AV page: status Draft, no status buttons, the ⋮ menu with Move to Backlog, Edit and Delete (Figma `1331:26533`). Its Status History has one entry, Initial Creation → Draft.
 
 ## Alternatives, failures and recovery

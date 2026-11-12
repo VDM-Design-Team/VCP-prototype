@@ -12,6 +12,7 @@ Get a new Added Value in front of an admin: from Draft to Pending.
 ## Actor, entry points and starting conditions
 - Any VCP user creating an Added Value (the initiator).
 - Starts from **Create Added Value** in the top bar (any page) or on the empty Drafts page. It opens **Added Value Creation** (`/added-values/new`), with the initiator set to whoever is creating it.
+- **Several initiators, all equal** *(decided 12 Nov 2026)*: the + beside Initiator adds more, and each one counts wherever "the initiator" does (Drafts, Edit, Discard, reviewing a handoff, the Initiator filter). Remove them all and whoever saves it is its initiator.
 
 ## Main steps and decision points
 1. Fill in the **Title**.
