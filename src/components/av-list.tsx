@@ -19,8 +19,6 @@ import { stageLabel, updatedLabel, type AddedValue } from "@/data/added-values";
 
 const DAY = 86_400_000;
 const dayOf = (iso: string) => Math.floor(Date.parse(`${iso}T00:00:00Z`) / DAY);
-const formatDate = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 
 /** A multipart AV's tag (AV · 10, DS #275): the parent's progress, or a part's place and parent. */
 function multipartOf(av: AddedValue, all: readonly AddedValue[]): AVTableRow["multipart"] {
@@ -44,7 +42,7 @@ function toRow(av: AddedValue, all: readonly AddedValue[] = []): AVTableRow {
     attachments: av.files.length,
     comments: av.comments.length,
     due: av.dueDate
-      ? { label: formatDate(av.dueDate), proximity: left! < 0 ? "overdue" : left! <= 3 ? "due-soon" : "default" }
+      ? { date: av.dueDate, proximity: left! < 0 ? "overdue" : left! <= 3 ? "due-soon" : "default" }
       : undefined,
     urgency: av.urgency,
     type: av.type,
