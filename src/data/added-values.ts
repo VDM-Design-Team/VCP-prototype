@@ -96,6 +96,9 @@ export interface AddedValue {
   assignees: { name: string; points?: number }[];
   startDate?: string;
   dueDate?: string;
+  /** Planning · 02: the date was worked out, not set by a person ("(est.)"). */
+  startEstimated?: boolean;
+  dueEstimated?: boolean;
   cycle?: string;
   capacityPoints?: number;
   dateInitiated: string;

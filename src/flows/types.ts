@@ -16,7 +16,7 @@ export type TestingStatus = "Not tested" | "Tested";
  * which part of the screen it's about. `target` finds that part:
  * - `step:<name>`: an element marked `data-flow-step="<name>"` on the screen;
  * - `group:<Label>`: a field group named by its label (DetailCard's "Tags", "Assignee");
- * - `button:<Text>`: a button by its words ("Submit");
+ * - `button:<Text>`: a button by its words ("Submit"), or an icon-only one by its name;
  * - `link:<href>`: a link by where it goes ("/added-values/vcp-1104", a Gantt bar).
  * Without a target, the step is text only.
  */
@@ -45,6 +45,12 @@ export interface ScenarioStep {
    * what the step after describes. Never skipped past.
    */
   action?: boolean;
+  /**
+   * The step asks the user to drag a row (the Planning List) onto a section:
+   * `row` is the AV's reference, `on` the section's title ("Cycle 45").
+   * Next does the drop for them when the row isn't there yet.
+   */
+  drop?: { row: string; on: string };
 }
 
 export interface ScenarioDef<Setup = unknown> {

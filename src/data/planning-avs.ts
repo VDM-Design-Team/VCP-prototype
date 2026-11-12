@@ -86,4 +86,66 @@ function toAV(r: Row): AddedValue {
   };
 }
 
-export const PLANNING_AVS: AddedValue[] = ROWS.map(toAV);
+/* Development's Backlog (Planning · 02): Accepted work that was parked, waiting
+   to be planned into a cycle. Each shows one way a drop on a cycle goes. */
+const backlogAV = (
+  n: number,
+  title: string,
+  problem: string,
+  plan: Partial<Pick<AddedValue, "assignees" | "startDate" | "dueDate" | "capacityPoints">>,
+): AddedValue => ({
+  id: `vcp-${n}`,
+  ref: `VCP-${n}`,
+  title,
+  domain: "development",
+  status: "Backlog",
+  urgency: "Normal",
+  type: "Type 2",
+  project: "VCP",
+  category: "Improvement",
+  tags: ["UX debt", "Development"],
+  initiator: "Alice Carter",
+  assignees: [],
+  ...plan,
+  dateInitiated: "2026-09-14",
+  dateAccepted: "2026-09-21",
+  problems: [problem],
+  solutions: [`${title}.`],
+  deliverables: [`${title} on the VCP pages.`],
+  desiredOutcome: "One less thing to do by hand.",
+  files: [],
+  links: [],
+  remarks: "Parked until there's room in a cycle.",
+  history: [
+    { actor: "Alice Carter", from: "Pending", to: "Accepted", when: "21/09/2026" },
+    { actor: "Alice Carter", from: "Accepted", to: "Backlog", when: "28/09/2026" },
+  ],
+  comments: [],
+  updatedAt: "2026-09-28T09:00:00Z",
+});
+
+const BACKLOG_AVS: AddedValue[] = [
+  /* Has its dates already, in Cycle 45: a drop just adds it there. */
+  backlogAV(1125, "Keyboard shortcuts for the AV table", "Power users reach for the mouse for every row.", {
+    assignees: [{ name: "John Mason Smith", points: 3 }],
+    capacityPoints: 3,
+    startDate: "2026-11-16",
+    dueDate: "2026-11-19",
+  }),
+  /* Assignee and points but no dates: the cycle's estimated dates are filled in. */
+  backlogAV(1126, "Copy link to a comment", "Comments can't be pointed at from Slack.", {
+    assignees: [{ name: "Alice Carter", points: 2 }],
+    capacityPoints: 2,
+  }),
+  /* Dates in Cycle 47, which isn't on the page yet: it appears, with the AV in it. */
+  backlogAV(1127, "Archive search", "Old AVs can't be found once archived.", {
+    assignees: [{ name: "Lena Novak", points: 5 }],
+    capacityPoints: 5,
+    startDate: "2026-12-08",
+    dueDate: "2026-12-15",
+  }),
+  /* No assignee, points or dates: a drop asks for them (Add Required Details). */
+  backlogAV(1128, "Bulk export of comments", "Reviews need the comments in a spreadsheet.", {}),
+];
+
+export const PLANNING_AVS: AddedValue[] = [...ROWS.map(toAV), ...BACKLOG_AVS];
