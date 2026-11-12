@@ -50,7 +50,7 @@ export const HOLIDAY_SCENARIOS: readonly ScenarioDef[] = [
     name: "Add a holiday",
     demonstrates: "Adding an entry, with the dialog's checks.",
     conditions,
-    simulated: "Nothing is saved. A Public holiday covers everyone, a Team one its teams' members, an Individual one the people picked (decided 9 Nov 2026). The teams are sample data.",
+    simulated: "Nothing is saved. A Public holiday covers everyone, a Team one its teams' members, an Individual one the people picked (decided 9 Nov 2026). The teams are the ones an admin sets in Settings.",
     expected: "The three errors (and \"Select who it applies to\" for a Team or Individual holiday), then the new row and a toast.",
     task: "As an admin, add the office's closing day on 30 November.",
   },

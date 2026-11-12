@@ -14,11 +14,11 @@ import {
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { useHolidays } from "@/components/holiday-store";
+import { useSettings } from "@/components/settings-store";
 import { useShellState } from "@/components/shell-state";
 import { CYCLES, PEOPLE, TODAY } from "@/data/gantt";
 import { VIEWER } from "@/data/added-values";
 import { EVERYONE, type Holiday } from "@/data/holidays";
-import { TEAMS } from "@/data/teams";
 
 /* Planning → Holiday Registry (Planning · 03). Figma "VCP Pages - Flows",
    Holiday Registry (3:7732): the table for an admin (3:8484) and a user
@@ -48,6 +48,8 @@ const PERIODS = CYCLES.filter((c) => c.start.startsWith("2026")).map((c) => ({ l
 
 export default function HolidayRegistryScreen() {
   const { holidays, add, update, remove } = useHolidays();
+  /* A Team holiday applies to the teams an admin sets in Settings (Admin · 04). */
+  const { teams } = useSettings();
   const { role } = useShellState();
   const { toast } = useToast();
   const admin = role !== "user";
@@ -84,7 +86,7 @@ export default function HolidayRegistryScreen() {
       d.type === "public"
         ? EVERYONE
         : d.type === "team"
-          ? [...new Set(TEAMS.filter((t) => appliesTo.includes(t.id)).flatMap((t) => t.people))]
+          ? [...new Set(teams.filter((t) => appliesTo.includes(t.id)).flatMap((t) => t.people))]
           : appliesTo;
     /* An all-day holiday keeps no times, so an edit back to All Day drops them. */
     const entry = { ...d, from: d.from, to: d.to, people, teams: d.type === "team" ? appliesTo : undefined };
@@ -137,7 +139,7 @@ export default function HolidayRegistryScreen() {
         open={!!editing}
         onClose={() => setEditing(null)}
         holiday={current && draftOf(current)}
-        teams={TEAMS.map((t) => ({ value: t.id, label: t.name }))}
+        teams={teams.map((t) => ({ value: t.id, label: t.name }))}
         people={PEOPLE.map((p) => ({ value: p.name, label: p.name }))}
         onSubmit={submit}
       />
