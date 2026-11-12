@@ -16,6 +16,7 @@ import { ICYMI_FLOW } from "./activity-03-icymi";
 import { BUDGETS_FLOW } from "./admin-01-budgets";
 import { DASHBOARD_FLOW } from "./admin-02-dashboard";
 import { MANAGE_FLOW } from "./admin-03-manage";
+import { SETTINGS_FLOW } from "./admin-04-settings";
 import type { FlowDef } from "./types";
 
 /* Every VCP flow, in the FigJam Index's order. A flow with no scenarios yet is
@@ -51,7 +52,7 @@ export const FLOWS: readonly FlowDef[] = [
   BUDGETS_FLOW,
   DASHBOARD_FLOW,
   MANAGE_FLOW,
-  planned("Admin", "04", "Users, tags and domains", "Admin, Super Admin"),
+  SETTINGS_FLOW,
 ];
 
 export const AREAS = ["AV", "Planning", "Activity", "Admin"] as const;

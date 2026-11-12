@@ -33,7 +33,7 @@ Keep public holidays, team days off and personal leave in one place, so everyone
 - **Done:** the registry is right, and the Planning List's availability follows it.
 
 ## The prototype's own rules
-- **Who an entry covers:** Public covers everyone; a Team entry covers the members of the teams picked in **Applies to**; an Individual entry covers the people picked. The teams are sample data (Team Platform, Team Finance, Team Warehouse).
+- **Who an entry covers:** Public covers everyone; a Team entry covers the members of the teams picked in **Applies to**; an Individual entry covers the people picked. The teams are the ones an admin sets in Settings (Admin · 04; the samples are Team Platform, Team Finance and Team Warehouse). A team's members are taken when the holiday is saved.
 - **All day or part of it:** the dialog's **All Day** switch; a partial day keeps its From and To.
 - **Availability:** all-day leave or a holiday that covers someone → Unavailable (cannot be assigned); a partial day → Busy (can be). Yearly entries count every year.
 - **Estimates skip public holidays**, as they skip weekends.

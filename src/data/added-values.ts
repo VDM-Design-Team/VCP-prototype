@@ -27,7 +27,8 @@ export const NEW_AV_IDS = Array.from({ length: 20 }, (_, i) => `vcp-${1211 + i}`
 export type AVDomain = "development" | "design";
 
 /* Each domain's own steps after In Progress. A domain names these itself,
-   so they are data here, not design-system vocabulary. */
+   so they are data here, not design-system vocabulary. An admin renames and reorders them in Settings
+   (Admin · 04, decided 10 Nov 2026: it shows on every Added Value in the domain at once); `setChain` is how. */
 export const CHAINS: Record<AVDomain, readonly AVChainStep[]> = {
   development: [
     { id: "for-review", label: "For review" },
@@ -125,6 +126,14 @@ export interface AddedValue {
   /** A part's parent (AV · 10). */
   parent?: string;
   handoff?: Handoff;
+}
+
+/** The steps as shipped, so a scenario can put them back. */
+export const CHAINS_AS_SHIPPED: Record<AVDomain, readonly AVChainStep[]> = { development: [...CHAINS.development], design: [...CHAINS.design] };
+
+/** A domain's steps, renamed or reordered in Settings. Every screen reads `CHAINS` when it draws. */
+export function setChain(domain: string, steps: readonly AVChainStep[]) {
+  if (domain in CHAINS) (CHAINS as Record<string, readonly AVChainStep[]>)[domain] = steps;
 }
 
 /** What an AV's status reads as: its chain step's name, or its spine status. */

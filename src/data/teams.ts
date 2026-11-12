@@ -1,4 +1,5 @@
-/* The planning team's teams: who a Team holiday can apply to (Planning · 03). No real people. */
+/* The teams an admin's Settings start with (Admin · 04): the dashboard's team filter and a Team holiday's
+   Applies to (Planning · 03) read them from the settings store. No real people. */
 export interface Team {
   id: string;
   name: string;

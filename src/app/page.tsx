@@ -30,10 +30,11 @@ import { DOMAINS } from "@/data/added-values";
 import { useBudgets } from "@/components/budget-store";
 import { CURRENT, YEARS, consumedFor, periodOf, quarterKey } from "@/data/budgets";
 import { useHolidays } from "@/components/holiday-store";
+import { useSettings } from "@/components/settings-store";
 import { CYCLES } from "@/data/gantt";
 import { CURRENT_CYCLE } from "@/data/planning";
 import {
-  TEAMS,
+  ALL_PEOPLE,
   WHOSE,
   burndown,
   cycleById,
@@ -43,7 +44,6 @@ import {
   teamCapacity,
   userCapacity,
   valueCards,
-  type TeamId,
   type Whose,
 } from "@/data/dashboard";
 
@@ -89,10 +89,17 @@ export default function DashboardScreen() {
   };
   /* Admin · 02: the Development admin's dashboard (Figma 947:304368), Cycle or Quarter. */
   const [cycleId, setCycleId] = React.useState(CURRENT_CYCLE.id);
-  const [team, setTeam] = React.useState<TeamId>("all");
+  const [team, setTeam] = React.useState("all");
+  /* Teams are the admin's, from Settings (Admin · 04); All Teams is the whole planning team. */
+  const { teams, accounts } = useSettings();
+  /* Each person's cap, from Settings (Admin · 04). */
+  const caps = Object.fromEntries(accounts.map((a) => [a.name, a.capacityPoints]));
+  const teamOptions = [{ value: "all", label: "All Teams" }, ...teams.map((t) => ({ value: t.id, label: t.name }))];
+  const peopleFor = (id: string) => (id === "all" ? ALL_PEOPLE : (teams.find((t) => t.id === id)?.people ?? ALL_PEOPLE));
+  const teamName = (id: string) => teamOptions.find((t) => t.value === id)?.label ?? "All Teams";
   /* Figma draws "Assigned" chosen. */
   const [whose, setWhose] = React.useState<Whose>("Assigned");
-  const [perf, setPerf] = React.useState<{ team: TeamId; year: number; quarter: Quarter }>({ team: "all", ...CURRENT });
+  const [perf, setPerf] = React.useState<{ team: string; year: number; quarter: Quarter }>({ team: "all", ...CURRENT });
   const cycleYear = cycleById(cycleId).start.slice(0, 4);
 
   const strip = (
@@ -140,14 +147,14 @@ export default function DashboardScreen() {
     const cards = (
       <div className="pb-6" data-flow-step="value-cards">
         <ValueCards
-          items={valueCards(avs, domainValue, whose)}
+          items={valueCards(avs, domainValue, whose, teams)}
           filter={{ label: "Whose Added Values", value: whose, options: [...WHOSE], onChange: (v) => setWhose(v as Whose) }}
         />
       </div>
     );
-    const summary = cycleSummary(avs, cycleId, team, holidays);
-    const capacity = teamCapacity(avs, cycleId, team);
-    const burn = burndown(avs, cycleId, team, holidays);
+    const summary = cycleSummary(avs, cycleId, peopleFor(team), holidays);
+    const capacity = teamCapacity(avs, cycleId, peopleFor(team));
+    const burn = burndown(avs, cycleId, peopleFor(team), holidays);
     return (
       <Screen
         active="dashboard"
@@ -178,7 +185,7 @@ export default function DashboardScreen() {
                         /* A year's first cycle, or the running one in this year. */
                         onChange: (y) => setCycleId(CURRENT_CYCLE.start.startsWith(y) ? CURRENT_CYCLE.id : CYCLES.find((c) => c.start.startsWith(y))!.id),
                       },
-                      { key: "team", label: "Team", value: team, options: TEAMS.map((t) => ({ value: t.value, label: t.label })), onChange: (v) => setTeam(v as TeamId) },
+                      { key: "team", label: "Team", value: team, options: teamOptions, onChange: setTeam },
                     ]}
                     resetLabel="Reset Filters"
                     onReset={() => {
@@ -193,7 +200,7 @@ export default function DashboardScreen() {
                     /* No file in the prototype: the toast says what the file would hold (decided 10 Nov 2026). */
                     onExport={(key) => {
                       const c = cycleById(cycleId).short;
-                      const who = TEAMS.find((t) => t.value === team)!.label;
+                      const who = teamName(team);
                       toast({
                         tone: "success",
                         title: "Cycle Report exported",
@@ -234,12 +241,12 @@ export default function DashboardScreen() {
               </div>
               <div className="pb-6" data-flow-step="user-capacity">
                 <UserCapacity
-                  members={userCapacity(avs, cycleId, team, holidays)}
+                  members={userCapacity(avs, cycleId, peopleFor(team), holidays, caps)}
                   hint="Each person's points this cycle, their leave from the Holiday Registry, and what's left."
                 />
               </div>
               <div className="pb-6" data-flow-step="sprint-metrics">
-                <SprintMetrics data={sprintMetrics(avs, cycleId, team)} description={`Current: ${cycleById(cycleId).short}`} />
+                <SprintMetrics data={sprintMetrics(avs, cycleId, peopleFor(team))} description={`Current: ${cycleById(cycleId).short}`} />
               </div>
               <div className="pb-6" data-flow-step="burndown">
                 <CycleBurndown
@@ -258,9 +265,9 @@ export default function DashboardScreen() {
               {dev ? (
                 <div className="pb-6" data-flow-step="cycle-performance">
                   <CyclePerformance
-                    data={cyclePerformance(avs, perf.year, perf.quarter, perf.team)}
+                    data={cyclePerformance(avs, perf.year, perf.quarter, peopleFor(perf.team))}
                     filters={[
-                      { key: "team", label: "Show", value: perf.team, options: TEAMS.map((t) => ({ value: t.value, label: t.value === "all" ? "All" : t.label })), onChange: (v) => setPerf((p) => ({ ...p, team: v as TeamId })) },
+                      { key: "team", label: "Show", value: perf.team, options: teamOptions.map((t) => (t.value === "all" ? { ...t, label: "All" } : t)), onChange: (v) => setPerf((p) => ({ ...p, team: v })) },
                       { key: "quarter", label: "Quarter", value: `Q${perf.quarter}`, options: ["Q1", "Q2", "Q3", "Q4"], onChange: (v) => setPerf((p) => ({ ...p, quarter: Number(v.slice(1)) as Quarter })) },
                       { key: "year", label: "Year", value: String(perf.year), options: CYCLE_YEARS, onChange: (v) => setPerf((p) => ({ ...p, year: Number(v) })) },
                     ]}

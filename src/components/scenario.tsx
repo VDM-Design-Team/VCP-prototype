@@ -7,6 +7,7 @@ import { useAddedValues } from "./av-store";
 import { useHolidays } from "./holiday-store";
 import { useNotifications } from "./notification-store";
 import { useBudgets } from "./budget-store";
+import { useSettings } from "./settings-store";
 import { ADMIN_DOMAINS, useShellState } from "./shell-state";
 import { findScenario } from "@/flows/catalogue";
 import type { FlowDef, ScenarioDef, ScenarioStep } from "@/flows/types";
@@ -54,6 +55,7 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
   const { reset: resetHolidays } = useHolidays();
   const { reset: resetNotifications } = useNotifications();
   const { reset: resetBudgets } = useBudgets();
+  const { reset: resetSettings } = useSettings();
   const { setRole, setCollapsed, setDomain, setDashboardView } = useShellState();
   const { dismissAll } = useToast();
   const pathname = usePathname();
@@ -101,6 +103,7 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         resetHolidays();
         resetNotifications();
         resetBudgets();
+        resetSettings();
         dismissAll();
         setRole(found.scenario.role);
         setDomain(found.scenario.domain ?? ADMIN_DOMAINS[0]);
@@ -118,6 +121,7 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         resetHolidays();
         resetNotifications();
         resetBudgets();
+        resetSettings();
         dismissAll();
         setRole("user");
         setDomain(ADMIN_DOMAINS[0]);
@@ -128,7 +132,7 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         setTrail([0]);
       },
     }),
-    [active, view, run, trail, reset, resetHolidays, resetNotifications, resetBudgets, dismissAll, setRole, setCollapsed, setDomain, setDashboardView],
+    [active, view, run, trail, reset, resetHolidays, resetNotifications, resetBudgets, resetSettings, dismissAll, setRole, setCollapsed, setDomain, setDashboardView],
   );
 
   return <ScenarioContext.Provider value={value}>{children}</ScenarioContext.Provider>;
