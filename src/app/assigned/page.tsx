@@ -9,7 +9,7 @@ export default function AssignedScreen() {
     <AVListScreen
       active="assigned"
       title="Assigned"
-      include={(av) => av.assignees.some((a) => a.name === VIEWER.name) && !ARCHIVED.includes(av.status)}
+      include={(av) => av.status !== "Draft" && av.assignees.some((a) => a.name === VIEWER.name) && !ARCHIVED.includes(av.status)}
       empty={{ title: "Nothing assigned to you", description: "Added Values assigned to you show here until they're done." }}
     />
   );

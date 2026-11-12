@@ -32,6 +32,7 @@ import {
   TAG_OPTIONS,
   type SubmitDraft,
 } from "@/flows/av-01-submit";
+import { DRAFT_FLOW } from "@/flows/av-03-save-as-draft";
 
 type ListKey = "problems" | "solutions" | "deliverables";
 
@@ -124,13 +125,25 @@ function check(d: SubmitDraft): Problems {
 
 const blocked = (p: Problems) => p.toasts.length > 0;
 
+/** Save as draft checks one thing: a Title, so the draft can be found on Drafts (AV · 03). */
+const DRAFT_TITLE = "You need to fill in this field before saving the Added Value as a draft";
+function checkDraft(d: SubmitDraft): Problems {
+  const p: Problems = { problems: {}, solutions: {}, deliverables: {}, details: {}, toasts: [], warnings: [] };
+  if (blank(d.title)) {
+    p.title = DRAFT_TITLE;
+    p.toasts.push("Title Field can't be empty, please fill it in before saving a draft.");
+  }
+  return p;
+}
+
 /**
  * Added Value Creation — Figma "Added value creation" (2:11984) and the flow
  * AV · 01 Submit (FigJam page "AV · 01 Submit"): the description on the left,
  * the details and deliverables on the right, Save as draft and Submit under
  * them. Submit runs every check at once; a blocked Submit raises one "Missing
  * Input" toast per problem (not announced: the field errors announce
- * themselves) and an error under each field until it's fixed.
+ * themselves) and an error under each field until it's fixed. Save as draft
+ * (AV · 03) checks only the Title and keeps the AV a Draft, on Drafts.
  */
 export function CreateScreen() {
   const { run } = useScenario();
@@ -142,12 +155,14 @@ function CreateForm() {
   const router = useRouter();
   const { toast, dismissAll } = useToast();
   const { create } = useAddedValues();
-  const setup = useScenarioSetup<SubmitDraft>(SUBMIT_FLOW.id);
+  const setup = useScenarioSetup<SubmitDraft>([SUBMIT_FLOW.id, DRAFT_FLOW.id]);
   const [draft, setDraft] = React.useState<SubmitDraft>(() => structuredClone(setup ?? EMPTY_DRAFT));
-  /* Errors show from the first Submit on, and each clears as its field is fixed. */
-  const [attempted, setAttempted] = React.useState(false);
+  /* Errors show from the first Submit (or Save as draft) on, and each clears as
+     its field is fixed. Which one was pressed last decides which checks show. */
+  const [attempted, setAttempted] = React.useState<"submit" | "draft">();
   const [links, setLinks] = React.useState<{ id: string; title: string; url: string; domain: "design" | "development" }[]>([]);
   const problems = React.useMemo(() => check(draft), [draft]);
+  const draftProblems = React.useMemo(() => checkDraft(draft), [draft]);
   /* Each blocked Submit, once its inline errors are on screen: bring the first
      one into view and put the cursor in it (Figma: "scroll to the highest
      missing field"). An assignee the card can't mark is reached by its banner
@@ -159,28 +174,33 @@ function CreateForm() {
     first?.scrollIntoView({ block: "center" });
     first?.focus({ preventScroll: true });
   }, [blockedSubmits]);
-  const shown = attempted ? problems : undefined;
+  const shown = attempted === "submit" ? problems : attempted === "draft" ? draftProblems : undefined;
 
   const setList = (key: ListKey, list: string[]) => setDraft((d) => ({ ...d, [key]: list }));
   const setItem = (key: ListKey, i: number, value: string) =>
     setDraft((d) => ({ ...d, [key]: d[key].map((v, j) => (j === i ? value : v)) }));
   const removeItem = (key: ListKey, i: number) => setList(key, draft[key].filter((_, j) => j !== i));
 
-  const submit = () => {
-    setAttempted(true);
-    /* A new Submit replaces the last one's toasts rather than stacking on them. */
+  /* One press of Submit or Save as draft: its checks, its toasts. A new press
+     replaces the last one's toasts rather than stacking on them. */
+  const press = (kind: "submit" | "draft") => {
+    const found = kind === "submit" ? problems : draftProblems;
+    setAttempted(kind);
     dismissAll();
-    if (blocked(problems)) {
-      for (const message of problems.toasts) {
-        toast({ tone: "critical", title: "Missing Input", description: message, announce: false, duration: null });
-      }
-      setBlockedSubmits((n) => n + 1);
-      return;
+    if (!blocked(found)) return true;
+    for (const message of found.toasts) {
+      toast({ tone: "critical", title: "Missing Input", description: message, announce: false, duration: null });
     }
-    const av = create({
+    setBlockedSubmits((n) => n + 1);
+    return false;
+  };
+
+  /** The AV as the page holds it now, in `status`. */
+  const save = (status: "Pending" | "Draft") =>
+    create({
       title: draft.title.trim(),
       domain: "development",
-      status: "Pending",
+      status,
       urgency: draft.details.urgency ?? "Normal",
       type: draft.details.type ?? "Type 3",
       project: draft.details.projects?.[0] ?? "VCP",
@@ -198,11 +218,19 @@ function CreateForm() {
       desiredOutcome: draft.desiredOutcome.trim(),
       files: [],
       links: links.map((l) => ({ ...l })),
-      history: [{ actor: VIEWER.name, from: "Draft", to: "Pending", when: "Just now" }],
+      history: [
+        status === "Pending"
+          ? { actor: VIEWER.name, from: "Draft", to: "Pending", when: "Just now" }
+          : { actor: VIEWER.name, from: "Initial Creation", to: "Draft", when: "Just now" },
+      ],
       comments: [],
       updatedAt: new Date().toISOString(),
       updatedLabel: "Just now",
     } satisfies Omit<AddedValue, "id" | "ref">);
+
+  const submit = () => {
+    if (!press("submit")) return;
+    const av = save("Pending");
     /* Decided 6 Nov 2026: a submitted AV closes, and the Dashboard opens with a
        success toast that can open it. (Figma draws no landing page.) */
     router.push("/");
@@ -210,6 +238,22 @@ function CreateForm() {
       tone: "success",
       title: `${av.ref} submitted`,
       description: "It's Pending until an admin accepts or rejects it.",
+      actionLabel: "Open it",
+      onAction: () => router.push(`/added-values/${av.id}`),
+    });
+  };
+
+  /* AV · 03: only the Title is checked. The page closes and Drafts opens, where
+     the draft waits until it's edited and submitted (inferred: Figma draws no
+     landing page). */
+  const saveDraft = () => {
+    if (!press("draft")) return;
+    const av = save("Draft");
+    router.push("/drafts");
+    toast({
+      tone: "success",
+      title: `${av.ref} saved as a draft`,
+      description: "Only you can see it until it's submitted.",
       actionLabel: "Open it",
       onAction: () => router.push(`/added-values/${av.id}`),
     });
@@ -309,16 +353,7 @@ function CreateForm() {
             onRemoveLink={(_section, id) => setLinks((list) => list.filter((l) => l.id !== id))}
           />
           <div data-flow-step="actions" className="flex justify-end gap-3">
-            <Button
-              variant="secondary"
-              onClick={() =>
-                toast({
-                  tone: "info",
-                  title: "Save as Draft is its own flow",
-                  description: "AV · 03 Save as Draft isn't in the prototype yet.",
-                })
-              }
-            >
+            <Button variant="secondary" onClick={saveDraft}>
               Save as draft
             </Button>
             <Button onClick={submit}>Submit</Button>

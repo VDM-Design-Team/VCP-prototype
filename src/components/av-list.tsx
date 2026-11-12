@@ -18,8 +18,6 @@ import { stageLabel, updatedLabel, type AddedValue } from "@/data/added-values";
 
 const DAY = 86_400_000;
 const dayOf = (iso: string) => Math.floor(Date.parse(`${iso}T00:00:00Z`) / DAY);
-const formatDate = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 
 /** One AV as AVTable draws it. */
 function toRow(av: AddedValue): AVTableRow {
@@ -32,7 +30,7 @@ function toRow(av: AddedValue): AVTableRow {
     attachments: av.files.length,
     comments: av.comments.length,
     due: av.dueDate
-      ? { label: formatDate(av.dueDate), proximity: left! < 0 ? "overdue" : left! <= 3 ? "due-soon" : "default" }
+      ? { date: av.dueDate, proximity: left! < 0 ? "overdue" : left! <= 3 ? "due-soon" : "default" }
       : undefined,
     urgency: av.urgency,
     type: av.type,
@@ -58,12 +56,15 @@ export function AVListScreen({
   title,
   include,
   empty,
+  emptyAction,
 }: {
   active: string;
   title: string;
   /** Which AVs this list shows. */
   include: (av: AddedValue) => boolean;
   empty: { title: string; description: string };
+  /** Under the empty state when there's nothing yet (not when filters hide everything). */
+  emptyAction?: React.ReactNode;
 }) {
   const router = useRouter();
   const { avs } = useAddedValues();
@@ -94,21 +95,25 @@ export function AVListScreen({
           }}
           resetLabel="Reset Filters"
         />
-        <AVTable
-          rows={rows}
-          sort={sort}
-          onSortChange={setSort}
-          onOpen={(row) => router.push(`/added-values/${row.id}`)}
-          caption={title}
-          empty={
-            <EmptyState
-              headingLevel={2}
-              icon={<Icon name={filtered ? "magnifying-glass" : "file"} size="lg" />}
-              title={filtered ? "No Added Values match these filters" : empty.title}
-              description={filtered ? "Try another search, or reset the filters." : empty.description}
-            />
-          }
-        />
+        {/* Where a guided scenario's step points: see src/flows/types.ts. */}
+        <div data-flow-step="av-list">
+          <AVTable
+            rows={rows}
+            sort={sort}
+            onSortChange={setSort}
+            onOpen={(row) => router.push(`/added-values/${row.id}`)}
+            caption={title}
+            empty={
+              <EmptyState
+                headingLevel={2}
+                icon={<Icon name={filtered ? "magnifying-glass" : "file"} size="lg" />}
+                title={filtered ? "No Added Values match these filters" : empty.title}
+                description={filtered ? "Try another search, or reset the filters." : empty.description}
+                action={filtered ? undefined : emptyAction}
+              />
+            }
+          />
+        </div>
       </div>
     </Screen>
   );

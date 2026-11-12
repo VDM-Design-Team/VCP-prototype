@@ -150,29 +150,36 @@ export function AVScreen({ id }: { id: string }) {
           onBack={back}
           backLabel="Back to the list"
           role={viewer}
-          showStatusActions={!!viewer}
+          /* A draft's page has no status buttons (Figma 1331:26533): it's
+             submitted from its edit page (AV · 04). */
+          showStatusActions={!!viewer && av.status !== "Draft"}
           {...(av.step ? { step: av.step } : { status: av.status })}
           chain={chain}
           onTransition={onTransition}
           actions={
-            <DetailCardMenu
-              role={admin ? "admin" : "user"}
-              status={av.status}
-              onEdit={() => toast({ tone: "info", title: "Editing an Added Value isn't in the prototype yet" })}
-              onDelete={() => setDialog("delete")}
-              onMoveToBacklog={() => {
-                moveTo(av.id, "Backlog");
-                archiveToast(`${av.ref} moved to the backlog`, "backlogs");
-              }}
-              onMoveToDraft={() => {
-                moveTo(av.id, "Draft");
-                toast({ tone: "success", title: `${av.ref} moved back to Draft` });
-              }}
-              onMoveToPending={() => {
-                moveTo(av.id, "Pending");
-                toast({ tone: "success", title: `${av.ref} moved to Pending` });
-              }}
-            />
+            /* Where a guided scenario's step points: see src/flows/types.ts. */
+            <div data-flow-step="av-menu" className="flex">
+              <DetailCardMenu
+                role={admin ? "admin" : "user"}
+                status={av.status}
+                onEdit={() =>
+                  toast({ tone: "info", title: "Editing is its own flow", description: "AV · 04 Edit an AV isn't in the prototype yet." })
+                }
+                onDelete={() => setDialog("delete")}
+                onMoveToBacklog={() => {
+                  moveTo(av.id, "Backlog");
+                  archiveToast(`${av.ref} moved to the backlog`, "backlogs");
+                }}
+                onMoveToDraft={() => {
+                  moveTo(av.id, "Draft");
+                  toast({ tone: "success", title: `${av.ref} moved back to Draft` });
+                }}
+                onMoveToPending={() => {
+                  moveTo(av.id, "Pending");
+                  toast({ tone: "success", title: `${av.ref} moved to Pending` });
+                }}
+              />
+            </div>
           }
         />
       }
@@ -186,24 +193,33 @@ export function AVScreen({ id }: { id: string }) {
             </Banner>
           )}
           <DescriptionCardTitle reference={av.ref} title={av.title} />
-          <DescriptionSection type="problem">
-            {av.problems.map((p) => (
-              <DescriptionCard key={p}>{p}</DescriptionCard>
-            ))}
-          </DescriptionSection>
-          <DescriptionSection type="solution">
-            {av.solutions.map((s) => (
-              <DescriptionCard key={s}>{s}</DescriptionCard>
-            ))}
-          </DescriptionSection>
-          <DescriptionSection type="deliverable">
-            {av.deliverables.map((d) => (
-              <DescriptionCard key={d}>{d}</DescriptionCard>
-            ))}
-          </DescriptionSection>
-          <DescriptionSection type="desired-outcome">
-            <DescriptionCard>{av.desiredOutcome}</DescriptionCard>
-          </DescriptionSection>
+          {av.problems.length > 0 && (
+            <DescriptionSection type="problem">
+              {av.problems.map((p) => (
+                <DescriptionCard key={p}>{p}</DescriptionCard>
+              ))}
+            </DescriptionSection>
+          )}
+          {av.solutions.length > 0 && (
+            <DescriptionSection type="solution">
+              {av.solutions.map((s) => (
+                <DescriptionCard key={s}>{s}</DescriptionCard>
+              ))}
+            </DescriptionSection>
+          )}
+          {av.deliverables.length > 0 && (
+            <DescriptionSection type="deliverable">
+              {av.deliverables.map((d) => (
+                <DescriptionCard key={d}>{d}</DescriptionCard>
+              ))}
+            </DescriptionSection>
+          )}
+          {/* A draft can leave any of these blank: a section with nothing in it isn't drawn. */}
+          {av.desiredOutcome && (
+            <DescriptionSection type="desired-outcome">
+              <DescriptionCard>{av.desiredOutcome}</DescriptionCard>
+            </DescriptionSection>
+          )}
           <StatusHistory headingLevel={2} entries={av.history} />
           <CommentSection
             currentUser={VIEWER}
@@ -279,14 +295,15 @@ export function AVScreen({ id }: { id: string }) {
         onClose={close}
         domain={av.domain === "design" ? "design-governance" : "development"}
         overdueDays={daysOverdue(av) || undefined}
-        attachments={av.files.map((f) => ({ name: f.name }))}
-        defaultDate={ddmmyyyy(TODAY)}
+        attachments={av.files.map((f) => ({ id: f.id, name: f.name, kind: f.kind }))}
+        defaultDate={TODAY}
         onHandoff={(draft, { publish }) => {
+          const kept = av.files.filter((f) => !draft.removedAttachments.includes(f.id));
           moveTo(av.id, "Review", {
             handoff: {
-              date: draft.date,
+              date: ddmmyyyy(draft.date),
               links: draft.links.filter(Boolean),
-              attachments: [...av.files.map((f) => f.name), ...draft.attachments.map((f) => f.name)],
+              attachments: [...kept.map((f) => f.name), ...draft.attachments.map((f) => f.name)],
               overdueReason: draft.overdueReason,
             },
           });
