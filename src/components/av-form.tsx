@@ -537,6 +537,9 @@ function Form({ editing }: { editing?: AddedValue }) {
                 tags: tagOptions(avDomain),
               }}
               errors={shown?.details}
+              /* AV · 10 (DS #333): a part takes these from its parent, so they're
+                 locked on its edit page, as Figma 1404:132644 greys them. */
+              readOnly={editing?.parent ? ["projects", "category", "type", "urgency"] : undefined}
             />
           </div>
           <DeliverablesCard

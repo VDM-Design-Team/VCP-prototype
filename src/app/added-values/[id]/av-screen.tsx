@@ -4,6 +4,9 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
   AcceptPendingAVModal,
+  ChildPartModal,
+  MultipartParentChip,
+  MultipartSection,
   AVHeader,
   Banner,
   CommentSection,
@@ -34,7 +37,13 @@ import { useAddedValues } from "@/components/av-store";
 import { TODAY } from "@/data/gantt";
 import { CHAINS, CYCLE_OPTIONS, VIEWER, daysOverdue, stageLabel, type AddedValue } from "@/data/added-values";
 
-type Dialog = "accept" | "reject" | "handoff" | "review" | "delete" | "backlog" | null;
+type Dialog = "accept" | "reject" | "handoff" | "review" | "delete" | "backlog" | "add-part" | "rename-part" | null;
+
+/* Decided 6 Nov 2026 (DS #272): the Multipart info glyph's words. */
+const MULTIPART_HINT =
+  "This Added Value is split into parts. Each part is tracked on its own; the Added Value is done when every part is completed.";
+/** A part's default title, Figma's "(3/3) Parent AV Title" (ChildPartModal: a blank title means this). */
+const defaultPartTitle = (position: number, total: number, parentTitle: string) => `(${position}/${total}) ${parentTitle}`;
 
 const PEOPLE = [VIEWER, ...["Marvin Ode", "Alice Carter", "Jack Morgan", "Lena Novak", "Noah Foster"].map((name) => ({
   id: `u-${name.split(" ")[0].toLowerCase()}`,
@@ -65,7 +74,9 @@ function headerRole(av: AddedValue, admin: boolean): AVProgressionRole | undefin
 export function AVScreen({ id }: { id: string }) {
   const router = useRouter();
   const { role } = useShellState();
-  const { get, moveTo: storeMoveTo, addComment, remove } = useAddedValues();
+  const { get, moveTo: storeMoveTo, addComment, remove, update, createMany } = useAddedValues();
+  /* AV · 10: the part being renamed. */
+  const [renaming, setRenaming] = React.useState<string>();
   const moveTo: typeof storeMoveTo = (...args) => {
     storeMoveTo(...args);
     setMoved((n) => n + 1);
@@ -218,9 +229,15 @@ export function AVScreen({ id }: { id: string }) {
               </Banner>
             ) : null,
           )}
+          {/* AV · 10: a part links back to its parent (DS #275's chip). */}
+          {av.parent && get(av.parent) && (
+            <div data-flow-step="parent">
+              <MultipartParentChip parentRef={get(av.parent)!.ref} onOpen={() => router.push(`/added-values/${av.parent}`)} />
+            </div>
+          )}
           <DescriptionCardTitle reference={av.ref} title={av.title} />
           {av.problems.length > 0 && (
-            <DescriptionSection type="problem">
+            <DescriptionSection type="problem" data-flow-step="multipart-source">
               {av.problems.map((p) => (
                 <DescriptionCard key={p}>{p}</DescriptionCard>
               ))}
@@ -245,6 +262,36 @@ export function AVScreen({ id }: { id: string }) {
             <DescriptionSection type="desired-outcome">
               <DescriptionCard>{av.desiredOutcome}</DescriptionCard>
             </DescriptionSection>
+          )}
+          {/* AV · 10: a multipart AV's parts (DS #272), each its own AV. Add Part
+              and renaming are for editors (decided 6 Nov 2026): an admin or the initiator. */}
+          {av.parts && av.parts.length > 0 && (
+            <div data-flow-step="multipart">
+              <MultipartSection
+                hint={MULTIPART_HINT}
+                parts={av.parts
+                  .map((id) => get(id))
+                  .filter((p): p is AddedValue => !!p)
+                  .map((p) => ({
+                    id: p.id,
+                    title: p.title,
+                    assignee: p.assignees[0] ? { name: p.assignees[0].name } : undefined,
+                    capacityPoints: p.capacityPoints,
+                    dueDate: p.dueDate,
+                    ...(p.step ? { customStatus: stageLabel(p) } : { status: p.status }),
+                  }))}
+                onOpenPart={(part) => router.push(`/added-values/${part.id}`)}
+                {...(admin || av.initiator === VIEWER.name
+                  ? {
+                      onEditPartTitle: (part: { id: string | number }) => {
+                        setRenaming(String(part.id));
+                        setDialog("rename-part");
+                      },
+                      onAddPart: () => setDialog("add-part"),
+                    }
+                  : {})}
+              />
+            </div>
           )}
           <StatusHistory headingLevel={2} entries={av.history} />
           <CommentSection
@@ -300,12 +347,108 @@ export function AVScreen({ id }: { id: string }) {
       <AcceptPendingAVModal
         open={dialog === "accept"}
         onClose={close}
+        /* AV · 10: Multipart is Development's (a Dev Admin's choice, Figma 1404:132249). */
+        showMultipart={av.domain === "development"}
         multipart={multipart}
         onMultipartChange={setMultipart}
-        onConfirm={() => {
+        /* One part per problem set, each with its problem as the preview (DS #332). */
+        parts={av.problems.map((problem, i) => ({ label: `Problem Set ${i + 1}`, preview: problem }))}
+        onConfirm={({ multipart: split, titles }) => {
+          if (split && av.domain === "development") {
+            const total = av.problems.length;
+            const parts = createMany(
+              av.problems.map((problem, i) => ({
+                ...av,
+                title: titles?.[i] || defaultPartTitle(i + 1, total, av.title),
+                status: "Accepted",
+                step: undefined,
+                dateAccepted: TODAY,
+                problems: [problem],
+                solutions: av.solutions[i] ? [av.solutions[i]] : [],
+                assignees: [],
+                startDate: undefined,
+                dueDate: undefined,
+                capacityPoints: undefined,
+                comments: [],
+                files: [],
+                parts: undefined,
+                duplicates: undefined,
+                remarks: undefined,
+                parent: av.id,
+                history: [{ actor: VIEWER.name, from: "Initial Creation", to: "Accepted", when: "Just now" }],
+                updatedAt: new Date().toISOString(),
+                updatedLabel: "Just now",
+              })),
+            );
+            moveTo(av.id, "Accepted", { dateAccepted: TODAY, remarks: undefined, parts: parts.map((p) => p.id) });
+            close();
+            setMultipart(false);
+            toast({ tone: "success", title: `${av.ref} accepted, in ${total} parts`, description: "Each part is tracked on its own." });
+            return;
+          }
           moveTo(av.id, "Accepted", { dateAccepted: TODAY, remarks: undefined });
           close();
           toast({ tone: "success", title: `${av.ref} accepted`, description: "It's ready to be worked on." });
+        }}
+      />
+      {/* AV · 10: adding a part, and renaming one (DS #272's ChildPartModal). */}
+      <ChildPartModal
+        open={dialog === "add-part"}
+        onClose={close}
+        mode="new"
+        statusChange={av.status === "Completed" ? { from: "Completed", to: "In Progress" } : undefined}
+        onConfirm={(title) => {
+          const total = (av.parts?.length ?? 0) + 1;
+          const [part] = createMany([
+            {
+              ...av,
+              title: title || defaultPartTitle(total, total, av.title),
+              status: "Accepted",
+              step: undefined,
+              dateAccepted: TODAY,
+              assignees: [],
+              startDate: undefined,
+              dueDate: undefined,
+              capacityPoints: undefined,
+              comments: [],
+              files: [],
+              parts: undefined,
+              duplicates: undefined,
+              remarks: undefined,
+              parent: av.id,
+              history: [{ actor: VIEWER.name, from: "Initial Creation", to: "Accepted", when: "Just now" }],
+              updatedAt: new Date().toISOString(),
+              updatedLabel: "Just now",
+            },
+          ]);
+          const wasCompleted = av.status === "Completed";
+          /* Decided 9 Nov 2026: default titles are renumbered to the new count; typed ones stay. */
+          (av.parts ?? []).forEach((id, i) => {
+            const p = get(id);
+            if (p && /^\(\d+\/\d+\) /.test(p.title) && p.title.endsWith(av.title)) update(id, { title: defaultPartTitle(i + 1, total, av.title) });
+          });
+          if (wasCompleted) moveTo(av.id, "In Progress", { parts: [...(av.parts ?? []), part.id] });
+          else update(av.id, { parts: [...(av.parts ?? []), part.id] });
+          close();
+          toast({
+            tone: "success",
+            title: `${part.ref} added as part ${total}`,
+            description: wasCompleted ? `${av.ref} is back In Progress.` : undefined,
+          });
+        }}
+      />
+      <ChildPartModal
+        open={dialog === "rename-part"}
+        onClose={close}
+        mode="edit"
+        initialTitle={renaming ? get(renaming)?.title : undefined}
+        onConfirm={(title) => {
+          if (renaming) {
+            const position = (av.parts ?? []).indexOf(renaming) + 1;
+            /* Decided 6 Nov 2026: a blank renamed title restores the default. */
+            update(renaming, { title: title || defaultPartTitle(position, av.parts?.length ?? position, av.title) });
+          }
+          close();
         }}
       />
       <RejectPendingAVModal

@@ -116,6 +116,10 @@ export interface AddedValue {
   remarks?: string;
   /** Copies initiated to other domains (AV · 08). */
   duplicates?: Duplicate[];
+  /** A multipart AV's parts (AV · 10): the child AVs' ids, in order. */
+  parts?: string[];
+  /** A part's parent (AV · 10). */
+  parent?: string;
   handoff?: Handoff;
 }
 

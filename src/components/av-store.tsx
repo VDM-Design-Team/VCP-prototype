@@ -17,9 +17,11 @@ interface AVStore {
   remove: (id: string) => void;
   /** Add a new AV (created in the prototype) under the next free reference, and return it. */
   create: (av: Omit<AddedValue, "id" | "ref">) => AddedValue;
+  /** Several at once (a multipart AV's parts), each under its own free reference, in order. */
+  createMany: (avs: Omit<AddedValue, "id" | "ref">[]) => AddedValue[];
   /**
    * Back to the sample data: what starting a scenario does, so nothing carries
-   * over. A scenario's own AVs replace the sample ones with the same id.
+   * over. A scenario's own AVs replace the sample ones with the same id, or are added.
    */
   reset: (overrides?: readonly AddedValue[]) => void;
 }
@@ -39,7 +41,7 @@ export function AVStoreProvider({ children }: { children: React.ReactNode }) {
     return {
       avs,
       get: (id) => avs.find((av) => av.id === id),
-      moveTo: (id, to, change) =>
+      moveTo: (id, to, change) => {
         touch(id, (av) => {
           /* `to` is a chain step's id or a spine status. */
           const isStep = CHAINS[av.domain].some((s) => s.id === to);
@@ -54,18 +56,55 @@ export function AVStoreProvider({ children }: { children: React.ReactNode }) {
               ...av.history,
             ],
           };
-        }),
+        });
+        /* AV · 10, decided 9 Nov 2026: a multipart parent completes when its last part does. */
+        if (to === "Completed")
+          setAvs((list) => {
+            const parentId = list.find((av) => av.id === id)?.parent;
+            const parent = parentId ? list.find((av) => av.id === parentId) : undefined;
+            if (!parent?.parts || parent.status === "Completed") return list;
+            const done = parent.parts.every((p) => list.find((av) => av.id === p)?.status === "Completed");
+            if (!done) return list;
+            return list.map((av) =>
+              av.id === parent.id
+                ? {
+                    ...av,
+                    status: "Completed" as AVStatus,
+                    step: undefined,
+                    history: [{ actor: VIEWER.name, from: stageLabel(av), to: "Completed", when: "Just now" }, ...av.history],
+                    updatedAt: new Date().toISOString(),
+                    updatedLabel: "Just now",
+                  }
+                : av,
+            );
+          });
+      },
       update: (id, change) => touch(id, (av) => ({ ...av, ...change })),
       addComment: (id, comment) => touch(id, (av) => ({ ...av, comments: [comment, ...av.comments] })),
       remove: (id) => setAvs((list) => list.filter((av) => av.id !== id)),
+      createMany: (list) => {
+        const taken = new Set(avs.map((av) => av.id));
+        const created = list.map((fields) => {
+          const id = NEW_AV_IDS.find((free) => !taken.has(free)) ?? `vcp-${1211 + taken.size}`;
+          taken.add(id);
+          return { ...fields, id, ref: id.toUpperCase() } as AddedValue;
+        });
+        setAvs((current) => [...created, ...current]);
+        return created;
+      },
       create: (fields) => {
         const id = NEW_AV_IDS.find((free) => !avs.some((av) => av.id === free)) ?? `vcp-${1211 + avs.length}`;
         const created: AddedValue = { ...fields, id, ref: id.toUpperCase() };
         setAvs((list) => [created, ...list]);
         return created;
       },
+      /* A scenario's AVs replace the sample ones with the same id; the rest are
+         added (they use references kept free for new AVs, which have pages). */
       reset: (overrides = []) =>
-        setAvs(ADDED_VALUES.map((av) => overrides.find((o) => o.id === av.id) ?? av)),
+        setAvs([
+          ...overrides.filter((o) => !ADDED_VALUES.some((av) => av.id === o.id)),
+          ...ADDED_VALUES.map((av) => overrides.find((o) => o.id === av.id) ?? av),
+        ]),
     };
   }, [avs]);
 
