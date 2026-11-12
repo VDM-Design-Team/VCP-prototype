@@ -16,6 +16,7 @@ import {
   DetailCardMenu,
   EmptyState,
   HandoffAVModal,
+  MoveToBacklogModal,
   HANDOFF_REJECTION_REASONS,
   Icon,
   PageTitle,
@@ -33,7 +34,7 @@ import { useAddedValues } from "@/components/av-store";
 import { TODAY } from "@/data/gantt";
 import { CHAINS, CYCLE_OPTIONS, VIEWER, daysOverdue, stageLabel, type AddedValue } from "@/data/added-values";
 
-type Dialog = "accept" | "reject" | "handoff" | "review" | "delete" | null;
+type Dialog = "accept" | "reject" | "handoff" | "review" | "delete" | "backlog" | null;
 
 const PEOPLE = [VIEWER, ...["Marvin Ode", "Alice Carter", "Jack Morgan", "Lena Novak", "Noah Foster"].map((name) => ({
   id: `u-${name.split(" ")[0].toLowerCase()}`,
@@ -111,7 +112,14 @@ export function AVScreen({ id }: { id: string }) {
   const admin = role !== "user";
   const viewer = headerRole(av, admin);
   const chain = CHAINS[av.domain];
-  const close = () => setDialog(null);
+  const close = () => {
+    /* A dialog opened from the ⋮ menu: its menu item is gone, so focus goes
+       back to the ⋮ button rather than falling to the page. */
+    const fromMenu = dialog === "backlog" || dialog === "delete";
+    setDialog(null);
+    if (fromMenu)
+      window.setTimeout(() => headerRef.current?.querySelector<HTMLElement>('[data-flow-step="av-menu"] button')?.focus());
+  };
   const archiveToast = (title: string, archive: string, description?: string) =>
     toast({
       tone: "success",
@@ -165,16 +173,14 @@ export function AVScreen({ id }: { id: string }) {
                 /* Decided 9 Nov 2026: the same edit page at every status (AV · 04). */
                 onEdit={() => router.push(`/added-values/${av.id}/edit`)}
                 onDelete={() => setDialog("delete")}
-                onMoveToBacklog={() => {
-                  moveTo(av.id, "Backlog");
-                  archiveToast(`${av.ref} moved to the backlog`, "backlogs");
-                }}
+                /* AV · 05: the Feedback dialog first (DS #286). */
+                onMoveToBacklog={() => setDialog("backlog")}
                 onMoveToDraft={() => {
-                  moveTo(av.id, "Draft");
+                  moveTo(av.id, "Draft", { remarks: undefined });
                   toast({ tone: "success", title: `${av.ref} moved back to Draft` });
                 }}
                 onMoveToPending={() => {
-                  moveTo(av.id, "Pending");
+                  moveTo(av.id, "Pending", { remarks: undefined });
                   toast({ tone: "success", title: `${av.ref} moved to Pending` });
                 }}
               />
@@ -190,6 +196,14 @@ export function AVScreen({ id }: { id: string }) {
               {rejection?.label ?? "No reason was given"}
               {av.rejection?.detail ? `: ${av.rejection.detail}` : ""}
             </Banner>
+          )}
+          {/* Figma (1090:27191): a backlogged AV shows why, as Remarks. No feedback, no banner (inferred). */}
+          {av.status === "Backlog" && av.remarks && (
+            <div data-flow-step="remarks">
+              <Banner tone="warning" title="Remarks">
+                {av.remarks}
+              </Banner>
+            </div>
           )}
           <DescriptionCardTitle reference={av.ref} title={av.title} />
           {av.problems.length > 0 && (
@@ -271,7 +285,7 @@ export function AVScreen({ id }: { id: string }) {
         multipart={multipart}
         onMultipartChange={setMultipart}
         onConfirm={() => {
-          moveTo(av.id, "Accepted", { dateAccepted: TODAY });
+          moveTo(av.id, "Accepted", { dateAccepted: TODAY, remarks: undefined });
           close();
           toast({ tone: "success", title: `${av.ref} accepted`, description: "It's ready to be worked on." });
         }}
@@ -280,7 +294,7 @@ export function AVScreen({ id }: { id: string }) {
         open={dialog === "reject"}
         onClose={close}
         onReject={({ reason, detail }) => {
-          moveTo(av.id, "Rejected", { rejection: { reason, detail } });
+          moveTo(av.id, "Rejected", { rejection: { reason, detail }, remarks: undefined });
           close();
           archiveToast(
             `${av.ref} rejected`,
@@ -339,6 +353,16 @@ export function AVScreen({ id }: { id: string }) {
             title: `${av.ref} sent back to ${last.label}`,
             description: HANDOFF_REJECTION_REASONS.find((r) => r.value === reason)?.label,
           });
+        }}
+      />
+      <MoveToBacklogModal
+        open={dialog === "backlog"}
+        onClose={close}
+        onMove={(feedback) => {
+          moveTo(av.id, "Backlog", { remarks: feedback || undefined });
+          close();
+          /* Figma keeps the AV open, now Backlog; the toast is inferred. */
+          archiveToast(`${av.ref} moved to the Backlog`, "backlogs", feedback ? undefined : "No feedback was given.");
         }}
       />
       <ConfirmDeleteAVModal

@@ -326,8 +326,13 @@ function Form({ editing }: { editing?: AddedValue }) {
       });
       return;
     }
-    /* Decided 9 Nov 2026: on an AV past Draft, Save as draft only saves the
-       changes; the status stays. */
+    /* Decided 9 Nov 2026: a Backlog AV comes back to Draft this way (Figma
+       1090:27191, AV · 05); everywhere else Save as draft only saves the
+       changes and the status stays. */
+    if (editing.status === "Backlog") {
+      moveTo(editing.id, "Draft", { ...content(), remarks: undefined });
+      return backToAV(editing, `${editing.ref} moved back to Draft`, "It's out of the Backlog. Only you can see it until it's submitted.");
+    }
     update(editing.id, content());
     backToAV(
       editing,
