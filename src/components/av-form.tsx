@@ -11,18 +11,22 @@ import {
   DetailCard,
   DuplicateToOtherDomain,
   Field,
+  fileKind,
   formatDate,
   Input,
   Modal,
   PageTitle,
   StatusHistory,
+  useAttachmentFiles,
   useToast,
+  type DeliverableFile,
+  type DeliverableLinkItem,
   type DetailCardField,
   type DetailCardValue,
   ConfirmDeleteModal,
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
-import { useAddedValues } from "@/components/av-store";
+import { NO_FREE_REFERENCE, useAddedValues } from "@/components/av-store";
 import { useScenario, useScenarioSetup } from "@/components/scenario";
 import { TODAY } from "@/data/gantt";
 import { useShellState } from "@/components/shell-state";
@@ -163,7 +167,7 @@ function fromAV(av: AddedValue): SubmitDraft {
     desiredOutcome: av.desiredOutcome,
     details: {
       initiators: [{ name: av.initiator }],
-      assignees: av.assignees.map((a) => ({ name: a.name, description: "Assignee", points: a.points })),
+      assignees: av.assignees.map((a) => ({ name: a.name, description: a.role ?? "Assignee", points: a.points })),
       startDate: av.startDate,
       dueDate: av.dueDate,
       cycle: av.cycle,
@@ -178,6 +182,22 @@ function fromAV(av: AddedValue): SubmitDraft {
 }
 
 type Link = { id: string; title: string; url: string; domain: "design" | "development" };
+type LinkSection = "links" | "video";
+const asLinks = (list: readonly DeliverableLinkItem[] = []): Link[] =>
+  list.map((l) => ({ ...l, domain: (l.domain ?? "development") as Link["domain"] }));
+
+/** A free id for each of `count` new items, after the ones `taken`: one counted from a list's length can repeat one after a
+    removal, and removing either would then remove both. */
+function freeIds(taken: readonly { id: string }[], prefix: string, count: number) {
+  const used = new Set(taken.map((t) => t.id));
+  let n = taken.length;
+  return Array.from({ length: count }, () => {
+    do n += 1;
+    while (used.has(`${prefix}-${n}`));
+    used.add(`${prefix}-${n}`);
+    return `${prefix}-${n}`;
+  });
+}
 
 /** The copy of the AV for another domain (AV · 08): its own description, prefilled from the AV's. */
 type Copy = Pick<SubmitDraft, "title" | "problems" | "solutions" | "deliverables" | "desiredOutcome">;
@@ -243,9 +263,13 @@ function Form({ editing }: { editing?: AddedValue }) {
   /* Errors show from the first Submit (or Save as draft) on, and each clears as
      its field is fixed. Which one was pressed last decides which checks show. */
   const [attempted, setAttempted] = React.useState<"submit" | "draft">();
-  const [links, setLinks] = React.useState<Link[]>(() =>
-    (editing?.links ?? []).map((l) => ({ ...l, domain: (l.domain ?? "development") as Link["domain"] })),
-  );
+  /* Deliverables: Links, and Development's Video Links, each kept in its own list. */
+  const [links, setLinks] = React.useState<Link[]>(() => asLinks(editing?.links));
+  const [videoLinks, setVideoLinks] = React.useState<Link[]>(() => asLinks(editing?.videoLinks));
+  const setSection = (section: LinkSection) => (section === "video" ? setVideoLinks : setLinks);
+  /* Attachments: the AV's own files (a ✕ takes one off when the form is saved), and the ones picked here. */
+  const [attached, setAttached] = React.useState<DeliverableFile[]>(() => [...(editing?.files ?? [])]);
+  const picked = useAttachmentFiles();
   /* A new AV is Development's for now (the prototype's viewer is a developer). */
   const avDomain: AVDomain = editing?.domain ?? "development";
   /* AV · 08: the domains ticked in "Duplicate to other Domains", and each one's copy. */
@@ -298,7 +322,18 @@ function Form({ editing }: { editing?: AddedValue }) {
     return false;
   };
 
-  /** What the form holds, as the AV's fields. */
+  /* The prototype's upload: each picked file is kept for the session under an address of its own (the
+     picker's goes when the form closes), so the AV's page can still show and open it. */
+  const uploaded = (): DeliverableFile[] => {
+    const ids = freeIds(attached, "f", picked.files.length);
+    return picked.files.map((file, i) => {
+      const kind = fileKind(file);
+      const src = URL.createObjectURL(file);
+      return { id: ids[i], name: file.name, kind, src, thumb: kind === "image" ? src : undefined };
+    });
+  };
+
+  /** What the form holds, as the AV's fields. Call it once per save: it uploads the picked files. */
   const content = () => ({
     title: draft.title.trim(),
     urgency: draft.details.urgency ?? "Normal",
@@ -307,7 +342,7 @@ function Form({ editing }: { editing?: AddedValue }) {
     category: draft.details.category ?? "Improvement",
     tags: [...(draft.details.tags ?? [])],
     initiator: draft.details.initiators?.[0]?.name ?? VIEWER.name,
-    assignees: (draft.details.assignees ?? []).map((a) => ({ name: a.name, points: a.points })),
+    assignees: (draft.details.assignees ?? []).map((a) => ({ name: a.name, points: a.points, role: a.description })),
     startDate: draft.details.startDate,
     dueDate: draft.details.dueDate,
     cycle: draft.details.cycle,
@@ -317,16 +352,17 @@ function Form({ editing }: { editing?: AddedValue }) {
     deliverables: draft.deliverables.filter((s) => !blank(s)),
     desiredOutcome: draft.desiredOutcome.trim(),
     links: links.map((l) => ({ ...l })),
+    videoLinks: videoLinks.map((l) => ({ ...l })),
+    files: [...attached, ...uploaded()],
   });
 
-  /** A new AV (Added Value Creation), in `status`. */
+  /** A new AV (Added Value Creation), in `status`. Undefined when the prototype has no free reference left. */
   const createAs = (status: "Pending" | "Draft") =>
     create({
       ...content(),
       domain: avDomain,
       status,
       dateInitiated: TODAY,
-      files: [],
       history: [
         status === "Pending"
           ? { actor: VIEWER.name, from: "Draft", to: "Pending", when: "Just now" }
@@ -357,16 +393,31 @@ function Form({ editing }: { editing?: AddedValue }) {
   };
 
   /* AV · 08: Submit, or Save as draft (decided 9 Nov 2026), initiates a copy
-     in each ticked domain, "Initiated" there. The original keeps its own status. */
+     in each ticked domain, "Initiated" there, with the description as it was edited for that domain.
+     The original keeps its own status. */
   const initiated = (): Duplicate[] => [
     ...(editing?.duplicates ?? []),
-    ...initiate.map((d) => ({ domain: domainName(d), status: "Initiated", title: copies[d].title.trim() })),
+    ...initiate.map((d) => {
+      const copy = copies[d];
+      return {
+        domain: domainName(d),
+        status: "Initiated",
+        title: copy.title.trim(),
+        problems: copy.problems.filter((s) => !blank(s)),
+        solutions: copy.solutions.filter((s) => !blank(s)),
+        deliverables: copy.deliverables.filter((s) => !blank(s)),
+        desiredOutcome: copy.desiredOutcome.trim(),
+      };
+    }),
   ];
   const initiatedNote = initiate.length ? ` Initiated to ${initiate.map(domainName).join(" and ")}.` : "";
 
   const submit = () => {
     if (!press("submit")) return;
-    if (!editing) return submitted(createAs("Pending"));
+    if (!editing) {
+      const av = createAs("Pending");
+      return av ? submitted(av) : toast(NO_FREE_REFERENCE);
+    }
     if (editing.status === "Draft") {
       moveTo(editing.id, "Pending", { ...content(), duplicates: initiated() });
       return submitted(editing);
@@ -382,6 +433,7 @@ function Form({ editing }: { editing?: AddedValue }) {
     if (!press("draft")) return;
     if (!editing) {
       const av = createAs("Draft");
+      if (!av) return toast(NO_FREE_REFERENCE);
       router.push("/drafts");
       toast({
         tone: "success",
@@ -409,7 +461,12 @@ function Form({ editing }: { editing?: AddedValue }) {
 
   /** Edits not saved yet: what the back arrow asks about. */
   const dirty =
-    JSON.stringify(draft) !== JSON.stringify(initial) || links.length !== (editing?.links.length ?? 0) || initiate.length > 0;
+    JSON.stringify(draft) !== JSON.stringify(initial) ||
+    JSON.stringify(links) !== JSON.stringify(asLinks(editing?.links)) ||
+    JSON.stringify(videoLinks) !== JSON.stringify(asLinks(editing?.videoLinks)) ||
+    attached.length !== (editing?.files.length ?? 0) ||
+    picked.files.length > 0 ||
+    initiate.length > 0;
 
   /* AV · 08: one copy's description, as editable as the AV's own. */
   const setCopy = (d: string, change: Partial<Copy>) => setCopies((c) => ({ ...c, [d]: { ...c[d], ...change } }));
@@ -574,25 +631,22 @@ function Form({ editing }: { editing?: AddedValue }) {
             domain={avDomain}
             mode="edit"
             links={links}
-            onAddLinks={(_section, added) =>
-              setLinks((list) => {
-                /* A free id each: one counted from the list's length can repeat one after a removal, and removing
-                   either link would then remove both. */
-                const taken = new Set(list.map((l) => l.id));
-                let n = list.length;
-                const fresh = added.map((l) => {
-                  do n += 1;
-                  while (taken.has(`link-${n}`));
-                  taken.add(`link-${n}`);
-                  return { ...l, id: `link-${n}`, domain: avDomain };
-                });
-                return [...list, ...fresh];
+            videoLinks={videoLinks}
+            onAddLinks={(section, added) =>
+              setSection(section)((list) => {
+                const ids = freeIds(list, section === "video" ? "video" : "link", added.length);
+                return [...list, ...added.map((l, i) => ({ ...l, id: ids[i], domain: avDomain }))];
               })
             }
-            onEditLink={(_section, id, edited) =>
-              setLinks((list) => list.map((l) => (l.id === id ? { ...l, title: edited.title, url: edited.url } : l)))
+            onEditLink={(section, id, edited) =>
+              setSection(section)((list) => list.map((l) => (l.id === id ? { ...l, title: edited.title, url: edited.url } : l)))
             }
-            onRemoveLink={(_section, id) => setLinks((list) => list.filter((l) => l.id !== id))}
+            onRemoveLink={(section, id) => setSection(section)((list) => list.filter((l) => l.id !== id))}
+            files={[...attached, ...picked.items]}
+            onFiles={picked.add}
+            onRemoveFile={(id) =>
+              attached.some((f) => f.id === id) ? setAttached((list) => list.filter((f) => f.id !== id)) : picked.remove(id)
+            }
           />
           <div data-flow-step="actions" className="flex justify-end gap-3">
             {/* AV · 02: Discard, in red text (DS danger-tertiary, #365), while the AV is a Draft or Pending. */}

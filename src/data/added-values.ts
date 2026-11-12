@@ -20,9 +20,10 @@ export const VIEWER = { id: "u-eve", name: "Eve Kestrel" };
 /**
  * References kept free for Added Values created in the prototype. The site is
  * static, so each needs its page built ahead (see generateStaticParams on
- * /added-values/[id]): the first twenty new AVs get vcp-1211 … vcp-1230.
+ * /added-values/[id]): new AVs get vcp-1211 … vcp-1410. Past the last one the
+ * store creates nothing (an AV with no page would open a 404), and the page says so.
  */
-export const NEW_AV_IDS = Array.from({ length: 20 }, (_, i) => `vcp-${1211 + i}`);
+export const NEW_AV_IDS = Array.from({ length: 200 }, (_, i) => `vcp-${1211 + i}`);
 
 export type AVDomain = "development" | "design";
 
@@ -64,6 +65,11 @@ export interface Duplicate {
   status: string;
   /** The copy's own title. */
   title: string;
+  /** The copy's own description, edited for its domain when it was initiated (AV · 08). */
+  problems?: string[];
+  solutions?: string[];
+  deliverables?: string[];
+  desiredOutcome?: string;
   /** Why it was rejected there. */
   rejection?: string;
   /** Why it was backlogged there. */
@@ -94,7 +100,8 @@ export interface AddedValue {
   category: string;
   tags: string[];
   initiator: string;
-  assignees: { name: string; points?: number }[];
+  /** `role` is what they do on it, picked in the details card: QA, Design or Assignee. */
+  assignees: { name: string; points?: number; role?: string }[];
   startDate?: string;
   dueDate?: string;
   /** Planning · 02: the date was worked out, not set by a person ("(est.)"). */
@@ -110,6 +117,8 @@ export interface AddedValue {
   desiredOutcome: string;
   files: DeliverableFile[];
   links: DeliverableLinkItem[];
+  /** Development's Video Links, a section of their own in the deliverables. */
+  videoLinks?: DeliverableLinkItem[];
   history: StatusHistoryEntry[];
   comments: CommentData[];
   /** ISO date-time, for sorting. */
