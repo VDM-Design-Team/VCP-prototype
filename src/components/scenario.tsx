@@ -316,6 +316,12 @@ export function ScenarioBar() {
   const step = scenario.steps[index];
   const last = !step?.options && !step?.next && index >= scenario.steps.length - 1;
   const here = step && onPage(step, scenario, pathname);
+  /* A press whose next step is on another page (Submit → the Dashboard) can fail: a blocked Submit stays put. So the
+     walk moves only when that page opens, which the page-change follow above does; moving on the click would describe
+     a success that did not happen. A press whose next step is on this page (a menu, a dialog, "Blocked: …") moves on
+     the click. */
+  const following = step?.next ? scenario.steps.find((s) => s.id === step.next) : scenario.steps[index + 1];
+  const movesOnClick = !following || onPage(following, scenario, pathname);
   /* An action step: Next does the action (presses Submit), which then moves the walk on. */
   const actOrNext = () => {
     if (step?.drop && !document.querySelector('[role="dialog"]')) {
@@ -332,7 +338,9 @@ export function ScenarioBar() {
   return (
     <>
       {step?.target && here && <StepHighlight target={step.target} stepKey={`${scenario.id}:${index}`} />}
-      {step?.action && step.target && here && <ActionWatcher target={step.target} onDone={() => next(undefined, index)} />}
+      {step?.action && step.target && here && movesOnClick && (
+        <ActionWatcher target={step.target} onDone={() => next(undefined, index)} />
+      )}
       <aside
         data-scenario-bar
         aria-labelledby={headingId}

@@ -575,10 +575,22 @@ function Form({ editing }: { editing?: AddedValue }) {
             mode="edit"
             links={links}
             onAddLinks={(_section, added) =>
-              setLinks((list) => [
-                ...list,
-                ...added.map((l, i) => ({ ...l, id: `link-${list.length + i + 1}`, domain: avDomain })),
-              ])
+              setLinks((list) => {
+                /* A free id each: one counted from the list's length can repeat one after a removal, and removing
+                   either link would then remove both. */
+                const taken = new Set(list.map((l) => l.id));
+                let n = list.length;
+                const fresh = added.map((l) => {
+                  do n += 1;
+                  while (taken.has(`link-${n}`));
+                  taken.add(`link-${n}`);
+                  return { ...l, id: `link-${n}`, domain: avDomain };
+                });
+                return [...list, ...fresh];
+              })
+            }
+            onEditLink={(_section, id, edited) =>
+              setLinks((list) => list.map((l) => (l.id === id ? { ...l, title: edited.title, url: edited.url } : l)))
             }
             onRemoveLink={(_section, id) => setLinks((list) => list.filter((l) => l.id !== id))}
           />
