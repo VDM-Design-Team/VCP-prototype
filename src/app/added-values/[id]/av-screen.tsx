@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   AcceptPendingAVModal,
   ChildPartModal,
-  formatDate,
   MultipartParentChip,
   MultipartSection,
   AVHeader,
@@ -276,7 +275,7 @@ export function AVScreen({ id }: { id: string }) {
                     title: p.title,
                     assignee: p.assignees[0] ? { name: p.assignees[0].name } : undefined,
                     capacityPoints: p.capacityPoints,
-                    dueDate: p.dueDate ? formatDate(p.dueDate) : undefined,
+                    dueDate: p.dueDate,
                     ...(p.step ? { customStatus: stageLabel(p) } : { status: p.status }),
                   }))}
                 onOpenPart={(part) => router.push(`/added-values/${part.id}`)}
