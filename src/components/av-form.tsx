@@ -9,6 +9,7 @@ import {
   DescriptionCard,
   DescriptionSection,
   DetailCard,
+  DuplicateToOtherDomain,
   Field,
   formatDate,
   Input,
@@ -23,7 +24,7 @@ import { Screen } from "@/components/screen";
 import { useAddedValues } from "@/components/av-store";
 import { useScenario, useScenarioSetup } from "@/components/scenario";
 import { TODAY } from "@/data/gantt";
-import { CYCLE_OPTIONS, VIEWER, stageLabel, type AddedValue, type AVDomain } from "@/data/added-values";
+import { CYCLE_OPTIONS, DOMAINS, VIEWER, stageLabel, type AddedValue, type AVDomain, type Duplicate } from "@/data/added-values";
 import {
   availabilityClash,
   DOMAIN_NAMES,
@@ -53,6 +54,8 @@ interface Problems {
   warnings: string[];
   /** Assignees away during the AV's dates: a block. Shown as a banner, because DetailCard draws no error on its people fields. */
   unavailable?: string;
+  /** A copy for another domain with no title (AV · 08), by domain value. */
+  copies: Record<string, string>;
 }
 
 const EMPTY_FIELD = "You need to fill in this field before submitting the Added Value";
@@ -61,7 +64,7 @@ const blank = (s: string) => !s.trim();
 const range = (from: string, to: string) => `${formatDate(from)}–${formatDate(to)}`;
 
 function check(d: SubmitDraft, avDomain: AVDomain): Problems {
-  const p: Problems = { problems: {}, solutions: {}, deliverables: {}, details: {}, toasts: [], warnings: [] };
+  const p: Problems = { problems: {}, solutions: {}, deliverables: {}, details: {}, toasts: [], warnings: [], copies: {} };
   if (blank(d.title)) {
     p.title = EMPTY_FIELD;
     p.toasts.push("Title Field can't be empty, please fill it in before submitting.");
@@ -138,7 +141,7 @@ const blocked = (p: Problems) => p.toasts.length > 0;
 /** Save as draft checks one thing: a Title, so the draft can be found on Drafts (AV · 03). */
 const DRAFT_TITLE = "You need to fill in this field before saving the Added Value as a draft";
 function checkDraft(d: SubmitDraft): Problems {
-  const p: Problems = { problems: {}, solutions: {}, deliverables: {}, details: {}, toasts: [], warnings: [] };
+  const p: Problems = { problems: {}, solutions: {}, deliverables: {}, details: {}, toasts: [], warnings: [], copies: {} };
   if (blank(d.title)) {
     p.title = DRAFT_TITLE;
     p.toasts.push("Title Field can't be empty, please fill it in before saving a draft.");
@@ -173,6 +176,17 @@ function fromAV(av: AddedValue): SubmitDraft {
 
 type Link = { id: string; title: string; url: string; domain: "design" | "development" };
 
+/** The copy of the AV for another domain (AV · 08): its own description, prefilled from the AV's. */
+type Copy = Pick<SubmitDraft, "title" | "problems" | "solutions" | "deliverables" | "desiredOutcome">;
+const copyOf = (d: SubmitDraft): Copy => structuredClone({
+  title: d.title,
+  problems: d.problems,
+  solutions: d.solutions,
+  deliverables: d.deliverables,
+  desiredOutcome: d.desiredOutcome,
+});
+const domainName = (value: string) => DOMAINS.find((d) => d.value === value)?.name ?? value;
+
 /**
  * The Added Value form: Added Value Creation (Figma 2:11984; AV · 01 Submit,
  * AV · 03 Save as Draft) and, given `editing`, an AV's edit page at any status
@@ -206,8 +220,24 @@ function Form({ editing }: { editing?: AddedValue }) {
   );
   /* A new AV is Development's for now (the prototype's viewer is a developer). */
   const avDomain: AVDomain = editing?.domain ?? "development";
-  const problems = React.useMemo(() => check(draft, avDomain), [draft, avDomain]);
-  const draftProblems = React.useMemo(() => checkDraft(draft), [draft]);
+  /* AV · 08: the domains ticked in "Duplicate to other Domains", and each one's copy. */
+  const [initiate, setInitiate] = React.useState<string[]>([]);
+  const [copies, setCopies] = React.useState<Record<string, Copy>>({});
+  /* Each copy needs a title, on Submit and on Save as draft alike (both send it). */
+  const withCopies = React.useCallback(
+    (p: Problems, before: string) => {
+      for (const d of initiate) {
+        if (blank(copies[d]?.title ?? "")) {
+          p.copies[d] = before === "submitting" ? EMPTY_FIELD : DRAFT_TITLE;
+          p.toasts.push(`The copy in ${domainName(d)} domain needs a title before ${before}.`);
+        }
+      }
+      return p;
+    },
+    [initiate, copies],
+  );
+  const problems = React.useMemo(() => withCopies(check(draft, avDomain), "submitting"), [draft, avDomain, withCopies]);
+  const draftProblems = React.useMemo(() => withCopies(checkDraft(draft), "saving a draft"), [draft, withCopies]);
   /* Each blocked press, once its inline errors are on screen: bring the first
      one into view and put the cursor in it (Figma: "scroll to the highest
      missing field"). An assignee the card can't mark is reached by its banner
@@ -298,15 +328,23 @@ function Form({ editing }: { editing?: AddedValue }) {
     toast({ tone: "success", title, description });
   };
 
+  /* AV · 08: Submit, or Save as draft (decided 9 Nov 2026), initiates a copy
+     in each ticked domain, "Initiated" there. The original keeps its own status. */
+  const initiated = (): Duplicate[] => [
+    ...(editing?.duplicates ?? []),
+    ...initiate.map((d) => ({ domain: domainName(d), status: "Initiated", title: copies[d].title.trim() })),
+  ];
+  const initiatedNote = initiate.length ? ` Initiated to ${initiate.map(domainName).join(" and ")}.` : "";
+
   const submit = () => {
     if (!press("submit")) return;
     if (!editing) return submitted(createAs("Pending"));
     if (editing.status === "Draft") {
-      moveTo(editing.id, "Pending", content());
+      moveTo(editing.id, "Pending", { ...content(), duplicates: initiated() });
       return submitted(editing);
     }
-    update(editing.id, content());
-    backToAV(editing, `${editing.ref}: changes saved`, `It stays ${stageLabel(editing)}.`);
+    update(editing.id, { ...content(), duplicates: initiated() });
+    backToAV(editing, `${editing.ref}: changes saved`, `It stays ${stageLabel(editing)}.${initiatedNote}`);
   };
 
   /* AV · 03: only the Title is checked. A new draft closes the page and opens
@@ -330,19 +368,37 @@ function Form({ editing }: { editing?: AddedValue }) {
        1090:27191, AV · 05); everywhere else Save as draft only saves the
        changes and the status stays. */
     if (editing.status === "Backlog") {
-      moveTo(editing.id, "Draft", { ...content(), remarks: undefined });
-      return backToAV(editing, `${editing.ref} moved back to Draft`, "It's out of the Backlog. Only you can see it until it's submitted.");
+      moveTo(editing.id, "Draft", { ...content(), remarks: undefined, duplicates: initiated() });
+      return backToAV(editing, `${editing.ref} moved back to Draft`, `It's out of the Backlog. Only you can see it until it's submitted.${initiatedNote}`);
     }
-    update(editing.id, content());
+    update(editing.id, { ...content(), duplicates: initiated() });
     backToAV(
       editing,
       `${editing.ref}: changes saved`,
-      editing.status === "Draft" ? "It's still a Draft. Only you can see it until it's submitted." : `It stays ${stageLabel(editing)}.`,
+      (editing.status === "Draft" ? "It's still a Draft. Only you can see it until it's submitted." : `It stays ${stageLabel(editing)}.`) + initiatedNote,
     );
   };
 
   /** Edits not saved yet: what the back arrow asks about. */
-  const dirty = JSON.stringify(draft) !== JSON.stringify(initial) || links.length !== (editing?.links.length ?? 0);
+  const dirty =
+    JSON.stringify(draft) !== JSON.stringify(initial) || links.length !== (editing?.links.length ?? 0) || initiate.length > 0;
+
+  /* AV · 08: one copy's description, as editable as the AV's own. */
+  const setCopy = (d: string, change: Partial<Copy>) => setCopies((c) => ({ ...c, [d]: { ...c[d], ...change } }));
+  const copySection = (d: string, key: ListKey, type: "problem" | "solution" | "deliverable", noun: string) => (
+    <DescriptionSection type={type} onAdd={() => setCopy(d, { [key]: [...copies[d][key], ""] })} addLabel={`Add ${noun} to the ${domainName(d)} copy`}>
+      {copies[d][key].map((value, i) => (
+        <DescriptionCard
+          key={i}
+          editing
+          value={value}
+          onChange={(v) => setCopy(d, { [key]: copies[d][key].map((x, j) => (j === i ? v : x)) })}
+          onRemove={copies[d][key].length > 1 ? () => setCopy(d, { [key]: copies[d][key].filter((_, j) => j !== i) }) : undefined}
+          removeLabel={`Remove ${noun} ${i + 1} from the ${domainName(d)} copy`}
+        />
+      ))}
+    </DescriptionSection>
+  );
 
   const section = (key: ListKey, type: "problem" | "solution" | "deliverable", noun: string) => (
     <DescriptionSection
@@ -406,6 +462,50 @@ function Form({ editing }: { editing?: AddedValue }) {
           </DescriptionSection>
           {/* Figma's edit pages keep the log, closed. */}
           {editing && <StatusHistory headingLevel={2} entries={editing.history} />}
+          {/* AV · 08 Initiate to another domain (Figma 1141:138917): tick a domain,
+              its copy appears; Submit initiates it there. */}
+          {editing && (
+            <div data-flow-step="duplicate">
+              <DuplicateToOtherDomain
+                options={DOMAINS.filter((d) => d.value !== avDomain).map((d) => ({
+                  value: d.value,
+                  name: d.name,
+                  /* Already initiated there: it can't go twice. */
+                  disabled: editing.duplicates?.some((x) => x.domain === d.name),
+                }))}
+                value={initiate}
+                onChange={(value, change) => {
+                  setInitiate(value);
+                  if (change.checked && !copies[change.value]) setCopies((c) => ({ ...c, [change.value]: copyOf(draft) }));
+                }}
+              />
+            </div>
+          )}
+          {initiate.map((d) => (
+            <section
+              key={d}
+              data-flow-step={`copy-${d}`}
+              aria-labelledby={`copy-${d}-heading`}
+              className="overflow-hidden rounded-md border border-stroke-default"
+            >
+              <h2 id={`copy-${d}-heading`} className="bg-surface-neutral-subtle px-4 py-2 text-center text-body-md-semibold text-text-primary">
+                The copy in {domainName(d)} domain
+              </h2>
+              <div className="flex flex-col gap-4 p-4">
+                <section className="rounded-md bg-surface-elevated p-6">
+                  <Field label="Title" error={shown?.copies[d]}>
+                    <Input fullWidth value={copies[d].title} onChange={(e) => setCopy(d, { title: e.target.value })} />
+                  </Field>
+                </section>
+                {copySection(d, "problems", "problem", "problem")}
+                {copySection(d, "solutions", "solution", "solution")}
+                {copySection(d, "deliverables", "deliverable", "acceptance criterion")}
+                <DescriptionSection type="desired-outcome">
+                  <DescriptionCard editing value={copies[d].desiredOutcome} onChange={(v) => setCopy(d, { desiredOutcome: v })} />
+                </DescriptionSection>
+              </div>
+            </section>
+          ))}
         </div>
         <div className="flex flex-col gap-4">
           {shown?.unavailable && (

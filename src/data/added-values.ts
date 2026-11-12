@@ -41,6 +41,33 @@ export const CHAINS: Record<AVDomain, readonly AVChainStep[]> = {
   ],
 };
 
+/**
+ * Every domain an AV can be initiated to (AV · 08), by `DuplicateToOtherDomain`'s
+ * names. Only Design and Development run their own work in the prototype.
+ */
+export const DOMAINS = [
+  { value: "design", name: "Design (BESA)" },
+  { value: "development", name: "Development" },
+  { value: "content", name: "Content" },
+  { value: "governance", name: "Governance" },
+  { value: "partners", name: "Partners" },
+  { value: "qa", name: "Quality Assurance" },
+] as const;
+
+/** A copy of an AV initiated to another domain (AV · 08), as its original shows it. */
+export interface Duplicate {
+  /** The domain's name: "Design (BESA)". */
+  domain: string;
+  /** Its status there; it moves on its own, the original's doesn't. */
+  status: string;
+  /** The copy's own title. */
+  title: string;
+  /** Why it was rejected there. */
+  rejection?: string;
+  /** Why it was backlogged there. */
+  remarks?: string;
+}
+
 export interface Handoff {
   date: string;
   links: string[];
@@ -87,6 +114,8 @@ export interface AddedValue {
   rejection?: { reason: string; detail?: string };
   /** The Feedback given when it was moved to the Backlog (AV · 05), shown as Remarks. */
   remarks?: string;
+  /** Copies initiated to other domains (AV · 08). */
+  duplicates?: Duplicate[];
   handoff?: Handoff;
 }
 
