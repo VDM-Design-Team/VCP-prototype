@@ -485,14 +485,15 @@ export function AVScreen({ id }: { id: string }) {
         onClose={close}
         domain={av.domain === "design" ? "design-governance" : "development"}
         overdueDays={daysOverdue(av) || undefined}
-        attachments={av.files.map((f) => ({ name: f.name }))}
-        defaultDate={ddmmyyyy(TODAY)}
+        attachments={av.files.map((f) => ({ id: f.id, name: f.name, kind: f.kind }))}
+        defaultDate={TODAY}
         onHandoff={(draft, { publish }) => {
+          const kept = av.files.filter((f) => !draft.removedAttachments.includes(f.id));
           moveTo(av.id, "Review", {
             handoff: {
-              date: draft.date,
+              date: ddmmyyyy(draft.date),
               links: draft.links.filter(Boolean),
-              attachments: [...av.files.map((f) => f.name), ...draft.attachments.map((f) => f.name)],
+              attachments: [...kept.map((f) => f.name), ...draft.attachments.map((f) => f.name)],
               overdueReason: draft.overdueReason,
             },
           });

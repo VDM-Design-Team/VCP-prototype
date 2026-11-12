@@ -1,7 +1,7 @@
 # AV · 02 Discard
 
 **ID:** `av-02-discard` (stable; never reused)
-**Status:** Implemented in the prototype · Not approved as product behaviour yet · **Depends on DS #365** (`Button` `danger-tertiary`, Figma's red text Discard) and **DS #366** (`NotificationItem` `discarded`), not merged
+**Status:** Implemented in the prototype · Not approved as product behaviour yet · Uses the design system's `Button` `critical-tertiary` (Figma's red text Discard; `danger-tertiary` before 1.0.0) and `NotificationItem` `discarded`, both in 1.0.0
 **FigJam:** [AV · 02 Discard](https://www.figma.com/board/Jl6ANWtBbRbTTo4ItjtdoQ/VCP-Flows---Scenarios?node-id=87-257) (decision diagram, then screen by screen, drawn from the prototype's screens)
 **Figma sources:** VCP Pages - Flows, AV Page: Editing AVs: Flows › Discard Button (Draft) `1026:166776` (the button `1026:168551`, "available while the AV is in Draft and Pending status" `1026:168578`, the confirm `1028:170470`, "Does the AV already have an ID?" `1028:173219`)
 **Scenarios:** [`src/flows/av-02-discard.ts`](../src/flows/av-02-discard.ts), runnable from the Flows & Scenarios catalogue (`/flows`)
@@ -14,7 +14,7 @@ Throw away an Added Value that isn't wanted, before anyone has accepted it.
 - Once an admin has accepted it, there is no Discard. Nor is there for anyone else who can open its edit page.
 
 ## Main steps and decision points
-1. **Discard** (DS `Button` `danger-tertiary`, red text) sits before Save as draft and Submit (Figma `1026:166776`).
+1. **Discard** (DS `Button` `critical-tertiary`, red text) sits before Save as draft and Submit (Figma `1026:166776`).
 2. **The confirm** (DS `ConfirmDeleteModal`, "the same modal used to delete AVs in the AV table"): "Are you sure you want to discard this Added Value?", "This action cannot be undone. The item will be permanently removed.", the AV's reference and title, **Cancel** and **Confirm**.
 3. **Confirm**: the Added Value is removed for good. The toast: "Deleted!", and
    - with an ID: "Added Value “VCP-1199” has been discarded successfully.";
@@ -43,7 +43,7 @@ Throw away an Added Value that isn't wanted, before anyone has accepted it.
 ## What Figma shows, and what the prototype uses
 | Where | Figma | Prototype |
 |---|---|---|
-| Discard | Style=Text, label `accent/critical/outline/content/hover` (red-700) | DS `danger-tertiary` (#365), the same token |
+| Discard | Style=Text, label `accent/critical/outline/content/hover` (red-700) | DS `critical-tertiary`, the same token |
 | The confirm | "Are you sure you want to discard this Added Value?" · "This action cannot be undone. The item will be permanently removed." · Cancel, Confirm | the same words; the DS confirm also shows the AV's reference and title |
 | The toast | "Deleted!" · "Added Value “12065” has been discarded successfully." | "Deleted!" · "Added Value “VCP-1199” …" |
 | After | My Values | the Dashboard, until My Values is built (decided) |

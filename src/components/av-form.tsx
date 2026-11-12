@@ -662,9 +662,9 @@ function Form({ editing }: { editing?: AddedValue }) {
             }
           />
           <div data-flow-step="actions" className="flex justify-end gap-3">
-            {/* AV · 02: Discard, in red text (DS danger-tertiary, #365), while the AV is a Draft or Pending. */}
+            {/* AV · 02: Discard, in red text (DS critical-tertiary), while the AV is a Draft or Pending. */}
             {canDiscard && (
-              <Button variant="danger-tertiary" onClick={() => setAskDiscard(true)}>
+              <Button variant="critical-tertiary" onClick={() => setAskDiscard(true)}>
                 Discard
               </Button>
             )}
