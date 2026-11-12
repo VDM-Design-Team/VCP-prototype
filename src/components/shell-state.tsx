@@ -15,6 +15,9 @@ interface ShellState {
   /** Admin · 01: the admin's domain, from the rail's switcher (decided 10 Nov 2026: an admin has several). */
   domain: string;
   setDomain: (domain: string) => void;
+  /** Admin · 02: the Development admin's dashboard view, Cycle or Quarter (Figma's switch); kept between screens. */
+  dashboardView: DashboardView;
+  setDashboardView: (view: DashboardView) => void;
   /**
    * A page with unsaved edits (Admin · 01) claims navigation: given where to, it returns true when it will ask
    * first (and go later, or not). Every in-app link goes through `useGuardedPush`.
@@ -24,6 +27,8 @@ interface ShellState {
   setLeaveGuard: (guard: ((go: () => void) => boolean) | null) => void;
 }
 
+export type DashboardView = "cycle" | "quarter";
+
 const ShellStateContext = React.createContext<ShellState | null>(null);
 
 export function ShellStateProvider({ children }: { children: React.ReactNode }) {
@@ -32,13 +37,14 @@ export function ShellStateProvider({ children }: { children: React.ReactNode }) 
   /* A page opened directly starts in a role whose rail has it. */
   const [role, setRole] = React.useState<Role>(() => roleForPath(pathname));
   const [domain, setDomain] = React.useState(ADMIN_DOMAINS[0]);
+  const [dashboardView, setDashboardView] = React.useState<DashboardView>("cycle");
   const leaveGuard = React.useRef<((go: () => void) => boolean) | null>(null);
   const setLeaveGuard = React.useCallback((guard: ((go: () => void) => boolean) | null) => {
     leaveGuard.current = guard;
   }, []);
   return (
     <ShellStateContext.Provider
-      value={{ collapsed, setCollapsed, role, setRole, domain, setDomain, leaveGuard, setLeaveGuard }}
+      value={{ collapsed, setCollapsed, role, setRole, domain, setDomain, dashboardView, setDashboardView, leaveGuard, setLeaveGuard }}
     >
       {children}
     </ShellStateContext.Provider>

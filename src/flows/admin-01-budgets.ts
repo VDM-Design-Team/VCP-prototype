@@ -14,7 +14,8 @@ const on = (text: string, target = "step:budgets", path = EDIT): ScenarioStep =>
 const card = (text: string): ScenarioStep => ({ text, target: "step:budget-card", path: HOME });
 
 const superAdmin = { status: "Implemented", testing: "Not tested", role: "super-admin", start: EDIT, setup: undefined } as const;
-const admin = { status: "Implemented", testing: "Not tested", role: "admin", start: HOME, setup: undefined } as const;
+/* The admin's card is on the Dashboard's Quarter view (Admin · 02, Figma 961:372017). */
+const admin = { status: "Implemented", testing: "Not tested", role: "admin", start: HOME, setup: undefined, dashboardView: "quarter" } as const;
 const conditions = "Eve as Super Admin on Domain Budget; Q4 2026 is the current quarter (today 05/11/2026).";
 
 export const BUDGET_SCENARIOS: readonly ScenarioDef[] = [
@@ -22,7 +23,7 @@ export const BUDGET_SCENARIOS: readonly ScenarioDef[] = [
     ...admin,
     id: "admin-01-budgets.admin-view",
     steps: [
-      card("Admin view, on the Dashboard: Domain Budget, for Development, the admin's domain (Figma 696:55584). Allocated, Consumed and Remaining, the quarter's days left, and Budget Usage."),
+      card("Admin view, on the Dashboard's Quarter view (Admin · 02): Domain Budget, for Development, the admin's domain (Figma 696:55584). Allocated, Consumed and Remaining, the quarter's days left, and Budget Usage."),
       card("Point at an ⓘ: what each figure is (\"for the selected quarter\": a budget is per quarter, never per cycle). The bar is Figma's: blue, amber from 75%, red at 100%. Under it, the super admin's note for the domain (decided 10 Nov 2026)."),
       card("Pick Q3: a past quarter, with its dates and \"Go to Current Quarter\". Pick 2027, then Q1: an upcoming one, with no budget set yet (0 pts)."),
       card("\"Go to Current Quarter\" brings Q4 2026 back."),
@@ -88,7 +89,7 @@ export const BUDGET_SCENARIOS: readonly ScenarioDef[] = [
     id: "admin-01-budgets.admin-sees-it",
     steps: [
       on("Development has 120 pts this quarter. Raise it (to 150, say), and press Save Changes. Then Next."),
-      on("Switch View as to Admin, then open the Dashboard from the rail. Then Next."),
+      on("Switch View as to Admin, then open the Dashboard from the rail and press Quarter. Then Next."),
       card("The Domain Budget card shows the new allocation, and Remaining and Budget Usage with it: the admin reads what the super admin saved."),
     ],
     name: "What the admin sees",

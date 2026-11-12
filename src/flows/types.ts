@@ -75,6 +75,8 @@ export interface ScenarioDef<Setup = unknown> {
   role: Role;
   /** An admin's domain, from the rail's switcher (Admin · 01). Development when omitted. */
   domain?: string;
+  /** The Development admin's dashboard view to start on (Admin · 02). Cycle when omitted. */
+  dashboardView?: "cycle" | "quarter";
   /** The reviewer's guided walk through it. The participant view shows none of it. */
   steps: readonly ScenarioStep[];
   /** The screen's starting data. Read by the screen the scenario opens. */

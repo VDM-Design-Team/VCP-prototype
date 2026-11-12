@@ -54,7 +54,7 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
   const { reset: resetHolidays } = useHolidays();
   const { reset: resetNotifications } = useNotifications();
   const { reset: resetBudgets } = useBudgets();
-  const { setRole, setCollapsed, setDomain } = useShellState();
+  const { setRole, setCollapsed, setDomain, setDashboardView } = useShellState();
   const { dismissAll } = useToast();
   const pathname = usePathname();
   const [active, setActive] = React.useState<ScenarioState["active"]>();
@@ -104,6 +104,7 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         dismissAll();
         setRole(found.scenario.role);
         setDomain(found.scenario.domain ?? ADMIN_DOMAINS[0]);
+        setDashboardView(found.scenario.dashboardView ?? "cycle");
         setCollapsed(false);
         setActive(found);
         setView(nextView);
@@ -120,13 +121,14 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         dismissAll();
         setRole("user");
         setDomain(ADMIN_DOMAINS[0]);
+        setDashboardView("cycle");
         setCollapsed(false);
         setActive(undefined);
         setView("reviewer");
         setTrail([0]);
       },
     }),
-    [active, view, run, trail, reset, resetHolidays, resetNotifications, resetBudgets, dismissAll, setRole, setCollapsed, setDomain],
+    [active, view, run, trail, reset, resetHolidays, resetNotifications, resetBudgets, dismissAll, setRole, setCollapsed, setDomain, setDashboardView],
   );
 
   return <ScenarioContext.Provider value={value}>{children}</ScenarioContext.Provider>;
