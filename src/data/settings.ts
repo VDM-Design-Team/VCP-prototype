@@ -95,16 +95,7 @@ export const PANEL: Record<string, { roles: PanelItem[]; statuses: PanelItem[]; 
 };
 
 /** Teams an admin sets in Settings (decided 10 Nov 2026, Admin · 02): the dashboard's team filter reads them. */
-export interface Team {
-  id: string;
-  name: string;
-  people: string[];
-}
-export const TEAMS: Team[] = [
-  { id: "platform", name: "Team Platform", people: ["Eve Kestrel", "John Mason Smith", "Alice Carter"] },
-  { id: "finance", name: "Team Finance", people: ["Jack Morgan", "Noah Foster"] },
-  { id: "warehouse", name: "Team Warehouse", people: ["Lena Novak", "Maya Bennett"] },
-];
+export { TEAMS, type Team } from "./teams";
 
 /** Figma's Manuals Tab (1046:242262): sample manuals, with who uploaded them. Every user in the domain reads them;
     an admin's Add Manual puts one on top (decided 10 Nov 2026). */

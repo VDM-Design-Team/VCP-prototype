@@ -6,7 +6,6 @@ import {
   AVTable,
   EmptyState,
   FilterBar,
-  formatDate,
   Icon,
   PageTitle,
   type AVTableRow,
@@ -61,7 +60,7 @@ function toRow(av: AddedValue, all: readonly AddedValue[] = []): AVTableRow {
     attachments: av.files.length,
     comments: av.comments.length,
     due: av.dueDate
-      ? { label: formatDate(av.dueDate), proximity: left! < 0 ? "overdue" : left! <= 3 ? "due-soon" : "default" }
+      ? { date: av.dueDate, proximity: left! < 0 ? "overdue" : left! <= 3 ? "due-soon" : "default" }
       : undefined,
     urgency: av.urgency,
     type: av.type,
