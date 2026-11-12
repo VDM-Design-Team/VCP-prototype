@@ -19,8 +19,6 @@ import { stageLabel, updatedLabel, type AddedValue } from "@/data/added-values";
 
 const DAY = 86_400_000;
 const dayOf = (iso: string) => Math.floor(Date.parse(`${iso}T00:00:00Z`) / DAY);
-const formatDate = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
 
 /** One AV as AVTable draws it. */
 function toRow(av: AddedValue): AVTableRow {
@@ -33,7 +31,7 @@ function toRow(av: AddedValue): AVTableRow {
     attachments: av.files.length,
     comments: av.comments.length,
     due: av.dueDate
-      ? { label: formatDate(av.dueDate), proximity: left! < 0 ? "overdue" : left! <= 3 ? "due-soon" : "default" }
+      ? { date: av.dueDate, proximity: left! < 0 ? "overdue" : left! <= 3 ? "due-soon" : "default" }
       : undefined,
     urgency: av.urgency,
     type: av.type,
