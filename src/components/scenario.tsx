@@ -146,6 +146,13 @@ const nameOf = (el: Element) =>
       .join(" ")
   ).trim();
 
+/** A button's words as a screen reader hears them: its text without the `aria-hidden` parts ("+2" → "Show 2 more reactions"). */
+const spokenText = (el: HTMLElement) => {
+  const copy = el.cloneNode(true) as HTMLElement;
+  copy.querySelectorAll('[aria-hidden="true"]').forEach((n) => n.remove());
+  return copy.textContent?.trim();
+};
+
 /** See `ScenarioStep.target`: `step:<name>`, `group:<Label>`, `button:<Text>` or `link:<href>`. */
 function findTarget(target: string): HTMLElement | null {
   const at = target.indexOf(":");
@@ -157,7 +164,7 @@ function findTarget(target: string): HTMLElement | null {
     return (
       [...document.querySelectorAll<HTMLElement>("button")].find(
         /* By its words, or for an icon-only button its name (`aria-label`, or a `title`, as IconButton's). */
-        (b) => outsideBar(b) && [b.textContent?.trim(), b.getAttribute("aria-label"), b.title].includes(value),
+        (b) => outsideBar(b) && [b.textContent?.trim(), spokenText(b), b.getAttribute("aria-label"), b.title].includes(value),
       ) ??
       null
     );
