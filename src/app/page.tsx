@@ -16,6 +16,7 @@ import {
   TeamCapacity,
   UserCapacity,
   ValueCards,
+  formatDateRange,
   useToast,
   type Quarter,
 } from "@vdm-design-team/vcp-design-system";
@@ -50,10 +51,8 @@ const VIEWS = [
   { value: "cycle", label: "Cycle" },
   { value: "quarter", label: "Quarter" },
 ];
-const fullDate = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric", timeZone: "UTC" });
-/** Figma's cycle option: "C37 (Jul 20, 2026 - Aug 03, 2026)". */
-const cycleOption = (c: (typeof CYCLES)[number]) => ({ value: c.id, label: `${c.short} (${fullDate(c.start)} - ${fullDate(c.end)})` });
+/** A cycle option: "C37 (21/07/2026 - 03/08/2026)", dates as everywhere (Figma writes "Jul 20, 2026"). */
+const cycleOption = (c: (typeof CYCLES)[number]) => ({ value: c.id, label: `${c.short} (${formatDateRange(c.start, c.end)})` });
 const CYCLE_YEARS = [...new Set(CYCLES.map((c) => c.start.slice(0, 4)))].sort().reverse();
 
 /* A user's dashboard (an admin's is Admin · 02, below): the Value Cards, "In Case You Missed it" (Activity · 03; Figma 1552:13937, placed

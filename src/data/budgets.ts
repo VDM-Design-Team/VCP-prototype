@@ -1,4 +1,4 @@
-import type { DomainBudgetPeriod, Quarter } from "@vdm-design-team/vcp-design-system";
+import { formatDate, type DomainBudgetPeriod, type Quarter } from "@vdm-design-team/vcp-design-system";
 import { DOMAINS, type AddedValue } from "./added-values";
 import { TODAY } from "./gantt";
 
@@ -14,7 +14,8 @@ const endOf = (year: number, q: Quarter) => {
   const d = new Date(Date.UTC(year, q * 3, 0));
   return d.toISOString().slice(0, 10);
 };
-const short = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+/* dd/mm/yyyy, as every date (Figma writes "Dec 31"). */
+const short = (iso: string) => formatDate(iso);
 
 export const CURRENT = { year: Number(TODAY.slice(0, 4)), quarter: (Math.floor((Number(TODAY.slice(5, 7)) - 1) / 3) + 1) as Quarter };
 

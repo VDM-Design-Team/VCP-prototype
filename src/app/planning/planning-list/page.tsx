@@ -8,6 +8,7 @@ import {
   PlanningFilters,
   PlanningTable,
   formatCycleRange,
+  formatDate,
   useToast,
   type DataTableSort,
   type MoveAVToCycleDraft,
@@ -46,9 +47,8 @@ import {
 const NO_FILTERS: PlanningFiltersValue = { search: "", status: "", priority: "" };
 type Field = "start" | "due";
 const key = (id: string, field: Field) => `${id}:${field}`;
-/** "Nov 21", as the assignee pill reads it. */
-const shortDate = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+/** The assignee pill's date, dd/mm/yyyy as every date. */
+const shortDate = (iso: string) => formatDate(iso);
 
 export default function PlanningListScreen() {
   const router = useRouter();

@@ -1,7 +1,7 @@
 # Admin · 02 Admin dashboard
 
 **ID:** `admin-02-dashboard` (stable; never reused)
-**Status:** Implemented in the prototype · Not approved as product behaviour yet · **Depends on DS #354** (`ValueCards` exported from the package), not merged. The prototype runs a local DS build on current `main` (which has the dashboard pieces), with the open PRs it uses merged in.
+**Status:** Implemented in the prototype · Not approved as product behaviour yet · **Depends on DS #354** (`ValueCards` exported from the package) and **#362** (the amber Carried Over dot), not merged. The prototype runs a local DS build on current `main` (which has the dashboard pieces), with the open PRs it uses merged in.
 **FigJam:** [Admin · 02 Admin dashboard](https://www.figma.com/board/Jl6ANWtBbRbTTo4ItjtdoQ/VCP-Flows---Scenarios?node-id=80-245) (decision diagram, then screen by screen, drawn from the prototype's screens)
 **Figma sources:** VCP Pages - Flows, Dashboard Page `947:304368`: Cycle view `951:370905`, Quarter view `961:372017`, tooltips and dropdowns `964:375279`, Swapping Views `964:374002`, Cycle Summary States `964:375278`. Design Admin's Dashboard page `996:14932` is empty.
 **Scenarios:** [`src/flows/admin-02-dashboard.ts`](../src/flows/admin-02-dashboard.ts), runnable from the Flows & Scenarios catalogue (`/flows`); the rules are in [`src/data/dashboard.ts`](../src/data/dashboard.ts)
@@ -59,6 +59,7 @@ See how the domain's cycle and quarter are going: points, capacity, budget and w
 - **The gauge: against days gone** for a running cycle ("Of plan to date"); a finished cycle keeps completed ÷ committed. The DS gauge needed no change: the rate is the caller's, and `completionLabel` names it.
 - **Teams: an admin sets them in Settings**, creating teams and assigning people. The sample teams stay until that flow is built (noted for Admin · 04).
 - **A domain without cycles: as built.**
+- **The Carried Over dot: amber, as in Figma** (DS #362).
 - **Export: the PDF is the cycle dashboard as shown, with its filters; the CSV is one row per Added Value in the cycle**, with its status, points, assignees and dates. The prototype keeps the toast, which says so.
 
 ## What Figma shows, and what the prototype uses
@@ -93,8 +94,7 @@ To bring Figma to the DS palette (`CHART_SERIES`): one colour per series on ever
 | Cycle Burndown | Committed | #4285f4 (no token) | `surface.brand.stronger` |
 | Cycle Burndown | Overdue | `accent/critical/outline/border` #fb2c36 | `accent.critical.filled.surface` |
 
-Team Capacity's Available (`surface/brand/strong`) already matches. The Cycle Summary's dots aren't chart series: Committed (`action.primary.surface`) and Completed (`accent.success.outline.border`) match Figma, but **Carried Over** is brown in the DS (`accent.warning.outline.content`) and amber in Figma (`accent/warning/outline/border` #f0b100).
+Team Capacity's Available (`surface/brand/strong`) already matches. The Cycle Summary's dots aren't chart series: Committed (`action.primary.surface`) and Completed (`accent.success.outline.border`) match Figma. **Carried Over** was brown in the DS; it is amber now, as Figma draws it (decided 10 Nov 2026, DS #362): `accent.yellow.medium`, since the DS's `accent.warning.outline.border` is yellow-700 in light, nearly brown.
 
 ## Unresolved questions
-- **The Carried Over dot**: Figma's amber, or the DS's brown? The chart-palette decision doesn't cover it (it isn't a chart series).
 - For the Settings flows (Admin · 04): where an admin creates teams and assigns people.

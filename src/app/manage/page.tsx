@@ -5,7 +5,7 @@ import { useShellState } from "@/components/shell-state";
 import { ARCHIVED, DOMAINS } from "@/data/added-values";
 
 /* Manage (Admin): every open Added Value in the domain, Pending ones
-   included — where an admin accepts or rejects them. Figma 940:167946. The
+   included — where an admin accepts or rejects them. Figma 940:167946, with its filters, members and pages (Admin · 03). The
    domain is the one picked in the rail's switcher (Admin · 01, decided 10 Nov 2026). */
 export default function ManageScreen() {
   const { domain } = useShellState();

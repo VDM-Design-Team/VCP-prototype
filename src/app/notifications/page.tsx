@@ -1,19 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { NotificationInbox, PageTitle } from "@vdm-design-team/vcp-design-system";
+import { NotificationInbox, PageTitle, formatDate } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { useNotifications } from "@/components/notification-store";
 import { NotificationRow } from "@/components/notification-rows";
 import { TODAY } from "@/data/gantt";
 import type { AppNotification } from "@/data/notifications";
 
-/* "Today", "Yesterday", or "3 November", from the prototype's today. */
+/* "Today", "Yesterday", or the date ("03/11/2026"), from the prototype's today. */
 const dayLabel = (iso: string) => {
   const days = Math.round((Date.parse(TODAY) - Date.parse(iso)) / 86_400_000);
   if (days === 0) return "Today";
   if (days === 1) return "Yesterday";
-  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
+  return formatDate(iso);
 };
 
 /* Activity · 02: the notification inbox, where the popover's "View notifications inbox" goes. Figma

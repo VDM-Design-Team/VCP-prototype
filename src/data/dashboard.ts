@@ -1,4 +1,4 @@
-import type { ChartSeries, CapacitySegment, Quarter } from "@vdm-design-team/vcp-design-system";
+import { formatDate, formatDateRange, type ChartSeries, type CapacitySegment, type Quarter } from "@vdm-design-team/vcp-design-system";
 import type { AddedValue } from "./added-values";
 import { VIEWER } from "./added-values";
 import { CYCLES, PEOPLE, TODAY } from "./gantt";
@@ -159,8 +159,9 @@ export function userCapacity(avs: readonly AddedValue[], cycleId: string, team: 
   });
 }
 
-const shortDate = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
-export const cycleRange = (c: Cycle) => `${shortDate(c.start)} - ${shortDate(c.end)}`;
+/* Dates read dd/mm/yyyy, as everywhere. */
+const shortDate = (iso: string) => formatDate(iso);
+export const cycleRange = (c: Cycle) => formatDateRange(c.start, c.end);
 
 /** Sprint Metrics: the chosen cycle and the three before it (Figma draws four). */
 export function sprintMetrics(avs: readonly AddedValue[], cycleId: string, team: TeamId) {
