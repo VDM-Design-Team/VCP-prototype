@@ -42,7 +42,9 @@ export interface ScenarioStep {
   /**
    * The step asks the user to press its target (Submit). Pressing it moves the
    * walk on by itself, and Next presses it for them, so the screen always shows
-   * what the step after describes. Never skipped past.
+   * what the step after describes. Never skipped past. When the step after is
+   * on another page, the walk moves only once that page opens, so a press that
+   * fails (a blocked Submit) leaves it on this step.
    */
   action?: boolean;
   /**
