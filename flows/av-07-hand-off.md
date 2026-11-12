@@ -15,7 +15,7 @@ Hand finished work over for review, and have it signed off (Completed) or sent b
 
 ## Main steps and decision points
 1. On the AV, **Move to Handoff** (an admin's reads **Handoff**) opens **"Handoff Added Value"** (`HandoffAVModal`):
-   - **Handoff Date** (prefilled with today), **Demo Links** (Add Another Link), **Attachments** (the AV's files, plus a drop zone);
+   - **Handoff Date** (required, chosen from the calendar; prefilled with today, and **Handoff** stays disabled while it is empty), **Demo Links** (Add Another Link), **Attachments** (the AV's files as cards that can be removed, plus a drop zone);
    - **overdue:** a warning banner ("This value is Overdue by 3 days"), a **required Overdue Reason** (six reasons) and optional Additional Notes;
    - **footer by domain:** Design: Cancel · **Handoff**. Development: Cancel · Handoff · **Handoff & Publish**.
 2. **Handoff** → the AV moves to **Review**, logged; a toast names who reviews it ("Marvin Ode reviews it next"). The assignee has no more moves.
@@ -35,8 +35,8 @@ Hand finished work over for review, and have it signed off (Completed) or sent b
 - **Not in this flow:** handing off several at once (AV · 09), the initiator being told (Activity · 02).
 
 ## Unresolved questions
-- **The decided handoff form.** On 6 Nov the Handoff Date became a required calendar field, in one form shared by single and bulk handoff, with shared attachments. That's Eve's DS #279/#287; the prototype runs 0.3.0's dialog, where the date isn't required. Should AV · 07 wait for them, or move over when they land?
+- **The decided handoff form: done.** On 6 Nov the Handoff Date became a required calendar field, in one form shared by single and bulk handoff, with shared attachments. The prototype moved to it with design system 1.0.0 (12 Nov): the date is passed as ISO and a file removed in the dialog is left out of the handoff.
 - **Focus on a blocked handoff.** With no overdue reason, the error appears but focus stays on the dialog, not the field (a DS follow-up for the shared form).
-- **Date format:** the dialogs read "05-11-2026"; the 6 Nov decision is dd/mm/yyyy (being fixed in the DS from the main session).
+- **Date format:** the handoff dialog's date reads dd/mm/yyyy since 1.0.0; the review dialog still reads "05-11-2026" (its dates are text the prototype passes); the 6 Nov decision is dd/mm/yyyy.
 - **Handoff & Publish:** what "publish" does isn't drawn; the prototype only words the toast differently.
 - **Where it lands:** the AV stays open after a handoff and after a review (as AV · 06 decided for Accept/Reject).
