@@ -39,6 +39,7 @@ export const DECIDE_SCENARIOS: readonly ScenarioDef[] = [
   {
     ...base,
     id: "av-06-accept-reject.reject",
+    domain: "Design (BESA)",
     start: "/manage",
     steps: [
       onManage,
@@ -57,7 +58,7 @@ export const DECIDE_SCENARIOS: readonly ScenarioDef[] = [
     ],
     name: "Reject a Pending AV",
     demonstrates: "Rejecting needs a reason; the AV shows it and moves to Archive → Rejected.",
-    conditions: "Eve as Admin, on Manage. Lena's VCP-1202 is Pending.",
+    conditions: "Eve as Admin of Design (the rail's domain switcher), on Manage. Lena's VCP-1202 is Pending.",
     simulated: "Rejecting always succeeds.",
     expected: "Reject stays disabled until a reason is chosen. Then a red \"This Task was rejected\" banner with the reason, a toast, and the AV in Archive → Rejected.",
     task: "As an admin, turn down Lena's Added Value, and say why.",

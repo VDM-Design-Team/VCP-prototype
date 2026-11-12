@@ -6,7 +6,8 @@ import { Button, Menu, useToast } from "@vdm-design-team/vcp-design-system";
 import { useAddedValues } from "./av-store";
 import { useHolidays } from "./holiday-store";
 import { useNotifications } from "./notification-store";
-import { useShellState } from "./shell-state";
+import { useBudgets } from "./budget-store";
+import { ADMIN_DOMAINS, useShellState } from "./shell-state";
 import { findScenario } from "@/flows/catalogue";
 import type { FlowDef, ScenarioDef, ScenarioStep } from "@/flows/types";
 
@@ -52,7 +53,8 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
   const { reset } = useAddedValues();
   const { reset: resetHolidays } = useHolidays();
   const { reset: resetNotifications } = useNotifications();
-  const { setRole, setCollapsed } = useShellState();
+  const { reset: resetBudgets } = useBudgets();
+  const { setRole, setCollapsed, setDomain } = useShellState();
   const { dismissAll } = useToast();
   const pathname = usePathname();
   const [active, setActive] = React.useState<ScenarioState["active"]>();
@@ -98,8 +100,10 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         reset(found.scenario.avs);
         resetHolidays();
         resetNotifications();
+        resetBudgets();
         dismissAll();
         setRole(found.scenario.role);
+        setDomain(found.scenario.domain ?? ADMIN_DOMAINS[0]);
         setCollapsed(false);
         setActive(found);
         setView(nextView);
@@ -112,15 +116,17 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         reset();
         resetHolidays();
         resetNotifications();
+        resetBudgets();
         dismissAll();
         setRole("user");
+        setDomain(ADMIN_DOMAINS[0]);
         setCollapsed(false);
         setActive(undefined);
         setView("reviewer");
         setTrail([0]);
       },
     }),
-    [active, view, run, trail, reset, resetHolidays, resetNotifications, dismissAll, setRole, setCollapsed],
+    [active, view, run, trail, reset, resetHolidays, resetNotifications, resetBudgets, dismissAll, setRole, setCollapsed, setDomain],
   );
 
   return <ScenarioContext.Provider value={value}>{children}</ScenarioContext.Provider>;

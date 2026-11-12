@@ -11,6 +11,7 @@ Decide a submitted Added Value: accept it into the work, or turn it down and say
 
 ## Actor, entry points and starting conditions
 - **An admin.** The initiator and everyone else see no decision buttons (`StatusProgression` owns this).
+- An admin finds Pending AVs on **Manage**, for the domain picked in the rail's switcher (Admin · 01, decided 10 Nov 2026). The reject scenario starts on Design (BESA), VCP-1202's domain.
 - The AV is **Pending** (after AV · 01 or AV · 04), or **Backlog** (AV · 05; DS #330).
 - Starts from **Manage** (every open AV, Pending included) → the AV's row → its page, where the header has **Reject** and **Accept**.
 

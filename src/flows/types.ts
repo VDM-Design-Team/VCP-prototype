@@ -73,6 +73,8 @@ export interface ScenarioDef<Setup = unknown> {
   testing: TestingStatus;
   /** The role the scenario starts as. */
   role: Role;
+  /** An admin's domain, from the rail's switcher (Admin · 01). Development when omitted. */
+  domain?: string;
   /** The reviewer's guided walk through it. The participant view shows none of it. */
   steps: readonly ScenarioStep[];
   /** The screen's starting data. Read by the screen the scenario opens. */

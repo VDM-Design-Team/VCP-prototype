@@ -1,10 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { AppShell, NotificationPopover, Sidebar, TopBar } from "@vdm-design-team/vcp-design-system";
-import { useShellState } from "./shell-state";
+import { ADMIN_DOMAINS, useGuardedPush, useShellState } from "./shell-state";
 import { CreateAVButton } from "./create-av-button";
 import { useScenario } from "./scenario";
 import { railFor } from "./roles";
@@ -29,7 +28,7 @@ const useMounted = () =>
  * its menu; a row opens its AV, and the footer link the inbox, both without leaving the app.
  */
 function Bell() {
-  const router = useRouter();
+  const push = useGuardedPush();
   const { notifications, unread, markAllRead } = useNotifications();
   const [open, setOpen] = React.useState(false);
   const [filter, setFilter] = React.useState<"all" | "mentions">("all");
@@ -43,7 +42,7 @@ function Bell() {
     if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
     e.preventDefault();
     setOpen(false);
-    router.push(a.getAttribute("href")!);
+    push(a.getAttribute("href")!);
   };
   return (
     <span onClick={inApp} data-flow-step="bell">
@@ -85,9 +84,11 @@ export function Screen({
   /** `false`: no left menu, and the top bar's logo instead of Create Added Value (Figma's inbox, decided 9 Nov 2026). */
   rail?: boolean;
 }) {
-  const router = useRouter();
+  const push = useGuardedPush();
   const { resolvedTheme, setTheme } = useTheme();
-  const { collapsed, setCollapsed, role } = useShellState();
+  const { collapsed, setCollapsed, role, domain, setDomain } = useShellState();
+  /* Admin · 01: an admin switches between their domains (Figma's admin rail). Development's admin has Planning. */
+  const userType = role === "admin" ? (domain === "Development" ? "admin-dev" : "admin") : railFor(role);
   const mounted = useMounted();
   const { active: scenario, view } = useScenario();
 
@@ -96,9 +97,15 @@ export function Screen({
       sidebar={
         rail && (
           <Sidebar
-            userType={railFor(role)}
+            userType={userType}
             active={active}
-            onNavigate={(key) => router.push(routeFor(key))}
+            onNavigate={(key) => push(routeFor(key))}
+            {...(role === "admin" && {
+              showDomainSelector: true,
+              domain,
+              domains: ADMIN_DOMAINS,
+              onDomainChange: setDomain,
+            })}
             collapsed={collapsed}
             onToggleCollapse={() => setCollapsed(!collapsed)}
           />
@@ -111,7 +118,7 @@ export function Screen({
             const a = (e.target as Element).closest("a[href='/']");
             if (!a || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
             e.preventDefault();
-            router.push("/");
+            push("/");
           }}
         >
           <TopBar
