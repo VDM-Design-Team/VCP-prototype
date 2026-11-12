@@ -90,11 +90,34 @@ const describe = (op: Op): { property: string; value: string } => {
   return { property: "Status", value: map[op.key] ?? stepLabel(op.key) };
 };
 
-export function BulkActions({ selected, onClear }: { selected: readonly AddedValue[]; onClear: () => void }) {
+export function BulkActions({
+  selected,
+  onClear,
+  returnFocusRef,
+}: {
+  selected: readonly AddedValue[];
+  onClear: () => void;
+  /** Where focus goes when the selection empties and the bar goes with it: the list's select-all checkbox. */
+  returnFocusRef?: React.RefObject<HTMLElement | null>;
+}) {
   const { moveTo, update, remove } = useAddedValues();
   const { toast } = useToast();
   const [op, setOp] = React.useState<Op | null>(null);
   const [failed, setFailed] = React.useState<{ failures: BulkActionFailure[]; total: number; property: string; value: string } | null>(null);
+
+  /* The failure summary opens after the selection has emptied, so the button its dialog hands focus back to is gone.
+     When it closes and focus has fallen to the page, it goes where the bar's would. */
+  const hadFailed = React.useRef(false);
+  React.useEffect(() => {
+    const had = hadFailed.current;
+    hadFailed.current = !!failed;
+    if (!had || failed || !returnFocusRef) return undefined;
+    const timer = window.setTimeout(() => {
+      const active = document.activeElement;
+      if (!active || active === document.body) returnFocusRef.current?.focus();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [failed, returnFocusRef]);
 
   const items = selected.map((av) => ({ ref: av.ref, title: av.title, href: `/added-values/${av.id}` }));
   const domains = new Set(selected.map((av) => av.domain));
@@ -176,12 +199,21 @@ export function BulkActions({ selected, onClear }: { selected: readonly AddedVal
   return (
     <>
       {/* Stuck to the bottom of the table, centred over it, as Figma draws it;
-          raised clear of the prototype's own View as switch. */}
-      {selected.length > 0 && (
-        <div data-flow-step="bulk-bar" className="sticky bottom-20 z-10 flex justify-center">
-          <BulkActionBar count={selected.length} onClear={onClear} actions={actions} onDelete={() => setOp({ kind: "delete" })} />
-        </div>
-      )}
+          raised clear of the prototype's own View as switch. The bar stays mounted
+          with nothing selected (it draws nothing at 0): that is how it sees the
+          selection empty and hands focus to `returnFocusRef`. */}
+      <div
+        data-flow-step={selected.length > 0 ? "bulk-bar" : undefined}
+        className={selected.length > 0 ? "sticky bottom-20 z-10 flex justify-center" : "hidden"}
+      >
+        <BulkActionBar
+          count={selected.length}
+          onClear={onClear}
+          actions={actions}
+          onDelete={() => setOp({ kind: "delete" })}
+          returnFocusRef={returnFocusRef}
+        />
+      </div>
       {confirm}
       <ConfirmDeleteAVModal
         open={op?.kind === "delete"}

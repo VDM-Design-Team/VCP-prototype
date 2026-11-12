@@ -153,6 +153,16 @@ export function AVListScreen({
   /* Real data starts at 50 a page (Figma, decided 10 Nov 2026); the prototype starts at 10 so its few AVs still show the pages. */
   const [pageSize, setPageSize] = React.useState(10);
 
+  /* AV · 09: when the selection empties the bulk bar goes, and the button in it that had focus. Focus goes to the
+     table's select-all checkbox, or to the search box when the list is left empty and has none to offer. */
+  const listRef = React.useRef<HTMLDivElement>(null);
+  const afterBulk = React.useRef<HTMLElement | null>(null);
+  React.useEffect(() => {
+    const list = listRef.current;
+    afterBulk.current =
+      list?.querySelector<HTMLElement>('input[aria-label="Select all rows"]:not(:disabled)') ?? list?.querySelector<HTMLElement>('input[type="search"]') ?? null;
+  });
+
   const mine = avs.filter(include);
   const statusOptions = [...new Set(mine.map(stageLabel))];
   const q = search.trim().toLowerCase();
@@ -226,7 +236,7 @@ export function AVListScreen({
     <Screen active={active} header={<PageTitle title={title} />}>
       <div className="flex flex-col gap-6 py-6">
         {/* Where a guided scenario's step points: see src/flows/types.ts. */}
-        <div data-flow-step="av-list">
+        <div ref={listRef} data-flow-step="av-list">
           <AVTable
             rows={rows}
             sort={sort}
@@ -264,7 +274,7 @@ export function AVListScreen({
           />
         </div>
         {/* Mounted while the list is, so its failure summary outlives the cleared selection. */}
-        {bulk && <BulkActions selected={avs.filter((av) => selected.includes(av.id))} onClear={() => setSelected([])} />}
+        {bulk && <BulkActions selected={avs.filter((av) => selected.includes(av.id))} onClear={() => setSelected([])} returnFocusRef={afterBulk} />}
       </div>
     </Screen>
   );
