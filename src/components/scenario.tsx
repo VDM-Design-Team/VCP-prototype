@@ -316,7 +316,7 @@ export function ScenarioBar() {
   const step = scenario.steps[index];
   const last = !step?.options && !step?.next && index >= scenario.steps.length - 1;
   const here = step && onPage(step, scenario, pathname);
-  /* A press whose next step is on another page (Submit → the Dashboard) can fail: a blocked Submit stays put. So the
+  /* A press whose next step is on another page (Submit → the AV's page) can fail: a blocked Submit stays put. So the
      walk moves only when that page opens, which the page-change follow above does; moving on the click would describe
      a success that did not happen. A press whose next step is on this page (a menu, a dialog, "Blocked: …") moves on
      the click. */

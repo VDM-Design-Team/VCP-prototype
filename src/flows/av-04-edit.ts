@@ -30,9 +30,10 @@ const onEditPage = (text: string, target = "step:actions"): ScenarioStep => ({
   target,
   path: "/added-values/*/edit",
 });
+/* Exact on purpose: "/added-values/*" would match the edit page too, and the walk would move on a blocked Submit. */
 const submitted: ScenarioStep = {
-  text: "Submitted: Draft → Pending. The edit page closes and the Dashboard opens, as in AV · 01; the toast's Open it shows the AV.",
-  path: "/",
+  text: "Submitted: Draft → Pending. The edit page closes and VCP-1199's own page opens, as in AV · 01, with a toast that confirms it.",
+  path: "/added-values/vcp-1199",
 };
 
 /* ---------- The scenarios ---------- */
@@ -57,7 +58,7 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
     demonstrates: "A saved draft is finished on the edit page and submitted: Draft → Pending.",
     conditions: "Eve (User) on her draft VCP-1199, which lacks acceptance criteria and a desired outcome.",
     simulated: "Submit always succeeds once the checks pass.",
-    expected: "Edit opens the filled-in form. Once the two fields are filled, Submit moves it to Pending and opens the Dashboard with a toast.",
+    expected: "Edit opens the filled-in form. Once the two fields are filled, Submit moves it to Pending and opens the Added Value's page with a toast.",
     task: "Finish your draft about saved filters and send it for review.",
   },
   {
