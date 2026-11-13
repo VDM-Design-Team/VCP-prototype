@@ -2,12 +2,8 @@
 
 import * as React from "react";
 import {
-  BudgetTable,
-  Button,
+  DomainBudgetEditPage,
   Modal,
-  PageTitle,
-  SegmentedControl,
-  Select,
   useToast,
   type BudgetRow,
   type Quarter,
@@ -18,11 +14,13 @@ import { useBudgets } from "@/components/budget-store";
 import { useShellState } from "@/components/shell-state";
 import { BUDGET_DOMAINS, CURRENT, YEARS, consumedFor, quarterKey, type DomainBudget } from "@/data/budgets";
 
-/* Admin · 01: a super admin sets every domain's points for a quarter (Figma's Domain Budget Edit, 696:54963):
-   Q1–Q4 and the year above the table, the allocation and a note per domain, and one Save Changes. The table
-   saves nothing; this page saves (the DS BudgetTable's flow: loading, "Changes Saved"). Any quarter, past ones
-   included, can be edited; whole points only (decided 10 Nov 2026). With unsaved edits, switching quarter or
-   leaving asks first, with the AV edit page's dialog (decided); closing the tab, the browser's own prompt. */
+/* Admin · 01: a super admin sets every domain's points for a quarter (Figma's Domain Budget Edit, 696:54963).
+   The layout is the DS DomainBudgetEditPage's: Q1–Q4 and the year on the title's row, both 36 high (decided
+   13 Nov 2026, over Figma's own row above the table), the allocation and a note per domain, and one Save
+   Changes. The pattern holds no data; this page saves ("Changes Saved"). Any quarter, past ones included, can
+   be edited; whole points only (decided 10 Nov 2026). With unsaved edits, switching quarter or leaving asks
+   first, with the AV edit page's dialog (decided); closing the tab, the browser's own prompt (the pattern's
+   `dirty`). */
 export default function DomainBudgetScreen() {
   const { avs } = useAddedValues();
   const { budgets, save } = useBudgets();
@@ -52,13 +50,6 @@ export default function DomainBudgetScreen() {
     };
     if (!ask(go)) go();
   };
-
-  React.useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
 
   const rows: BudgetRow[] = BUDGET_DOMAINS.map((d) => ({
     id: d.id,
@@ -91,41 +82,29 @@ export default function DomainBudgetScreen() {
   return (
     <Screen
       active="domain-budget"
-      header={<PageTitle title="Domain Budget" subtitle="Each domain's development points for a quarter." />}
-    >
-      {/* Where a guided scenario's step points (Admin · 01): see src/flows/types.ts. */}
-      <div className="flex flex-col gap-4 py-6" data-flow-step="budgets">
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          <SegmentedControl
-            aria-label="Quarter"
-            size="lg"
-            /* Locked while saving, an option at a time (the control has no `disabled` of its own). */
-            options={["Q1", "Q2", "Q3", "Q4"].map((q) => ({ value: q, label: q, disabled: saving }))}
-            value={`Q${quarter}`}
-            onChange={(v) => switchTo({ quarter: Number(v.slice(1)) as Quarter })}
-          />
-          <Select
-            aria-label="Year"
-            size="md"
-            options={YEARS.map(String)}
-            value={String(year)}
-            onChange={(v) => switchTo({ year: Number(v) })}
-            disabled={saving}
-          />
-        </div>
-        <BudgetTable
-          rows={rows}
-          disabled={saving}
-          onAllocatedChange={(id, allocated) => edit(String(id), { allocated })}
-          onNotesChange={(id, notes) => edit(String(id), { notes })}
-          caption={`Domain budget, Q${quarter} ${year}`}
+      /* The pattern is the whole page, title band first, and brings its own 32 at the sides: it goes where the
+         shell takes the title band, not in the body (inset 32 already). */
+      header={
+        <DomainBudgetEditPage
+          /* Where a guided scenario's step points (Admin · 01): see src/flows/types.ts. */
+          data-flow-step="budgets"
+          quarter={`Q${quarter}`}
+          onQuarterChange={(q) => switchTo({ quarter: Number(q.slice(1)) as Quarter })}
+          year={String(year)}
+          years={YEARS.map(String)}
+          onYearChange={(y) => switchTo({ year: Number(y) })}
+          table={{
+            rows,
+            onAllocatedChange: (id, allocated) => edit(String(id), { allocated }),
+            onNotesChange: (id, notes) => edit(String(id), { notes }),
+            caption: `Domain budget, Q${quarter} ${year}`,
+          }}
+          saving={saving}
+          dirty={dirty}
+          onSave={onSave}
         />
-        <div className="flex justify-end">
-          <Button loading={saving} onClick={onSave}>
-            Save Changes
-          </Button>
-        </div>
-      </div>
+      }
+    >
       <Modal
         open={!!leaving}
         onClose={() => setLeaving(null)}
