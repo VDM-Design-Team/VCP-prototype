@@ -47,6 +47,15 @@ const MULTIPART_HINT =
 const defaultPartTitle = (position: number, total: number, parentTitle: string) => `(${position}/${total}) ${parentTitle}`;
 
 
+/**
+ * What an AV leaves behind when an admin moves it back before acceptance
+ * (Draft, Pending or the Backlog) from the ⋮ menu: the reason it was rejected
+ * or parked, the day it was accepted and what was handed off. Its plan
+ * (assignees, dates, points) stays. Since 13 Nov 2026 the menu offers these
+ * moves on a Rejected AV and on one that is accepted, in progress or in Review.
+ */
+const BEFORE_ACCEPTANCE = { remarks: undefined, rejection: undefined, dateAccepted: undefined, handoff: undefined } as const;
+
 /** "05-11-2026" — the handoff dialog's date format. */
 const ddmmyyyy = (iso: string) => iso.split("-").reverse().join("-");
 
@@ -182,14 +191,18 @@ export function AVScreen({ id }: { id: string }) {
                 /* Decided 9 Nov 2026: the same edit page at every status (AV · 04). */
                 onEdit={() => router.push(`/added-values/${av.id}/edit`)}
                 onDelete={() => setDialog("delete")}
-                /* AV · 05: the Feedback dialog first (DS #286). */
+                /* `DetailCardMenu` owns which moves a role and a status get. Decided
+                   13 Nov 2026: an admin also gets them on a Rejected AV (Backlog,
+                   Pending, Draft) and on one that is accepted, on a domain step or in
+                   Review (Backlog, Draft). Every move is the same whatever it leaves. */
+                /* AV · 05: the Feedback dialog first. */
                 onMoveToBacklog={() => setDialog("backlog")}
                 onMoveToDraft={() => {
-                  moveTo(av.id, "Draft", { remarks: undefined });
+                  moveTo(av.id, "Draft", BEFORE_ACCEPTANCE);
                   toast({ tone: "success", title: `${av.ref} moved back to Draft` });
                 }}
                 onMoveToPending={() => {
-                  moveTo(av.id, "Pending", { remarks: undefined });
+                  moveTo(av.id, "Pending", BEFORE_ACCEPTANCE);
                   toast({ tone: "success", title: `${av.ref} moved to Pending` });
                 }}
               />
@@ -206,7 +219,7 @@ export function AVScreen({ id }: { id: string }) {
               {av.rejection?.detail ? `: ${av.rejection.detail}` : ""}
             </Banner>
           )}
-          {/* Figma (1090:27191): a backlogged AV shows why, as Remarks. No feedback, no banner (inferred). */}
+          {/* Figma (1090:27191): a backlogged AV shows why, as Remarks. Feedback is required since 13 Nov 2026, so there always is one. */}
           {av.status === "Backlog" && av.remarks && (
             <div data-flow-step="remarks">
               <Banner tone="warning" title="Remarks">
@@ -535,11 +548,12 @@ export function AVScreen({ id }: { id: string }) {
       <MoveToBacklogModal
         open={dialog === "backlog"}
         onClose={close}
+        /* Feedback is required (decided 13 Nov 2026): the dialog only reports one that says something. */
         onMove={(feedback) => {
-          moveTo(av.id, "Backlog", { remarks: feedback || undefined });
+          moveTo(av.id, "Backlog", { ...BEFORE_ACCEPTANCE, remarks: feedback });
           close();
           /* Figma keeps the AV open, now Backlog; the toast is inferred. */
-          archiveToast(`${av.ref} moved to the Backlog`, "backlogs", feedback ? undefined : "No feedback was given.");
+          archiveToast(`${av.ref} moved to the Backlog`, "backlogs");
         }}
       />
       <ConfirmDeleteAVModal

@@ -79,6 +79,30 @@ export const BULK_SCENARIOS: readonly ScenarioDef[] = [
   },
   {
     ...base,
+    id: "av-09-bulk-actions.backlog-needs-feedback",
+    role: "admin",
+    start: "/manage",
+    steps: [
+      list("/manage", "Admin view, Development. Tick VCP-1200 and VCP-1201, both Pending."),
+      bar(
+        "/manage",
+        "Choose Status → Backlog. \"Move 2 Added Values to Backlog\" asks for Feedback, which is required (decided 13 Nov 2026). Press Confirm with it empty: refused, \"Enter feedback, or some for each Added Value.\" under the field, and the cursor goes to it. Press Cancel, then Next.",
+      ),
+      bar(
+        "/manage",
+        "Nothing moved: both are still Pending and still ticked. Choose Status → Backlog again and type feedback for all (\"Parked until next quarter's budget is set\"). List of Added Values can give one AV its own; the bulk feedback covers every AV without one. Press Confirm, then Next.",
+      ),
+      list("/manage", "Both are in the Backlog, each with its feedback as Remarks, and gone from Manage (Archive → Backlogs). The toast says \"Status changed to Backlog for 2 Added Values.\""),
+    ],
+    name: "Move several to the Backlog",
+    demonstrates: "Bulk Backlog needs feedback too: one for all, or one for each Added Value.",
+    conditions: "Eve as Admin on Manage, for Development; two Pending AVs.",
+    simulated: "The move succeeds for every selected AV once each has feedback.",
+    expected: "Confirm with no feedback is refused with \"Enter feedback, or some for each Added Value.\" and nothing moves. With feedback, each AV is in the Backlog with the bulk feedback or its own as Remarks; the toast confirms; they leave Manage.",
+    task: "As an admin, park both pending Added Values in the backlog.",
+  },
+  {
+    ...base,
     id: "av-09-bulk-actions.cycle-design",
     role: "user",
     start: "/assigned",
