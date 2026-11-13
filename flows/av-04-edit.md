@@ -20,7 +20,7 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
    - **Draft and Pending:** Discard · Save as draft · Submit (Figma `1026:166675`; Discard is AV · 02, allowed in Draft and Pending by its flow, `1026:168578`, though the Pending frame `1043:239669` draws none).
    - **Any other status:** Save as draft · Submit.
 3. **Submit** runs every check AV · 01 runs, plus **Projects** (Figma `1026:166742`):
-   - a **Draft** moves to **Pending**: the edit page closes and the **Dashboard** opens with the "VCP-1199 submitted" toast and its Open it (as AV · 01);
+   - a **Draft** moves to **Pending**: the edit page closes and the **AV's page** opens with the "VCP-1199 submitted" toast (as AV · 01, decided 13 Nov 2026);
    - any other AV keeps its status: the edit page closes and the AV's page opens, with "VCP-1200: changes saved" *(inferred)*.
 4. **Save as draft** checks only the Title (as AV · 03):
    - **it only saves the changes**: the AV keeps its status, Draft or not *(decided 9 Nov 2026)*. The AV's page opens, with "changes saved" *(inferred)*.
@@ -41,7 +41,7 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 
 ## Unresolved questions
 - **Decided 9 Nov 2026:** the same edit page at every status; Save as draft on an AV past Draft only saves the changes; the back arrow asks before dropping unsaved changes.
-- **Where an edit lands.** The prototype opens the AV's page after a save, and the Dashboard after a draft is submitted (AV · 01's rule).
+- **Where an edit lands.** The prototype opens the AV's page after a save, and after a draft is submitted too (AV · 01's rule since 13 Nov 2026).
 - **May an admin edit someone else's AV?** The ⋮ menu gives an admin Edit; the prototype lets them.
 - **Past Draft, Save as draft and Submit both save.** Submit runs every check, Save as draft only the Title. Is a second button needed there?
 - **The sidebar and the browser's back** don't ask about unsaved changes yet; only the page's back arrow does.

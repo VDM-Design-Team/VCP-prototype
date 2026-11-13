@@ -94,10 +94,12 @@ export const COMPLETE_DRAFT: SubmitDraft = {
 
 /* ---------- The guided steps ---------- */
 
-/* After a successful Submit the AV closes and the Dashboard opens, with a toast that can open the AV. */
+/* After a successful Submit the creation page closes and the new AV's own page opens, with a toast (decided 13 Nov 2026,
+   as the live product does). A new AV takes the first free reference, VCP-1211. The path is exact on purpose:
+   "/added-values/*" would match the creation page too, and the walk would move on a blocked Submit. */
 const submitted: ScenarioStep = {
-  text: "Submitted: the AV closes and you're back on the Dashboard. The toast confirms it, and Open it shows the AV, Pending until an admin accepts or rejects it (AV · 06).",
-  path: "/",
+  text: "Submitted: the creation page closes and the new Added Value's own page opens, VCP-1211. The toast confirms it, and the page shows it Pending until an admin accepts or rejects it (AV · 06).",
+  path: "/added-values/vcp-1211",
 };
 const pressSubmit = (text = "Press Submit. Every check runs at once."): ScenarioStep => ({
   text,
@@ -140,7 +142,7 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     demonstrates: "Submit passes every check and the AV moves from Draft to Pending.",
     conditions: "Eve (User) on the creation page with every required field filled and the tag rule met.",
     simulated: "Submit always succeeds. The new AV gets the next free reference and waits for an admin.",
-    expected: "The AV closes and the Dashboard opens with a success toast (Open it shows the AV, Pending). Nothing is blocked.",
+    expected: "The creation page closes and the new Added Value's page opens, Pending, with a success toast. Nothing is blocked.",
     task: "Submit this Added Value for review.",
     setup: COMPLETE_DRAFT,
   },
@@ -269,7 +271,7 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     demonstrates: "A busy assignee only gets a warning; Submit still passes.",
     conditions: "Eve (User), a complete draft assigned to Jack Morgan, who is fully booked 9–13 Nov.",
     simulated: "Jack's booking comes from the sample availability.",
-    expected: "An amber warning about Jack; Submit still goes through, back to the Dashboard.",
+    expected: "An amber warning about Jack; Submit still goes through, to the new Added Value's page.",
     task: "Submit this Added Value for review.",
     setup: { ...COMPLETE_DRAFT, details: { ...COMPLETE_DRAFT.details, assignees: [{ name: "Jack Morgan", description: "Assignee", points: 5 }] } },
   },

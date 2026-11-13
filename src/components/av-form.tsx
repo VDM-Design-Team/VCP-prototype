@@ -269,7 +269,7 @@ function Form({ editing }: { editing?: AddedValue }) {
       title: "Deleted!",
       description: editing ? `Added Value “${editing.ref}” has been discarded successfully.` : "Added Value has been discarded successfully.",
     });
-    /* Figma goes to My Values, which isn't built yet: the Dashboard, where Submit goes (AV · 01). */
+    /* Figma goes to My Values, which isn't built yet: the Dashboard until it is. */
     router.push("/");
   };
   /* Errors show from the first Submit (or Save as draft) on, and each clears as
@@ -386,16 +386,16 @@ function Form({ editing }: { editing?: AddedValue }) {
       updatedLabel: "Just now",
     } satisfies Omit<AddedValue, "id" | "ref">);
 
-  /* Decided 6 Nov 2026: a submitted AV closes, and the Dashboard opens with a
-     success toast that can open it. (Figma draws no landing page.) */
+  /* Decided 13 Nov 2026, as the live product does (it replaces 6 Nov's "the
+     Dashboard opens"): a submitted AV lands on its own page, where its
+     reference and its Pending status are, with a success toast. The toast has
+     no Open it: this is the page it would open. (Figma draws no landing page.) */
   const submitted = (av: Pick<AddedValue, "id" | "ref">) => {
-    router.push("/");
+    router.push(`/added-values/${av.id}`);
     toast({
       tone: "success",
       title: `${av.ref} submitted`,
       description: "It's Pending until an admin accepts or rejects it.",
-      actionLabel: "Open it",
-      onAction: () => router.push(`/added-values/${av.id}`),
     });
   };
   /* AV · 04: an edit that keeps the AV where it is, or moves it back, closes

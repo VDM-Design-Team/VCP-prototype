@@ -23,7 +23,7 @@ Get a new Added Value in front of an admin: from Draft to Pending.
    - every problem paired with a solution;
    - the tag rule met;
    - no assignee **unavailable** (e.g. on leave) during the AV's dates.
-5. All pass → the AV moves **Draft → Pending**, the creation page closes and the **Dashboard** opens, with a success toast ("VCP-1211 submitted") whose **Open it** shows the AV *(decided 6 Nov 2026; Figma draws no landing page)*. It waits for an admin to Accept or Reject (AV · 06).
+5. All pass → the AV moves **Draft → Pending**, the creation page closes and the **Added Value's own page** opens, showing its reference and its Pending status, with a success toast ("VCP-1211 submitted") *(decided 13 Nov 2026, as the live product does; it replaces 6 Nov's "the Dashboard opens". Figma draws no landing page)*. It waits for an admin to Accept or Reject (AV · 06).
 
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
@@ -39,7 +39,7 @@ Get a new Added Value in front of an admin: from Draft to Pending.
 A new Submit replaces the last Submit's toasts instead of stacking more.
 
 ## Completion or exit
-- **Done:** the AV is Pending, and the user is back on the Dashboard.
+- **Done:** the AV is Pending, and the user is on its page.
 - **Leave early:** the back arrow; **Save as Draft** (AV · 03, its own flow and scenarios) keeps it a Draft on Drafts; **Discard** (AV · 02) throws a new one away, after a confirm.
 
 ## Unresolved questions
