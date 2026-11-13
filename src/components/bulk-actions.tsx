@@ -191,8 +191,15 @@ export function BulkActions({
           onConfirm={() => run((av) => moveTo(av.id, CHAINS[av.domain][CHAINS[av.domain].length - 1].id))}
         />
       );
+    /* Feedback is required (decided 13 Nov 2026): the dialog refuses Confirm until every AV has some, the bulk one or its own. */
     if (key === "backlog")
-      return <BulkActionConfirmModal {...base} action="backlog" onConfirm={(choice) => run((av) => moveTo(av.id, "Backlog", { remarks: (choice.overrides[av.ref] ?? choice.value) || undefined }))} />;
+      return (
+        <BulkActionConfirmModal
+          {...base}
+          action="backlog"
+          onConfirm={(choice) => run((av) => moveTo(av.id, "Backlog", { remarks: (choice.overrides[av.ref]?.trim() || choice.value).trim() }))}
+        />
+      );
     return <BulkActionConfirmModal {...base} action="status" value={describe(op).value} onConfirm={() => run((av) => moveTo(av.id, key === "in-progress" ? "In Progress" : key))} />;
   })();
 
