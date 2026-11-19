@@ -25,7 +25,7 @@ Change several Added Values at once, instead of opening each one.
    - Accept Pending: the Multipart Value choice (Development only);
    - Accept (Review): Require Cypress Test Script (Development) or Copy to Dev (Design);
    - Reject: a **required Rejection Reason** ("Select a rejection reason, or one for each Added Value.");
-   - Backlog: optional Feedback.
+   - Backlog: a **required Feedback** *(decided 13 Nov 2026, as moving one AV asks for it in AV · 05)*. The bulk feedback covers every AV that has none of its own; Confirm with an AV left without any is refused with "Enter feedback, or some for each Added Value." and the cursor goes to the field.
 
    Delete opens `ConfirmDeleteAVModal` with every title.
 4. **Confirm** changes every selected AV that can take it, clears the selection and shows **"Added Values Updated"**, e.g. "Urgency changed to High for 2 Added Values." (Figma `1728:282486`).
@@ -53,6 +53,7 @@ Everything else (In Progress, a step, Backlog, Urgency, Type, Delete) applies to
 - **On hold:** **bulk Handoff** (Figma `Bulk_Action_Handoff_Popup`) waits for the shared single-and-bulk handoff form (decided 9 Nov 2026), so the Status menu leaves it out. Save as Draft and Submit, which Figma's Development list starts with, are left out too: they belong to the edit page.
 
 ## Unresolved questions
+- **Decided 13 Nov 2026:** feedback is required to move to the Backlog (design system 1.2.0); the bulk action follows the single move (AV · 05). The decision was made for one AV; applying it to the bulk action is the design system's choice (#396), still to be confirmed.
 - **Decided 9 Nov 2026:** the bar and its choices are Figma's, with no role rules; mixed domains get only their common steps; Save as Draft and Submit stay out; the failure dialog gets delete wording in the design system.
 - **Delete wording in the DS:** `BulkActionFailedModal` is only in Eve's #279, not on main yet. Branch from #279, or wait for it to merge?
 - **References in the summaries** are links that open the AV in a new tab, where the prototype starts from its sample data again.

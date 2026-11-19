@@ -5,8 +5,10 @@ import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
  * page is "AV · 07 Hand off". The assignee hands the finished work on from the
  * domain's last step (`HandoffAVModal`); the AV waits in Review until its
  * initiator (or an admin) accepts it (`ReviewAVModal`): Completed, or sent back
- * to the last step. The dialogs make the page inert, the walk's card included,
- * so those steps are answered in the dialog and Next is pressed after.
+ * to the last step. A handoff needs something to review: at least one demo
+ * link or one attachment (decided 13 Nov 2026, design system 1.2.0); a file
+ * already on the AV counts. The dialogs make the page inert, the walk's card
+ * included, so those steps are answered in the dialog and Next is pressed after.
  */
 
 const on = (id: string, text: string, target = "step:av-menu"): ScenarioStep => ({ text, target, path: `/added-values/${id}` });
@@ -22,12 +24,12 @@ export const HANDOFF_SCENARIOS: readonly ScenarioDef[] = [
       on("vcp-1205", "VCP-1205: Eve is the assignee, it's at Development's last step, Confirmed prod, and 3 days overdue.", "button:Move to Handoff"),
       on(
         "vcp-1205",
-        "Press Move to Handoff. The dialog names the delay and asks why. Press Handoff without a reason first, then Next.",
+        "Press Move to Handoff. The dialog names the delay and asks why. Press Handoff without a reason: refused, \"Please select a reason before completing the AV\" under Overdue Reason, with the cursor on it. Press Cancel, then Next.",
         "button:Move to Handoff",
       ),
       on(
         "vcp-1205",
-        "Blocked: \"Please select a reason before completing the AV\". Pick a reason, add a link if you like, and press Handoff & Publish (or Handoff). Then Next.",
+        "Nothing moved. Open it again and pick a reason. The AV already has a file (inbox-filters.png), so there is something to review; a demo link is extra. Press Handoff & Publish (or Handoff), then Next.",
         "button:Move to Handoff",
       ),
       on("vcp-1205", "In Review now: Marvin, the initiator, decides it next (the toast says so). Eve has no more moves."),
@@ -36,7 +38,7 @@ export const HANDOFF_SCENARIOS: readonly ScenarioDef[] = [
     demonstrates: "A late handoff has to say why: the overdue reason is required.",
     conditions: "Eve (User), assignee of VCP-1205 at Confirmed prod, due 02/11/2026: 3 days overdue.",
     simulated: "Handing off always succeeds. Files and links aren't uploaded anywhere.",
-    expected: "The overdue banner and a required reason; without one, an error under it. With one, the AV moves to Review and a toast names who reviews it.",
+    expected: "The overdue banner and a required reason; without one, an error under it and nothing moves. With one, and the AV's own file as the thing to review, the AV moves to Review and a toast names who reviews it.",
     task: "Your work on the CSV export is live but late. Hand it over for review.",
   },
   {
@@ -47,17 +49,42 @@ export const HANDOFF_SCENARIOS: readonly ScenarioDef[] = [
       on("vcp-1206", "VCP-1206 is a Design AV at its last step, Design review, and on time.", "button:Move to Handoff"),
       on(
         "vcp-1206",
-        "Press Move to Handoff. No banner and no reason: just the date (today), links and files. Design's footer is Cancel · Handoff. Press Handoff, then Next.",
+        "Press Move to Handoff. No banner and no reason: the date (today), links and files. A handoff needs a demo link or an attachment, and this AV has no file yet, so type a link (https://www.figma.com/file/tooltips). Design's footer is Cancel · Handoff. Press Handoff, then Next.",
         "button:Move to Handoff",
       ),
       on("vcp-1206", "In Review: Alice, the initiator, decides it next."),
     ],
     name: "Hand off on time (Design)",
-    demonstrates: "An on-time handoff asks for nothing extra; Design's dialog has one Handoff button.",
-    conditions: "Eve (User), assignee of the Design AV VCP-1206 at Design review, due 13/11/2026.",
-    simulated: "Handing off always succeeds.",
-    expected: "No overdue banner or reason. Handoff moves it to Review.",
+    demonstrates: "An on-time handoff asks for a date and something to review, nothing more; Design's dialog has one Handoff button.",
+    conditions: "Eve (User), assignee of the Design AV VCP-1206 at Design review, due 13/11/2026. It has no files attached.",
+    simulated: "Handing off succeeds once there is a link or a file. Files and links aren't uploaded anywhere.",
+    expected: "No overdue banner or reason. With a demo link, Handoff moves it to Review.",
     task: "Your tooltip copy is done. Hand it over for review.",
+  },
+  {
+    ...base,
+    id: "av-07-hand-off.nothing-to-review",
+    start: "/added-values/vcp-1206",
+    steps: [
+      on("vcp-1206", "VCP-1206 is at its last step, on time, and has no files attached.", "button:Move to Handoff"),
+      on(
+        "vcp-1206",
+        "Press Move to Handoff. Under Demo Links: \"A handoff needs at least one demo link or one attachment.\" Press Handoff with only the date: refused, \"Add a demo link or attach a file.\" under Demo Links, and the cursor is in the first link box. Press Cancel, then Next.",
+        "button:Move to Handoff",
+      ),
+      on(
+        "vcp-1206",
+        "Nothing moved: still Design review. Open it again and give it something to review: type a link (it must start with https://) or attach a file. Press Handoff, then Next.",
+        "button:Move to Handoff",
+      ),
+      on("vcp-1206", "In Review, with the link for Alice to open."),
+    ],
+    name: "Nothing to review",
+    demonstrates: "A handoff with neither a demo link nor an attachment is refused (decided 13 Nov 2026).",
+    conditions: "Eve (User), assignee of the Design AV VCP-1206 at Design review. It has no files attached.",
+    simulated: "Handing off is refused while there is no link and no file; with either, it succeeds.",
+    expected: "Handoff with only a date: \"Add a demo link or attach a file.\" under Demo Links, focus in the first link box, and the dialog stays open. The message goes once a link is typed or a file attached, and Handoff then moves the AV to Review.",
+    task: "Your tooltip copy is done. Hand it over for review; you have nothing to show for it yet.",
   },
   {
     ...base,
@@ -106,7 +133,7 @@ export const HANDOFF_SCENARIOS: readonly ScenarioDef[] = [
     start: "/added-values/vcp-1205",
     steps: [
       on("vcp-1205", "Admin view: at the last step an admin's button reads just \"Handoff\" (the assignee's reads \"Move to Handoff\").", "button:Handoff"),
-      on("vcp-1205", "Press Handoff, give the overdue reason, and hand it off. Then Next.", "button:Handoff"),
+      on("vcp-1205", "Press Handoff, give the overdue reason, and hand it off: the AV's own file is what there is to review. Then Next.", "button:Handoff"),
       on("vcp-1205", "In Review, an admin can decide it too: Reject or Accept, like the initiator.", "button:Accept"),
     ],
     name: "An admin hands off and reviews",

@@ -6,7 +6,10 @@ import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
  * (or, since DS #330, a Backlog one) from its page: Accept opens
  * `AcceptPendingAVModal`, Reject opens `RejectPendingAVModal`. Their dialogs
  * make the page inert, the walk's card included, so those steps are answered
- * in the dialog and Next is pressed after.
+ * in the dialog and Next is pressed after. Since 13 Nov 2026 (design system
+ * 1.2.0) a decision is not the end for an admin: the ⋮ menu reopens a Rejected
+ * AV (Move to Pending, Backlog or Draft) and parks or sends back one that is
+ * accepted, on a domain step or in Review (Move to Backlog or Draft).
  */
 
 const onManage: ScenarioStep = {
@@ -54,7 +57,7 @@ export const DECIDE_SCENARIOS: readonly ScenarioDef[] = [
         path: "/added-values/vcp-1202",
       },
       { text: "Open Archive → Rejected in the sidebar.", path: "/added-values/vcp-1202" },
-      { text: "It's listed there, and gone from Manage.", target: "step:av-list", path: "/archive/rejected" },
+      { text: "It's listed there, and gone from Manage. An admin can still reopen it from its ⋮ menu (the next scenario).", target: "step:av-list", path: "/archive/rejected" },
     ],
     name: "Reject a Pending AV",
     demonstrates: "Rejecting needs a reason; the AV shows it and moves to Archive → Rejected.",
@@ -82,6 +85,58 @@ export const DECIDE_SCENARIOS: readonly ScenarioDef[] = [
     simulated: "Rejecting always succeeds.",
     expected: "Choosing Other shows a text field; the banner reads \"Other: …\" with the text.",
     task: "As an admin, reject Lena's Added Value for a reason that isn't in the list.",
+  },
+  {
+    ...base,
+    id: "av-06-accept-reject.reopen-rejected",
+    start: "/added-values/vcp-1209",
+    steps: [
+      onAV(
+        "vcp-1209",
+        "Admin view. VCP-1209 is Lena's, rejected two weeks ago as a duplicate: the red banner says why. Rejected is no longer final for an admin (decided 13 Nov 2026).",
+      ),
+      onAV("vcp-1209", "Open ⋮: above Edit and Delete are Move to Backlog, Move to Pending and Move to Draft. Choose Move to Pending, then Next."),
+      onAV(
+        "vcp-1209",
+        "Pending again: the banner is gone, Reject and Accept are back in the header, and Status History logs Rejected → Pending. A toast confirms it.",
+        "button:Accept",
+      ),
+      { text: "Open Manage in the sidebar.", path: "/added-values/vcp-1209" },
+      { text: "It's back in the admins' queue, to be decided again, and gone from Archive → Rejected.", target: "step:av-list", path: "/manage" },
+    ],
+    name: "Reopen a rejected AV",
+    demonstrates: "An admin puts a Rejected AV back in the queue with Move to Pending; it can then be decided again.",
+    conditions: "Eve as Admin, on Lena's VCP-1209, rejected as a duplicate.",
+    simulated: "The move always succeeds. The initiator isn't notified in the prototype (Activity · 02).",
+    expected: "An admin's ⋮ menu on a Rejected AV has Move to Backlog, Move to Pending and Move to Draft. Move to Pending: the AV is Pending, the rejection banner is gone, Reject and Accept are in the header, and it is listed on Manage again.",
+    task: "As an admin: Lena's bulk upload was turned down as a duplicate, but it wasn't one. Put it back in the queue.",
+  },
+  {
+    ...base,
+    id: "av-06-accept-reject.park-in-progress",
+    start: "/added-values/vcp-1204",
+    steps: [
+      onAV(
+        "vcp-1204",
+        "Admin view. VCP-1204 was accepted and is being worked on: it's In QA. On work in progress (Accepted, a domain step, Review) an admin's ⋮ menu has Move to Backlog and Move to Draft (decided 13 Nov 2026).",
+      ),
+      onAV(
+        "vcp-1204",
+        "Open ⋮ → Move to Backlog. Feedback is required, as in AV · 05: type why (\"Paused until the registry sync is fixed\"), press Move to Backlog, then Next.",
+      ),
+      {
+        text: "Backlog, with the feedback as Remarks. Its plan stays on it (assignees, dates, points); Date Accepted goes, and Status History logs In QA → Backlog. The toast's link opens Archive → Backlogs.",
+        target: "step:remarks",
+        path: "/added-values/vcp-1204",
+      },
+      onAV("vcp-1204", "It comes back the way any Backlog AV does (AV · 05): Accept or Reject in the header, or ⋮ → Move to Pending / Move to Draft."),
+    ],
+    name: "Park work in progress",
+    demonstrates: "An admin moves an accepted, in-progress AV to the Backlog, saying why; acceptance is not a one-way door.",
+    conditions: "Eve as Admin, on VCP-1204 at In QA (Development).",
+    simulated: "The move always succeeds. Nobody is notified in the prototype (Activity · 02).",
+    expected: "An admin's ⋮ menu on an in-progress AV has Move to Backlog and Move to Draft. Move to Backlog asks for feedback (required), then the AV is in the Backlog with Remarks and listed in Archive → Backlogs.",
+    task: "As an admin: the holiday export has to wait for another fix. Take it out of the work for now, and say why.",
   },
   {
     ...base,
@@ -123,7 +178,7 @@ export const DECIDE_FLOW: FlowDef = {
   number: "06",
   name: "Accept / Reject",
   actor: "Admin",
-  goal: "Decide a submitted Added Value: accept it into the work, or turn it down with a reason.",
+  goal: "Decide a submitted Added Value: accept it into the work, or turn it down with a reason. And, as an admin, change that decision later.",
   figjam: "https://www.figma.com/board/Jl6ANWtBbRbTTo4ItjtdoQ/VCP-Flows---Scenarios?node-id=35-72",
   doc: "flows/av-06-accept-reject.md",
   status: "Implemented",
