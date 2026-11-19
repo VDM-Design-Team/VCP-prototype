@@ -15,7 +15,7 @@ Park an Added Value that won't be worked on for now, and say why.
 
 ## Main steps and decision points
 1. ⋮ → **Move to Backlog**. The **"Move Added Value to Backlog"** dialog opens (DS `MoveToBacklogModal`) with one field, **Feedback**, which is **required** *(decided 13 Nov 2026, as the live product does: parking an AV says why, the way rejecting one does)*. The cursor starts in it, and **Move to Backlog stays off until something is typed**; spaces alone don't count.
-2. **Move to Backlog**: the AV moves to **Backlog** (logged in Status History). The dialog closes and the AV stays open (Figma), now with a yellow **Remarks** banner holding the feedback. A toast confirms it, with a link to Archive → Backlogs *(the toast is inferred)*.
+2. **Move to Backlog**: the AV moves to **Backlog** (logged in Status History). The dialog closes and the AV stays open (Figma), now with a yellow **"This Added Value was moved to the backlog"** banner (DS `backloggedBanner`, 2.0.0; Figma's is "Remarks") holding the feedback. A toast confirms it, with a link to Archive → Backlogs *(the toast is inferred)*.
 3. The AV is listed in **Archive → Backlogs**, and leaves Drafts, Manage and Assigned.
 4. **Getting it back:**
    - **the initiator:** ⋮ → **Edit**, then **Save as draft** moves it back to **Draft** *(decided 9 Nov 2026, Figma's rule; on any other status Save as draft only saves)*;

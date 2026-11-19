@@ -8,6 +8,7 @@ import {
   FilterBar,
   Icon,
   PageTitle,
+  PENDING_REJECTION_REASONS,
   type AVTableRow,
   type DataTableSort,
 } from "@vdm-design-team/vcp-design-system";
@@ -68,6 +69,17 @@ function toRow(av: AddedValue, all: readonly AddedValue[] = []): AVTableRow {
     members: membersOf(av),
     lastUpdated: updatedLabel(av),
     multipart: multipartOf(av, all),
+    /* DS 2.0.0's row flags (Figma's Rejected_AV_Indicator and Backlogged_AV_Indicator): the reason in the tooltip. Backlogged is
+       grey, not Figma's green (decided 17 Nov 2026). The prototype has no BESA data, so no seal. */
+    rejected:
+      av.status === "Rejected"
+        ? {
+            reason:
+              (PENDING_REJECTION_REASONS.find((r) => r.value === av.rejection?.reason)?.label ?? "No reason was given") +
+              (av.rejection?.detail ? `: ${av.rejection.detail}` : ""),
+          }
+        : undefined,
+    backlogged: av.status === "Backlog" ? { reason: av.remarks ?? "No feedback was given" } : undefined,
   };
 }
 

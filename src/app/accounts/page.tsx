@@ -56,7 +56,7 @@ export default function AccountsScreen() {
       access: Object.fromEntries(draft.access.map((r) => [String(r.id), { access: r.access, admin: r.admin }])),
     });
     setOpen(null);
-    toast({ tone: "success", title: editing ? "Changes Saved" : "Account added", description: `${draft.name}: ${draft.access.filter((r) => r.access).length} domain(s).` });
+    toast({ tone: "success", title: editing ? "Changes saved" : "Account added", description: `${draft.name}: ${draft.access.filter((r) => r.access).length} domain(s).` });
   };
 
   return (

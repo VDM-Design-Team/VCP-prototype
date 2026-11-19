@@ -24,6 +24,8 @@ import {
   tabPanelId,
   UserAccountModal,
   UsersTable,
+  changesSaved,
+  undoDeletion,
   useToast,
   type DataTableSort,
   type UserAccountDraft,
@@ -90,7 +92,7 @@ export default function SettingsScreen() {
             <PersonalInfoForm
               initial={{ name: VIEWER.name, email: "eve.kestrel@example.com" }}
               emailReadOnly
-              onSave={() => toast({ tone: "success", title: "Changes Saved", description: "Your details are saved." })}
+              onSave={() => toast(changesSaved({ description: "Your details are saved." }))}
             />
           )}
           {shown === "users" && <UsersTab domainValue={domainValue} />}
@@ -171,7 +173,7 @@ function UsersTab({ domainValue }: { domainValue: string }) {
       roles: { ...base.roles, [domainValue]: draft.roles ?? [] },
     });
     setOpen(null);
-    toast({ tone: "success", title: editing ? "Changes Saved" : "User created", description: editing ? `${draft.name}'s account is saved.` : `${draft.name} is added, ${draft.status === "approved" ? "approved" : "waiting for approval"}.` });
+    toast({ tone: "success", title: editing ? "Changes saved" : "User created", description: editing ? `${draft.name}'s account is saved.` : `${draft.name} is added, ${draft.status === "approved" ? "approved" : "waiting for approval"}.` });
   };
 
   return (
@@ -257,7 +259,7 @@ function AdminPanel({ domainValue }: { domainValue: string }) {
     /* Only rows with a bin: the locked ones have none. */
     focusAfter(neighbours(before.filter((i) => i.variant !== "locked").map((i) => i.label), item.label, "Add New"));
     setPanelList(domainValue, list, before.filter((i) => i.id !== item.id));
-    toast({ tone: "info", title: "Deleted", description: `${item.label} is deleted.`, actionLabel: "Undo", onAction: () => setPanelList(domainValue, list, before) });
+    toast(undoDeletion(item.label, () => setPanelList(domainValue, list, before)));
   };
   const card = (list: PanelList, title: string) => (
     <DomainCard
@@ -288,7 +290,7 @@ function AdminPanel({ domainValue }: { domainValue: string }) {
             const before = teams;
             focusAfter(neighbours(teams.map((t) => t.name), item.label, "Add New"));
             setTeams(teams.filter((t) => t.id !== item.id));
-            toast({ tone: "info", title: "Deleted", description: `${item.label} is deleted.`, actionLabel: "Undo", onAction: () => setTeams(before) });
+            toast(undoDeletion(item.label, () => setTeams(before)));
           }}
         />
       )}

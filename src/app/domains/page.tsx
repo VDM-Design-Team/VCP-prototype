@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { DomainCard, PageTitle, TagManagementModal, useToast } from "@vdm-design-team/vcp-design-system";
+import { DomainCard, PageTitle, TagManagementModal, useToast, undoDeletion } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { neighbours, useFocusAfterRemove } from "@/components/focus-after-remove";
 import { useSettings } from "@/components/settings-store";
@@ -51,7 +51,7 @@ export default function DomainsScreen() {
             const before = projects;
             focusAfter(neighbours(projects.map((p) => p.label), item.label, "Add New"));
             setProjects(projects.filter((p) => p.id !== item.id));
-            toast({ tone: "info", title: "Deleted", description: `${item.label} is deleted.`, actionLabel: "Undo", onAction: () => setProjects(before) });
+            toast(undoDeletion(item.label, () => setProjects(before)));
           }}
         />
       </div>

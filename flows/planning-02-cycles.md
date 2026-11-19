@@ -24,7 +24,7 @@ Plan Backlog Added Values into cycles, each with dates, an assignee and points, 
 3. In every case the AV becomes **Accepted** (logged in Status History), and the cycle's **Capacity Remaining** drops by its points. A toast names the cycle, and says why when it isn't the one dropped on.
 4. **Assignee availability** in the dialog: **Busy** (other scheduled work in those dates): "This assignee is busy during the selected dates, but can still be assigned." **Unavailable** (on leave): "This assignee is not available during the selected dates and cannot be assigned.", listed under Unavailable with the day they're free.
 5. **Move a planned AV** (decided 9 Nov 2026): drag it **to another cycle** (it keeps its status and gets that cycle's estimated dates) or **back to the Backlog** (status Backlog, logged; it keeps its assignee and points). Completed AVs don't move; **a cycle that has ended takes no rows** (its own late AVs can still leave).
-6. **Without dragging** (decided; DS #335): every row that can move has a **Move button** (⇅, "Move VCP-1203 to…") in the last column: a menu of the sections it can go to, with their dates. It does exactly what a drag does (the same dialog when details are missing), and **focus follows the row** to its new section.
+6. **Without dragging** (decided; DS #335): every row that can move has an **Actions** button (⋯, "Actions for VCP-1203") in the last column (DS 2.0.0): its menu's **Move to** opens a submenu of the sections it can go to, with their dates. It does exactly what a drag does (the same dialog when details are missing), and **focus follows the row** to its new section.
 7. **Edit in place** (any row): **Points** re-estimates the Due Date; a new **Start Date** is a real date, re-estimates the Due Date and moves the AV to that date's cycle; a new **Due Date** works the Start Date back. The recalculated date reads "(est.)" and plays the highlight.
 
 ## Alternatives, failures and recovery
@@ -49,7 +49,7 @@ Plan Backlog Added Values into cycles, each with dates, an assignee and points, 
 - **A toast after a drop**: Figma shows none; without it, a screen-reader user hears nothing when the row moves.
 
 ## Decided (9 Nov 2026)
-- **Moving without dragging:** a "Move … to…" button per row, built into the DS `PlanningTable` (#335). It opens the same dialog.
+- **Moving without dragging:** an Actions menu per row with **Move to** (Move to Cycle when only cycles are offered), built into the DS `PlanningTable` (#335; a menu since DS 2.0.0). It opens the same dialog.
 - **Over capacity:** as Figma. No warning, no block; Capacity Remaining just goes below 0.
 - **Total Capacity:** a fixed number per cycle (an admin's figure).
 - **Completed work counts** against its cycle's capacity.

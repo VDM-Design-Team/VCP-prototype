@@ -58,7 +58,7 @@ export const BUDGET_SCENARIOS: readonly ScenarioDef[] = [
       on("Super Admin view: Domain Budget, in the rail (DS #347). Every domain's points for the quarter: Q1–Q4 and the year top right, then Allocated, Consumed (with its bar), Remaining and a note. Governance is over budget: -40 pts, in red."),
       on("Raise Development's allocation with its arrows (Figma: stepper input): Remaining and the bar follow at once. Or type a number: they follow after a brief pause (Figma: keyboard input). Whole points only; zero is fine, and so is less than already consumed: the domain shows over budget (decided 10 Nov 2026)."),
       on("Add a note to a domain: the field grows while you write, and folds to one line after."),
-      { text: "Press Save Changes: it spins while saving, then \"Changes Saved\" (Figma 701:67752).", target: "button:Save Changes", path: EDIT, action: true },
+      { text: "Press Save Changes: it spins while saving, then \"Changes saved\" (Figma 701:67752).", target: "button:Save Changes", path: EDIT, action: true },
       on("Saved. Now change an allocation again, and pick Q3 (or a page in the rail) before saving: \"Leave without saving?\" asks first, as on the AV edit page (decided 10 Nov 2026)."),
       on("Keep editing stays, with the edit. Leave drops it and goes. Closing the tab, the browser asks."),
     ],
@@ -66,7 +66,7 @@ export const BUDGET_SCENARIOS: readonly ScenarioDef[] = [
     demonstrates: "Editing allocations and notes inline, and saving (Figma's Allocated Points Input flows, 705:82511).",
     conditions,
     simulated: "Saving takes a moment and always works.",
-    expected: "The new allocation, Remaining and bar; \"Changes Saved\".",
+    expected: "The new allocation, Remaining and bar; \"Changes saved\".",
     task: "Give Development more points this quarter.",
   },
   {

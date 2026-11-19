@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { NotificationInbox, PageTitle, formatDate } from "@vdm-design-team/vcp-design-system";
+import { NotificationInbox, formatDate } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { useNotifications } from "@/components/notification-store";
 import { NotificationRow } from "@/components/notification-rows";
@@ -16,9 +16,11 @@ const dayLabel = (iso: string) => {
   return formatDate(iso);
 };
 
-/* Activity · 02: the notification inbox, where the popover's "View notifications inbox" goes. Figma
+/* Activity · 02: the notification inbox, where the popover's "View notification inbox" goes. Figma
    "Notification Inbox" (1030:173233): Mark all as read, Show unread only, the rows (no comment previews),
-   and the pager; no left menu, as Figma draws it, and the rows grouped by day (both decided 9 Nov 2026). */
+   and the pager; no left menu, as Figma draws it, and the rows grouped by day (both decided 9 Nov 2026).
+   DS 2.0.0's page: the title is the card's own heading and the page's h1 (a recorded difference from Figma,
+   whose card has none), with no PageTitle band above it, and 40 above and below. */
 export default function NotificationInboxScreen() {
   const { notifications, markAllRead } = useNotifications();
   const [unreadOnly, setUnreadOnly] = React.useState(false);
@@ -30,10 +32,12 @@ export default function NotificationInboxScreen() {
     children: rows.filter((n: AppNotification) => n.on === day).map((n) => <NotificationRow key={n.id} n={n} withComment={false} />),
   }));
   return (
-    <Screen active="notifications" rail={false} header={<PageTitle title="Notification Inbox" />}>
+    <Screen active="notifications" rail={false}>
       {/* Where a guided scenario's step points (Activity · 02): see src/flows/types.ts. */}
-      <div className="py-6" data-flow-step="inbox">
+      <div className="py-10" data-flow-step="inbox">
         <NotificationInbox
+          title="Notification Inbox"
+          headingLevel={1}
           unreadOnly={unreadOnly}
           onUnreadOnlyChange={setUnreadOnly}
           onMarkAllRead={markAllRead}

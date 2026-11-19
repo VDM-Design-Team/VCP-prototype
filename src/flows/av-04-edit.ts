@@ -105,7 +105,7 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
     demonstrates: "Projects is required to submit: Figma's \"Projects\" field error.",
     conditions: "Eve (User), her draft VCP-1199 complete except for Projects.",
     simulated: "Nothing is sent until Submit passes.",
-    expected: "An error under Projects and a \"Missing Input\" toast. Choosing a project clears it; Submit then passes.",
+    expected: "An error under Projects and a \"Missing input\" toast. Choosing a project clears it; Submit then passes.",
     task: "Send your draft about saved filters for review.",
   },
   {

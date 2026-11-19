@@ -18,7 +18,7 @@ Keep each domain's people, lists and teams right (an admin), and everyone's acco
 1. **Settings** (Figma `806:102049`, DS `Tabs`): Personal Info, **Users**, **Admin Panel**, Announcements, Manuals, Password.
 2. **Users** (DS `UsersTable`, Figma `992:3002`): the domain's people, their status (DS `AccountStatusTag`) and when they were added; a search, sorting, pages.
    - **+ New User** (DS `UserAccountModal`, "Create New User"): Status, Name, Email, Roles. Submit: "User created".
-   - **View** (the same dialog, filled): Status, Name, Email, **Capacity Points** with its own **Save** (it saves the points alone), Roles. Submit: "Changes Saved".
+   - **View** (the same dialog, filled): Status, Name, Email, **Capacity Points** with its own **Save** (it saves the points alone), Roles. Submit: "Changes saved".
    - **Capacity Points are a per-person cap** (decided 10 Nov 2026): the most that person can take in one cycle. The cycle's fixed total stays separate. **The Planning List warns** when someone's work in an open cycle goes past their cap ("Jack Morgan: 12 of 8 points in C44"); the dashboard's User Capacity row is capped by it.
 3. **Admin Panel** (DS `DomainCard`, Figma `806:102342`): **Roles**, **Status** and **Assignee Types**, each with Add New, a pencil (rename) and a bin (delete).
    - **Status**: the shared steps are locked ("Default"); the domain's own steps have a grip and move by dragging, or by Space, ↑ ↓, Space. **Renaming or reordering them shows on every Added Value in the domain at once**, and on the AV page's progression (decided 10 Nov 2026).
@@ -40,7 +40,7 @@ Keep each domain's people, lists and teams right (an admin), and everyone's acco
 | A required field empty (name, email) | The dialog's own error under the field | Fill it in |
 | A team with no name | "Give the team a name." | Name it |
 | Add Manual with no name, or no file | "Give the manual a name." / "Add at least one file." | Fill them in |
-| A row deleted with its bin (a tag, a status step, a team, a project) | "Deleted", with Undo; focus on the next row's Delete (or the previous one's, or Add New) | Undo |
+| A row deleted with its bin (a tag, a status step, a team, a project) | "<name> deleted", with Undo (DS `undoDeletion` recipe); focus on the next row's Delete (or the previous one's, or Add New) | Undo |
 | An account or a domain deleted after the confirm | "Account deleted" / "Domain deleted", no Undo (the confirm says it can't be undone); focus on the next row's Delete, or the previous one's, or the search | — |
 
 ## Completion or exit

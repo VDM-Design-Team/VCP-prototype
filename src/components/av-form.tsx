@@ -5,25 +5,29 @@ import { useRouter } from "next/navigation";
 import {
   Banner,
   Button,
+  ConfirmModal,
+  confirmations,
   DeliverablesCard,
   DescriptionCard,
+  DescriptionCardTitle,
   DescriptionSection,
   DetailCard,
-  DuplicateToOtherDomain,
+  discarded,
   Field,
   fileKind,
+  focusFirstInvalid,
   formatDate,
+  InitiateToOtherDomain,
   Input,
+  missingInput,
   Modal,
   PageTitle,
-  StatusHistory,
   useAttachmentFiles,
   useToast,
   type DeliverableFile,
   type DeliverableLinkItem,
   type DetailCardField,
   type DetailCardValue,
-  ConfirmDeleteModal,
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { NO_FREE_REFERENCE, useAddedValues } from "@/components/av-store";
@@ -263,12 +267,8 @@ function Form({ editing }: { editing?: AddedValue }) {
       markDiscarded(editing.id, editing.title, "You");
     }
     dismissAll();
-    /* Figma: with an ID the toast names it; a new AV has none yet. */
-    toast({
-      tone: "success",
-      title: "Deleted!",
-      description: editing ? `Added Value “${editing.ref}” has been discarded successfully.` : "Added Value has been discarded successfully.",
-    });
+    /* DS 2.0.0's recipe: "Draft discarded", naming the reference when there is one (a new AV has none yet). */
+    toast(discarded(editing?.ref));
     /* Figma goes to My Values, which isn't built yet: the Dashboard until it is. */
     router.push("/");
   };
@@ -284,7 +284,7 @@ function Form({ editing }: { editing?: AddedValue }) {
   const picked = useAttachmentFiles();
   /* A new AV is Development's for now (the prototype's viewer is a developer). */
   const avDomain: AVDomain = editing?.domain ?? "development";
-  /* AV · 08: the domains ticked in "Duplicate to other Domains", and each one's copy. */
+  /* AV · 08: the domains ticked in "Initiate to other Domains", and each one's copy. */
   const [initiate, setInitiate] = React.useState<string[]>([]);
   const [copies, setCopies] = React.useState<Record<string, Copy>>({});
   /* Each copy needs a title, on Submit and on Save as draft alike (both send it). */
@@ -304,14 +304,11 @@ function Form({ editing }: { editing?: AddedValue }) {
   const draftProblems = React.useMemo(() => withCopies(checkDraft(draft), "saving a draft"), [draft, withCopies]);
   /* Each blocked press, once its inline errors are on screen: bring the first
      one into view and put the cursor in it (Figma: "scroll to the highest
-     missing field"). An assignee the card can't mark is reached by its banner
-     and toast. */
+     missing field"; the DS's focusFirstInvalid). An assignee the card can't
+     mark is reached by its banner and toast. */
   const [blockedPresses, setBlockedPresses] = React.useState(0);
   React.useEffect(() => {
-    if (!blockedPresses) return;
-    const first = document.querySelector<HTMLElement>('main [aria-invalid="true"]');
-    first?.scrollIntoView({ block: "center" });
-    first?.focus({ preventScroll: true });
+    if (blockedPresses) focusFirstInvalid(document.querySelector("main"));
   }, [blockedPresses]);
   const shown = attempted === "submit" ? problems : attempted === "draft" ? draftProblems : undefined;
 
@@ -327,9 +324,9 @@ function Form({ editing }: { editing?: AddedValue }) {
     setAttempted(kind);
     dismissAll();
     if (!blocked(found)) return true;
-    for (const message of found.toasts) {
-      toast({ tone: "critical", title: "Missing Input", description: message, announce: false, duration: null });
-    }
+    /* DS 2.0.0's missingInput recipe (sentence-case title, not announced, times out: the field errors stay),
+       with Figma's own wording for each field. */
+    for (const message of found.toasts) toast(missingInput("", "fill", { description: message }));
     setBlockedPresses((n) => n + 1);
     return false;
   };
@@ -537,16 +534,15 @@ function Form({ editing }: { editing?: AddedValue }) {
     <Screen active="" header={header}>
       <div className="grid gap-4 lg:grid-cols-3">
         <div data-flow-step="form" className="flex flex-col gap-4 lg:col-span-2">
-          <section data-flow-step="title" className="rounded-md bg-surface-elevated p-6">
-            <Field label="Title" error={shown?.title}>
-              <Input
-                fullWidth
-                placeholder="Type in the title"
-                value={draft.title}
-                onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
-              />
-            </Field>
-          </section>
+          {/* DS 2.0.0: the title card's Editing state is the Title field (Figma's DescriptionCardTitle). */}
+          <div data-flow-step="title">
+            <DescriptionCardTitle
+              editing
+              title={draft.title}
+              onChange={(title) => setDraft((d) => ({ ...d, title }))}
+              error={shown?.title}
+            />
+          </div>
           {section("problems", "problem", "problem")}
           {section("solutions", "solution", "solution")}
           {section("deliverables", "deliverable", "acceptance criterion")}
@@ -558,13 +554,13 @@ function Form({ editing }: { editing?: AddedValue }) {
               error={shown?.desiredOutcome}
             />
           </DescriptionSection>
-          {/* Figma's edit pages keep the log, closed. */}
-          {editing && <StatusHistory headingLevel={2} entries={editing.history} />}
+          {/* No Status History on an edit page: it is for reading only, like Comments (DS 2.0.0, the design lead's call;
+              Figma's edit frames draw it closed). */}
           {/* AV · 08 Initiate to another domain (Figma 1141:138917): tick a domain,
               its copy appears; Submit initiates it there. */}
           {editing && (
             <div data-flow-step="duplicate">
-              <DuplicateToOtherDomain
+              <InitiateToOtherDomain
                 options={DOMAINS.filter((d) => d.value !== avDomain).map((d) => ({
                   value: d.value,
                   name: d.name,
@@ -643,6 +639,8 @@ function Form({ editing }: { editing?: AddedValue }) {
           <DeliverablesCard
             domain={avDomain}
             mode="edit"
+            /* DS 2.0.0: removing a link or a file asks first. */
+            confirmRemove
             links={links}
             videoLinks={videoLinks}
             onAddLinks={(section, added) =>
@@ -675,17 +673,8 @@ function Form({ editing }: { editing?: AddedValue }) {
           </div>
         </div>
       </div>
-      {/* Figma: "the same modal used to delete AVs in the AV table" (1026:169657), with the discard's words. */}
-      <ConfirmDeleteModal
-        open={askDiscard}
-        onClose={() => setAskDiscard(false)}
-        onConfirm={discard}
-        title="Are you sure you want to discard this Added Value?"
-        description="This action cannot be undone. The item will be permanently removed."
-        confirmLabel="Confirm"
-        itemLabel="Added Value"
-        itemName={editing ? `${editing.ref}: ${editing.title}` : draft.title || "Untitled Added Value"}
-      />
+      {/* AV · 02: the plain confirm question (DS 2.0.0's ConfirmModal with the discardAV recipe, Figma's copy). */}
+      <ConfirmModal open={askDiscard} onClose={() => setAskDiscard(false)} onConfirm={discard} {...confirmations.discardAV()} />
       {editing && (
         <Modal
           open={askLeave}

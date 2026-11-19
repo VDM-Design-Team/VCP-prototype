@@ -27,7 +27,7 @@ export const BACKLOG_SCENARIOS: readonly ScenarioDef[] = [
         "vcp-1199",
       ),
       {
-        text: "It stays open, now Backlog. Remarks shows the feedback (Figma 1090:27191); the toast's link opens the archive.",
+        text: "It stays open, now Backlog. A yellow banner, \"This Added Value was moved to the backlog\", shows the feedback (Figma 1090:27191); the toast's link opens the archive.",
         target: "step:remarks",
         path: "/added-values/vcp-1199",
       },
@@ -49,7 +49,7 @@ export const BACKLOG_SCENARIOS: readonly ScenarioDef[] = [
     demonstrates: "The initiator parks a draft in the Backlog with a reason (Remarks), then brings it back with Edit → Save as draft.",
     conditions: "Eve (User) on her draft VCP-1199.",
     simulated: "The move always succeeds.",
-    expected: "The Feedback dialog, with Move to Backlog off until feedback is typed. Then the AV in Backlog with a Remarks banner, a toast, and the AV listed in Archive → Backlogs. Edit → Save as draft moves it back to Draft.",
+    expected: "The Feedback dialog, with Move to Backlog off until feedback is typed. Then the AV in Backlog with a \"moved to the backlog\" banner, a toast, and the AV listed in Archive → Backlogs. Edit → Save as draft moves it back to Draft.",
     task: "You won't work on your saved-filters draft for a while. Park it, and say why.",
   },
   {
@@ -74,7 +74,7 @@ export const BACKLOG_SCENARIOS: readonly ScenarioDef[] = [
     demonstrates: "Nothing goes to the Backlog without feedback; Cancel moves nothing, and the dialog starts empty each time.",
     conditions: "Eve (User) on her draft VCP-1199.",
     simulated: "The move succeeds once there is feedback.",
-    expected: "With no feedback (or only spaces) Move to Backlog stays disabled, with no error message. Cancel closes the dialog with nothing changed. With feedback the AV moves, and the Remarks banner shows it.",
+    expected: "With no feedback (or only spaces) Move to Backlog stays disabled, with no error message. Cancel closes the dialog with nothing changed. With feedback the AV moves, and its banner shows it.",
     task: "Park your saved-filters draft in the backlog without saying why. Can you?",
   },
   {

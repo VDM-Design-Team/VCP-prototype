@@ -23,7 +23,7 @@ Decide a submitted Added Value: accept it into the work, or turn it down and say
 3. **Reject** → "Reject Added Value" (`RejectPendingAVModal`):
    - **Rejection Reason** is required: Reject stays faded until one is picked;
    - each reason shows what it means; **Other** shows an optional text field instead (Figma `1139:137784`);
-   - **Reject** → Pending → **Rejected**: the AV stays open with a red **"This Task was rejected"** banner giving the reason (and the text, for Other) (Figma `1094:95365`); a toast links to Archive → Rejected *(inferred)*. It leaves Manage and is listed in **Archive → Rejected**.
+   - **Reject** → Pending → **Rejected**: the AV stays open with a red **"This Added Value was rejected"** banner (DS `rejectedBanner`, 2.0.0; Figma's is "This Task was rejected") giving the reason (and the text, for Other) (Figma `1094:95365`); a toast links to Archive → Rejected *(inferred)*. It leaves Manage and is listed in **Archive → Rejected**.
 4. **After the decision, an admin's ⋮ menu can undo it** *(decided 13 Nov 2026, the live product's menu; `DetailCardMenu` owns which moves appear, Figma does not draw them)*:
 
    | The AV is | An admin's ⋮ menu adds | What the move does |

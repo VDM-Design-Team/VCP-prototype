@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   DomainBudgetEditPage,
   Modal,
+  changesSaved,
   useToast,
   type BudgetRow,
   type Quarter,
@@ -17,7 +18,7 @@ import { BUDGET_DOMAINS, CURRENT, YEARS, consumedFor, quarterKey, type DomainBud
 /* Admin · 01: a super admin sets every domain's points for a quarter (Figma's Domain Budget Edit, 696:54963).
    The layout is the DS DomainBudgetEditPage's: Q1–Q4 and the year on the title's row, both 36 high (decided
    13 Nov 2026, over Figma's own row above the table), the allocation and a note per domain, and one Save
-   Changes. The pattern holds no data; this page saves ("Changes Saved"). Any quarter, past ones included, can
+   Changes. The pattern holds no data; this page saves (DS 2.0.0's changesSaved recipe, "Changes saved"). Any quarter, past ones included, can
    be edited; whole points only (decided 10 Nov 2026). With unsaved edits, switching quarter or leaving asks
    first, with the AV edit page's dialog (decided); closing the tab, the browser's own prompt (the pattern's
    `dirty`). */
@@ -75,7 +76,7 @@ export default function DomainBudgetScreen() {
         return rest;
       });
       setSaving(false);
-      toast({ tone: "success", title: "Changes Saved", description: "Your updates have been saved successfully!" });
+      toast(changesSaved());
     }, 800);
   };
 

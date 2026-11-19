@@ -29,8 +29,8 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
 |---|---|---|
-| Any Submit check fails (empty field, unpaired problem, tag rule, assignee away) | As AV · 01: one "Missing Input" toast per problem and the field errors; the first error is scrolled to and focused | Fix the field; Submit again |
-| No project | "Please select a project tag before submitting" under Projects, and a "Missing Input" toast (Figma `1026:166742`) | Pick a project. *Applies to AV · 01 Submit too* |
+| Any Submit check fails (empty field, unpaired problem, tag rule, assignee away) | As AV · 01: one "Missing input" toast per problem and the field errors; the first error is scrolled to and focused | Fix the field; Submit again |
+| No project | "Please select a project tag before submitting" under Projects, and a "Missing input" toast (Figma `1026:166742`) | Pick a project. *Applies to AV · 01 Submit too* |
 | No Title on Save as draft | As AV · 03 | Type a title |
 | Discard on a Draft or Pending AV | AV · 02: the confirm, then the AV is gone | Cancel keeps it |
 
@@ -45,7 +45,7 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 - **May an admin edit someone else's AV?** The ⋮ menu gives an admin Edit; the prototype lets them.
 - **Past Draft, Save as draft and Submit both save.** Submit runs every check, Save as draft only the Title. Is a second button needed there?
 - **The sidebar and the browser's back** don't ask about unsaved changes yet; only the page's back arrow does.
-- **"Duplicate to other Domains"** checkboxes sit on Figma's edit pages. That's AV · 08 Initiate to another domain, not built yet.
+- **"Initiate to other Domains"** checkboxes sit on Figma's edit pages: AV · 08 Initiate to another domain.
 - **The page title.** Figma strikes through "Added Value Creation" on its edit pages; the prototype says "Edit VCP-1199".
 - **Design system:** Figma's Discard is red text: DS `Button` `critical-tertiary` (built for AV · 02; `danger-tertiary` before 1.0.0).
 - **Projects is now checked on Submit** for new AVs too (AV · 01), since Figma's error says "before submitting".

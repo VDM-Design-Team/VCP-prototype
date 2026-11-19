@@ -14,7 +14,7 @@ Hand finished work over for review, and have it signed off (Completed) or sent b
 - The AV is at its domain's **last step** (Development: Confirmed prod; Design: Design review), after Accept (AV · 06) and the domain's steps.
 
 ## Main steps and decision points
-1. On the AV, **Move to Handoff** (an admin's reads **Handoff**) opens **"Handoff Added Value"** (`HandoffAVModal`):
+1. On the AV, **Move to Handoff** (an admin's too, since DS 2.0.0) opens **"Handoff Added Value"** (`HandoffAVModal`):
    - **Handoff Date** (required, chosen from the calendar; prefilled with today, and **Handoff** stays disabled while it is empty), **Demo Links** (Add Another Link), **Attachments** (the AV's files as cards that can be removed, plus a drop zone);
    - **something to review is required** *(decided 13 Nov 2026)*: **at least one demo link or one attachment**. The rule is written under Demo Links ("A handoff needs at least one demo link or one attachment."). A file already on the AV counts while it isn't removed in the dialog; a link that is typed must be a valid `https://` address. A file counts as well as a link, so work without a URL can be handed off;
    - **overdue:** a warning banner ("This value is Overdue by 3 days"), a **required Overdue Reason** (six reasons) and optional Additional Notes;

@@ -20,7 +20,7 @@ Know what happened to your Added Values and comments, and act on it without hunt
 4. **"reacted to your comment"** (decided 9 Nov 2026; DS #341): the row shows your comment with its reactions. No Reply on it (it's your own).
 5. **Mark one read or unread**: on hover or focus the dot becomes a check, "Mark as Read"; read, it's a filled check, "Mark as Unread" (Figma `477:56333`).
 6. **Open a row**: its AV opens, and the popover closes.
-7. **View notifications inbox** (the footer) opens **the inbox** (Figma `1030:173233`): **full width, no left menu**, the logo top bar (decided 9 Nov 2026); every notification **grouped by day**, "Today", "Yesterday", "3 November" (decided; DS #343), without the comment previews, with **Show unread only**, **Mark all as read**, and the pager. The popover stays one list.
+7. **View notification inbox** (the footer; "notifications" until DS 2.0.0) opens **the inbox** (Figma `1030:173233`): **full width, no left menu**, the logo top bar (decided 9 Nov 2026); the title **"Notification Inbox" is inside the card**, the page's heading, with no title band above it (DS 2.0.0, a recorded difference from Figma, whose card has none); every notification **grouped by day**, "Today", "Yesterday", "3 November" (decided; DS #343), without the comment previews, with **Show unread only**, **Mark all as read**, and the pager. The popover stays one list.
 
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
