@@ -132,15 +132,15 @@ export const HANDOFF_SCENARIOS: readonly ScenarioDef[] = [
     role: "admin",
     start: "/added-values/vcp-1205",
     steps: [
-      on("vcp-1205", "Admin view: at the last step an admin's button reads just \"Handoff\" (the assignee's reads \"Move to Handoff\").", "button:Handoff"),
-      on("vcp-1205", "Press Handoff, give the overdue reason, and hand it off: the AV's own file is what there is to review. Then Next.", "button:Handoff"),
+      on("vcp-1205", "Admin view: at the last step an admin's button reads \"Move to Handoff\", the same as the assignee's (DS 2.0.0, decided 17 Nov 2026).", "button:Move to Handoff"),
+      on("vcp-1205", "Press Move to Handoff, give the overdue reason, and hand it off: the AV's own file is what there is to review. Then Next.", "button:Move to Handoff"),
       on("vcp-1205", "In Review, an admin can decide it too: Reject or Accept, like the initiator.", "button:Accept"),
     ],
     name: "An admin hands off and reviews",
     demonstrates: "An admin can hand off at the last step and decide the review.",
     conditions: "Eve as Admin, on VCP-1205 at Confirmed prod (overdue).",
     simulated: "Handing off and reviewing always succeed.",
-    expected: "The same dialogs; the admin's button reads \"Handoff\", and the review's Reject and Accept are theirs too.",
+    expected: "The same dialogs; the admin's button reads \"Move to Handoff\" too, and the review's Reject and Accept are theirs too.",
     task: "As an admin, hand off the late CSV export, then sign it off.",
   },
 ];

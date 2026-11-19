@@ -28,7 +28,7 @@ Get a new Added Value in front of an admin: from Draft to Pending.
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
 |---|---|---|
-| A required field is empty | A critical **"Missing Input"** toast per empty field (✕, stays until dismissed, `announce: false`), and "You need to fill in this field before submitting the Added Value" under each field | Fill the field: its error clears at once. Submit again |
+| A required field is empty | A critical **"Missing input"** toast per empty field (the DS `missingInput` recipe with Figma's wording: ✕, `announce: false`, and since DS 2.0.0 it times out, because the error under the field stays), and "You need to fill in this field before submitting the Added Value" under each field | Fill the field: its error clears at once. Submit again |
 | A problem without its solution (or the reverse) | "Problem and solution should be filled together" under both cards of the pair | Fill the other card, or remove the problem |
 | No project | "Please select a project tag before submitting" under Projects, and a toast (Figma `1026:166742`; added with AV · 04) | Pick a project |
 | No tags | "Please select at least one tag before submitting" under Tags, and a toast | Add a global and a domain tag |

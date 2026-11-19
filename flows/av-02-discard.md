@@ -15,10 +15,10 @@ Throw away an Added Value that isn't wanted, before anyone has accepted it.
 
 ## Main steps and decision points
 1. **Discard** (DS `Button` `critical-tertiary`, red text) sits before Save as draft and Submit (Figma `1026:166776`).
-2. **The confirm** (DS `ConfirmDeleteModal`, "the same modal used to delete AVs in the AV table"): "Are you sure you want to discard this Added Value?", "This action cannot be undone. The item will be permanently removed.", the AV's reference and title, **Cancel** and **Confirm**.
-3. **Confirm**: the Added Value is removed for good. The toast: "Deleted!", and
-   - with an ID: "Added Value “VCP-1199” has been discarded successfully.";
-   - a new one, never saved: "Added Value has been discarded successfully." (Figma's "Does the AV already have an ID?").
+2. **The confirm** (DS `ConfirmModal` with the `discardAV` recipe, since DS 2.0.0): a plain question, "Are you sure you want to discard this Added Value?", "This action cannot be undone. The item will be permanently removed.", **Cancel** and a red **Confirm**. It no longer names the AV: the page it is asked on does.
+3. **Confirm**: the Added Value is removed for good. The toast is the DS `discarded` recipe, **"Draft discarded"**, and
+   - with an ID: "Added Value VCP-1199 was discarded.";
+   - a new one, never saved: no line under the title (Figma's "Does the AV already have an ID?").
 4. **Where to**: **My Values** in the product (Figma); the prototype goes to the **Dashboard** until My Values is built (decided 10 Nov 2026).
 5. **Notifications** (decided 10 Nov 2026): whoever was told of it (the admins, told of a Pending one) **keeps the row**, which now reads "**Lena Novak discarded** *Empty states for the archive pages*." and **no longer opens it** (DS `NotificationItem` `discarded`, #366). It comes to the top, unread.
 
@@ -44,8 +44,8 @@ Throw away an Added Value that isn't wanted, before anyone has accepted it.
 | Where | Figma | Prototype |
 |---|---|---|
 | Discard | Style=Text, label `accent/critical/outline/content/hover` (red-700) | DS `critical-tertiary`, the same token |
-| The confirm | "Are you sure you want to discard this Added Value?" · "This action cannot be undone. The item will be permanently removed." · Cancel, Confirm | the same words; the DS confirm also shows the AV's reference and title |
-| The toast | "Deleted!" · "Added Value “12065” has been discarded successfully." | "Deleted!" · "Added Value “VCP-1199” …" |
+| The confirm | "Are you sure you want to discard this Added Value?" · "This action cannot be undone. The item will be permanently removed." · Cancel, Confirm | the same words (DS `ConfirmModal`, `confirmations.discardAV`) |
+| The toast | "Deleted!" · "Added Value “12065” has been discarded successfully." | "Draft discarded" · "Added Value VCP-1199 was discarded." (DS `discarded` recipe, 2.0.0) |
 | After | My Values | the Dashboard, until My Values is built (decided) |
 | Who | the initiator's page only | whoever raised it, and the domain's admins (decided) |
 | Notifications | not drawn | the row stays and says "discarded", and opens nothing (decided; DS #366) |

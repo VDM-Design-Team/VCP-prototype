@@ -14,26 +14,26 @@ Send a copy of an Added Value to another domain that has to do its part, and fol
 - The domains are Design (BESA), Development, Content, Governance, Partners and Quality Assurance; the AV's own domain isn't offered.
 
 ## Main steps and decision points
-1. On the edit page, under Status History: **"Duplicate to other Domains"** (DS `DuplicateToOtherDomain`), one checkbox per other domain: "Initiate to Design (BESA) assignment".
+1. On the edit page, under the cards: **"Initiate to other Domains"** (DS `InitiateToOtherDomain`; "Duplicate" until DS 2.0.0), one checkbox per other domain: "Initiate to Design (BESA) assignment".
 2. Tick a domain: **"The copy in Design (BESA) domain"** appears under it, a copy of the AV's Title, Problems, Solutions, Acceptance Criteria and Desired Outcome, each editable for that domain (Figma `1141:139495`). Untick it and the copy goes.
 3. **Submit** (the AV's own checks) or **Save as draft** (its title) *(decided 9 Nov 2026: both send the copies)*, plus a **Title for each copy**. It saves the AV and initiates each copy, **"Initiated"** in its domain. The AV keeps its own status; the toast says where it was initiated.
-4. The AV's page then uses the details card's **Duplicates** view: one box per copy with its domain and its status there (Figma `1142:144122`).
-5. **The copy moves on its own:** its status in Duplicates follows its domain ("In design", "For QA"…); the original's stays the same (Figma `1144:46123`).
-6. **Endpoints:** a copy **rejected** in its domain shows a red banner on the original, "This Task was rejected in Design (BESA) Domain", with that domain's reason. A **backlogged** copy shows a yellow one, "This Task was backlogged in …", with the feedback (Figma `1146:65944`, `1146:65362`).
+4. The AV's page then uses the details card's **Initiated to** view: one box per copy with its domain and its status there (Figma `1142:144122`).
+5. **The copy moves on its own:** its status in Initiated to follows its domain ("In design", "For QA"…); the original's stays the same (Figma `1144:46123`).
+6. **Endpoints:** a copy **rejected** in its domain shows a red banner on the original, "This Added Value was rejected in Design (BESA) Domain" (DS 2.0.0's banner; Figma writes "This Task was rejected…"), with that domain's reason. A **backlogged** copy shows a yellow one, "This Task was backlogged in …", with the feedback (Figma `1146:65944`, `1146:65362`).
 
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
 |---|---|---|
-| A copy with no title | The copy's Title error and a "Missing Input" toast naming the domain | Give it a title, or untick the domain |
+| A copy with no title | The copy's Title error and a "Missing input" toast naming the domain | Give it a title, or untick the domain |
 | Already initiated to a domain | That checkbox is disabled: an AV goes to a domain once | — |
 
 ## Completion or exit
-- **Done:** the copy is Initiated in its domain and listed under Duplicates on the original.
+- **Done:** the copy is Initiated in its domain and listed under Initiated to on the original.
 - **Not in this flow:** the copy's own life in its domain (its own AV · 06/07); the copy as a page of its own and in that domain's lists (Figma `1144:22299`) aren't in the prototype.
 
 ## Decided (9 Nov 2026)
 - **Save as draft sends the copies too**, the same as Submit.
-- **The Duplicates view as in Figma:** once an AV has a copy, its details card shows the duplicate card, with no Assignee, dates, Cycle or Capacity.
+- **The Initiated to view as in Figma:** once an AV has a copy, its details card shows the initiated card, with no Assignee, dates, Cycle or Capacity.
 - **A copy needs only its title.**
 - **Two design-system pieces, once this flow is approved:** the AV table's marker for a copy rejected or backlogged elsewhere (`1145:49620`, `1146:63791`), and the "The copy in … domain" section (page layout in the prototype until then). Each gets its own DS branch and draft PR; then the prototype uses them.
 

@@ -18,7 +18,7 @@ Give each domain a budget of development points per quarter, and let its admin s
 1. **The table** (DS `BudgetTable`, Figma `701:67744`): Q1–Q4 and the year top right; per domain, **Allocated Points** (a number field with arrows), **Consumed** (with its bar), **Remaining** (red when negative), **Optional Notes**.
 2. **Change an allocation**: the arrows update Remaining and the bar at once; typing does after a brief pause (Figma's two flows). **Whole points only**: a decimal isn't taken. **Zero** is allowed, and so is **less than already consumed** (the domain shows over budget). A domain with no budget says "Set Budget" and counts as 0.
 3. **A note** grows while it's written and folds to one line after.
-4. **Save Changes** (one, for the quarter shown): it spins while saving and locks the table and the quarter controls; then **"Changes Saved"** ("Your updates have been saved successfully!").
+4. **Save Changes** (one, for the quarter shown): it spins while saving and locks the table and the quarter controls; then **"Changes saved"** ("Your updates have been saved successfully!").
 5. **The admin's card** (DS `DomainBudgetSummary`, Figma `696:55584`), for the domain in the rail's switcher: Allocated, Consumed, Remaining; the quarter, its end and days left; **Budget Usage**, blue below 75%, amber from 75%, red from 100%; and under it the super admin's **note** for that domain. A past quarter shows its dates, an upcoming one its dates, each with **Go to Current Quarter**.
 6. **Switching domain** changes the card, In Case You Missed It and the Manage list together: each shows the picked domain only.
 7. **The two are one budget**: what the super admin saves is what the admin's card reads.

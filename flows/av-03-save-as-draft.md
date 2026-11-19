@@ -22,7 +22,7 @@ Keep an Added Value that isn't finished, to finish and submit it later.
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
 |---|---|---|
-| No Title | A critical **"Missing Input"** toast ("Title Field can't be empty, please fill it in before saving a draft.", ✕, stays until dismissed, `announce: false`) and "You need to fill in this field before saving the Added Value as a draft" under Title. The page scrolls to Title and focuses it | Type a title: the error clears at once. Save again |
+| No Title | A critical **"Missing input"** toast ("Title Field can't be empty, please fill it in before saving a draft.", ✕, times out since DS 2.0.0 while the field error stays, `announce: false`) and "You need to fill in this field before saving the Added Value as a draft" under Title. The page scrolls to Title and focuses it | Type a title: the error clears at once. Save again |
 | Anything Submit would block (empty fields, an unpaired problem, the tag rule, an assignee away) | Nothing: **Submit's checks don't run** on a draft | Not needed. They run when the draft is submitted (AV · 04) |
 | Submit was pressed first and blocked | Save as draft clears Submit's toasts and errors, then saves | — |
 

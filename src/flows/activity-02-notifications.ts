@@ -108,7 +108,7 @@ export const NOTIFICATION_SCENARIOS: readonly ScenarioDef[] = [
     id: "activity-02-notifications.inbox",
     steps: [
       press("Press the bell.", "Notifications, 4 unread"),
-      say("At the foot: View notifications inbox. Press it. Then Next."),
+      say("At the foot: View notification inbox. Press it. Then Next."),
       { text: "The inbox (Figma 1030:173233): full width, no left menu (decided 9 Nov 2026), the logo takes you home. Every notification, grouped by day (Today, Yesterday, 3 November …; decided), without the comment previews, with Show unread only, Mark all as read and the pager.", target: "step:inbox", path: INBOX },
       { text: "Switch Show unread only on, then press Mark all as read: the list empties (\"No unread notifications\") and the bell's dot goes.", target: "step:inbox", path: INBOX },
     ],

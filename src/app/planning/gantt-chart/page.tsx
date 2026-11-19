@@ -36,8 +36,10 @@ export default function GanttChartScreen() {
   return (
     <Screen active="planning/gantt-chart">
       {/* Where a guided scenario's step points (Planning · 01): see src/flows/types.ts. */}
-      <div className="py-6" data-flow-step="gantt" onClick={openInApp}>
+      {/* DS 2.0.0's "On a page": 40 above and below, and the chart's title is the page's one h1. */}
+      <div className="py-10" data-flow-step="gantt" onClick={openInApp}>
         <GanttChart
+          headingLevel={1}
           title="Gantt Chart"
           infoText="Each bar is an Added Value, from its start to its due date; select it to open the Added Value. A closed row sums up a person's work; open it to see each task and their availability. Pick projects to group the rows by project. The hatched column is today."
           tasks={tasks}

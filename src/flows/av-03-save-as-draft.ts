@@ -97,7 +97,7 @@ export const DRAFT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     conditions: "Eve (User) on a blank creation page.",
     simulated: "Nothing is sent: the check runs in the page.",
     expected:
-      'A "Missing Input" toast and an error under Title. Typing a title clears it; the draft then saves.',
+      'A "Missing input" toast and an error under Title. Typing a title clears it; the draft then saves.',
     task: "Keep this Added Value as a draft for later.",
     setup: EMPTY_DRAFT,
   },

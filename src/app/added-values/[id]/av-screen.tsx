@@ -9,6 +9,8 @@ import {
   MultipartSection,
   AVHeader,
   Banner,
+  backloggedBanner,
+  rejectedBanner,
   CommentSection,
   ConfirmDeleteAVModal,
   DeliverablesCard,
@@ -213,31 +215,28 @@ export function AVScreen({ id }: { id: string }) {
     >
       <div className="grid grid-cols-3 items-start gap-4 py-6">
         <div className="col-span-2 flex min-w-0 flex-col gap-4">
+          {/* The headlines are DS 2.0.0's (rejectedBanner, backloggedBanner; decided 17 Nov 2026), not Figma's
+              "This Task was rejected" and "Remarks". */}
           {av.status === "Rejected" && (
-            <Banner tone="critical" title="This Task was rejected">
-              {rejection?.label ?? "No reason was given"}
-              {av.rejection?.detail ? `: ${av.rejection.detail}` : ""}
-            </Banner>
+            <Banner
+              {...rejectedBanner({
+                message: `${rejection?.label ?? "No reason was given"}${av.rejection?.detail ? `: ${av.rejection.detail}` : ""}`,
+              })}
+            />
           )}
-          {/* Figma (1090:27191): a backlogged AV shows why, as Remarks. Feedback is required since 13 Nov 2026, so there always is one. */}
+          {/* Figma (1090:27191): a backlogged AV shows why. Feedback is required since 13 Nov 2026, so there always is one. */}
           {av.status === "Backlog" && av.remarks && (
             <div data-flow-step="remarks">
-              <Banner tone="warning" title="Remarks">
-                {av.remarks}
-              </Banner>
+              <Banner {...backloggedBanner({ message: av.remarks })} />
             </div>
           )}
           {/* AV · 08 (Figma 1144:46613): a copy rejected or backlogged in its own
               domain says so on the original, whose own status stays. */}
           {av.duplicates?.map((d) =>
             d.status === "Rejected" ? (
-              <Banner key={d.domain} tone="critical" title={`This Task was rejected in ${d.domain} Domain`}>
-                {d.rejection ?? "No reason was given"}
-              </Banner>
+              <Banner key={d.domain} {...rejectedBanner({ message: d.rejection ?? "No reason was given", domain: d.domain })} />
             ) : d.status === "Backlog" ? (
-              <Banner key={d.domain} tone="warning" title={`This Task was backlogged in ${d.domain} Domain`}>
-                {d.remarks ?? "No feedback was given"}
-              </Banner>
+              <Banner key={d.domain} {...backloggedBanner({ message: d.remarks ?? "No feedback was given", domain: d.domain })} />
             ) : null,
           )}
           {/* AV · 10: a part links back to its parent (DS #275's chip). */}
@@ -329,10 +328,10 @@ export function AVScreen({ id }: { id: string }) {
 
         <div className="col-span-1 flex min-w-0 flex-col gap-4">
           {/* Initiated to other domains (AV · 08): Figma's "Viewing Initiated AV"
-              uses the duplicate card, with each copy's domain and status. */}
+              uses the initiated card ("Initiated to"), with each copy's domain and status. */}
           <div data-flow-step="details">
             <DetailCard
-              type={av.duplicates?.length ? "duplicate" : "viewing"}
+              type={av.duplicates?.length ? "initiated" : "viewing"}
               domain={av.domain}
               value={{
                 initiators: av.initiators.map((name) => ({ name })),
@@ -352,7 +351,7 @@ export function AVScreen({ id }: { id: string }) {
                 capacityPoints: av.capacityPoints,
                 dateInitiated: av.dateInitiated,
                 dateAccepted: av.dateAccepted,
-                duplicates: av.duplicates?.map(({ domain, status }) => ({ domain, status })),
+                initiatedTo: av.duplicates?.map(({ domain, status }) => ({ domain, status })),
               }}
               options={{ cycles: CYCLE_OPTIONS }}
             />
