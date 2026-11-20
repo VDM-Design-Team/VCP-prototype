@@ -3,10 +3,9 @@
 import * as React from "react";
 import {
   ACCOUNT_STATUS_OPTIONS,
-  AccountsTable,
+  AccountsPage,
   Button,
   ConfirmDeleteModal,
-  PageTitle,
   UserAccountModal,
   useToast,
   type DataTableSort,
@@ -62,28 +61,33 @@ export default function AccountsScreen() {
   return (
     <Screen
       active="accounts"
-      header={<PageTitle title="Accounts" />}
       primaryAction={<Button onClick={() => setOpen("new")}>Add Account</Button>}
+      /* DS 2.0's AccountsPage is the whole page, title first, and brings its own 32 at the sides: it goes where the
+         shell takes the title band, not in the body (inset 32 already), as the Domain Budget page does. */
+      header={
+        <div data-flow-step="accounts" ref={searchRef}>
+          <AccountsPage
+            table={{
+              rows,
+              search,
+              onSearchChange: (s) => {
+                setSearch(s);
+                setPage(1);
+              },
+              sort,
+              onSortChange: setSort,
+              onEdit: (row) => setOpen(accounts.find((a) => a.id === row.id) ?? null),
+              onDelete: (row) => setDeleting(accounts.find((a) => a.id === row.id) ?? null),
+              page,
+              pageCount,
+              onPageChange: setPage,
+              itemCount: all.length,
+              pageSize: PAGE_SIZE,
+            }}
+          />
+        </div>
+      }
     >
-      <div className="flex flex-col gap-4 py-6" data-flow-step="accounts" ref={searchRef}>
-        <AccountsTable
-          rows={rows}
-          search={search}
-          onSearchChange={(s) => {
-            setSearch(s);
-            setPage(1);
-          }}
-          sort={sort}
-          onSortChange={setSort}
-          onEdit={(row) => setOpen(accounts.find((a) => a.id === row.id) ?? null)}
-          onDelete={(row) => setDeleting(accounts.find((a) => a.id === row.id) ?? null)}
-          page={page}
-          pageCount={pageCount}
-          onPageChange={setPage}
-          itemCount={all.length}
-          pageSize={PAGE_SIZE}
-        />
-      </div>
       <UserAccountModal
         key={editing?.id ?? String(open)}
         open={!!open}

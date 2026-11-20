@@ -3,11 +3,9 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
-  Banner,
+  type BannerProps,
   MoveAVToCycleModal,
-  PageTitle,
-  PlanningFilters,
-  PlanningTable,
+  PlanningPage,
   formatCycleRange,
   formatDate,
   useToast,
@@ -48,6 +46,8 @@ import {
    142:4943). Dates and points edit in place, and each recalculates the other. */
 
 const NO_FILTERS: PlanningFiltersValue = { search: "", status: "", priority: "" };
+/* A data attribute isn't in the table's props type, so it rides in as a spread; the table passes it to its root. */
+const PLANNING_STEP = { "data-flow-step": "planning" };
 type Field = "start" | "due";
 const key = (id: string, field: Field) => `${id}:${field}`;
 /** The assignee pill's date, dd/mm/yyyy as every date. */
@@ -308,43 +308,46 @@ export default function PlanningListScreen() {
     if (av.startDate) animate(av.id, "due");
   };
 
+  /* A guided scenario's step points at it (Planning · 02): see src/flows/types.ts. */
+  const overCapBanner: (BannerProps & { "data-flow-step": string }) | undefined =
+    overCap.length > 0
+      ? {
+          "data-flow-step": "over-cap",
+          tone: "warning",
+          title: overPeople === 1 ? "Someone is over their cap" : `${overPeople} people are over their cap`,
+          children: `${overCap.map((o) => `${o.name}: ${o.points} of ${o.cap} points in ${o.cycle}`).join(" · ")}. A person's cap is their Capacity Points in Settings; move work to another cycle or person.`,
+        }
+      : undefined;
+
   return (
-    <Screen active="planning/planning-list" header={<PageTitle title="Planning List" />}>
-      <div className="flex flex-col gap-6 py-6">
-        <PlanningFilters
-          value={filters}
-          onChange={setFilters}
-          statusOptions={statusOptions}
-          onReset={() => setFilters(NO_FILTERS)}
+    <Screen
+      active="planning/planning-list"
+      /* DS 2.1's PlanningPage is the whole page, title first, with its own 32 at the sides: it goes where the shell
+         takes the title band, not in the body (inset 32 already), as the Domain Budget page does. */
+      header={
+        <PlanningPage
+          filters={{ value: filters, onChange: setFilters, statusOptions, onReset: () => setFilters(NO_FILTERS) }}
+          /* The over-cap warning, in the page's notice spot between the filters and the sections (DS 2.1, #431). */
+          banner={overCapBanner}
+          table={{
+            sections,
+            sort,
+            onSortChange: setSort,
+            onOpen: (row) => router.push(`/added-values/${row.id}`),
+            onMoveRow,
+            moves: "anywhere",
+            canMove: (row) => get(row.id)?.status !== "Completed",
+            onStartChange,
+            onDueChange,
+            onPointsChange,
+            onAnimationDismiss: (row, field) => setAnimated((s) => new Set([...s].filter((k) => k !== key(row.id, field)))),
+            empty: "No Added Values here.",
+            /* Where a guided scenario's step points (Planning · 02): see src/flows/types.ts. */
+            ...PLANNING_STEP,
+          }}
         />
-        {overCap.length > 0 && (
-          <div data-flow-step="over-cap">
-            <Banner tone="warning" title={overPeople === 1 ? "Someone is over their cap" : `${overPeople} people are over their cap`}>
-              {overCap.map((o) => `${o.name}: ${o.points} of ${o.cap} points in ${o.cycle}`).join(" · ")}. A person&apos;s cap is their
-              Capacity Points in Settings; move work to another cycle or person.
-            </Banner>
-          </div>
-        )}
-        {/* Where a guided scenario's step points (Planning · 02): see src/flows/types.ts. */}
-        <div data-flow-step="planning" className="flex flex-col gap-6">
-          <PlanningTable
-            sections={sections}
-            sort={sort}
-            onSortChange={setSort}
-            onOpen={(row) => router.push(`/added-values/${row.id}`)}
-            onMoveRow={onMoveRow}
-            moves="anywhere"
-            canMove={(row) => get(row.id)?.status !== "Completed"}
-            onStartChange={onStartChange}
-            onDueChange={onDueChange}
-            onPointsChange={onPointsChange}
-            onAnimationDismiss={(row, field) =>
-              setAnimated((s) => new Set([...s].filter((k) => k !== key(row.id, field))))
-            }
-            empty="No Added Values here."
-          />
-        </div>
-      </div>
+      }
+    >
       {detailsAV && details && (
         <MoveAVToCycleModal
           key={detailsAV.id}

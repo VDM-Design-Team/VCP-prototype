@@ -182,7 +182,7 @@ export const SETTINGS_SCENARIOS: readonly ScenarioDef[] = [
       press("Press Add New on Domains.", "Add New", "/domains"),
       { text: "\"Add a new Domain\" (Figma 984:376997): type Marketing, Submit, then Next.", path: "/domains" },
       on("Marketing is at the end. Delete it with its bin: \"Are you sure you want to delete this domain?\" with its name (Figma 984:377443). Confirm, then Next.", "step:domains", "/domains"),
-      on("Projects: Add New is Figma's \"Add a new Tag\" (984:376450); a project's bin deletes it with Undo, unless Added Values belong to it: VCP's bin says \"used by\" them (decided 10 Nov 2026).", "step:domains", "/domains"),
+      on("Projects: Add New is Figma's \"Add a new Tag\" (984:376450). A project's bin asks first, like a domain's, and can't be undone (design system 2.0, decided 20 Nov 2026). One that Added Values belong to is refused: try VCP, \"used by\" them (decided 10 Nov 2026), and the dialog stays open for Cancel.", "step:domains", "/domains"),
     ],
     name: "Domains and projects",
     demonstrates: "The super admin's lists (Figma 808:104305).",

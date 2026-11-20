@@ -30,9 +30,9 @@ Keep each domain's people, lists and teams right (an admin), and everyone's acco
    - **Delete** (DS `ConfirmDeleteModal`): "Are you sure you want to delete?" with the name.
 5. **Manuals** (Figma `1046:242262`, DS `ManualsTable`): the domain's manuals, who uploaded them, how many files, when. **Every user in the domain reads them** (decided 10 Nov 2026).
    - **Add Manual** (admins, in the top bar; DS `AddManualModal`, #367; decided 10 Nov 2026, Figma draws no dialog): a **Manual Name** and **one or more files** (DS `Attachments`, the shared drop area and file cards). Submit: "Manual added"; it's on top, uploaded by the admin, "Today".
-6. **Domains** (super admin; DS `DomainCard`, Figma `808:104308`): **Domains** and **Projects**.
+6. **Domains** (super admin; DS `DomainsPage`, its `TagManagement` owning the dialogs, Figma `808:104308`): **Domains** and **Projects**.
    - **Add New** on Domains: "Add a new Domain" (`984:376997`); on Projects: "Add a new Tag" (`984:376450`).
-   - **Delete** a domain: "Are you sure you want to delete this domain?" with its name (`984:377443`). A project's bin deletes it with Undo.
+   - **Delete** a domain: "Are you sure you want to delete this domain?" with its name (`984:377443`). A project's bin asks "Are you sure you want to delete this project?" the same way, and can't be undone (design system 2.0, decided 20 Nov 2026).
 
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
@@ -40,8 +40,10 @@ Keep each domain's people, lists and teams right (an admin), and everyone's acco
 | A required field empty (name, email) | The dialog's own error under the field | Fill it in |
 | A team with no name | "Give the team a name." | Name it |
 | Add Manual with no name, or no file | "Give the manual a name." / "Add at least one file." | Fill them in |
-| A row deleted with its bin (a tag, a status step, a team, a project) | "<name> deleted", with Undo (DS `undoDeletion` recipe); focus on the next row's Delete (or the previous one's, or Add New) | Undo |
-| An account or a domain deleted after the confirm | "Account deleted" / "Domain deleted", no Undo (the confirm says it can't be undone); focus on the next row's Delete, or the previous one's, or the search | — |
+| A row deleted with its bin (a tag, a status step, a team) | "<name> deleted", with Undo (DS `undoDeletion` recipe); focus on the next row's Delete (or the previous one's, or Add New) | Undo |
+| An account deleted after the confirm | "Account deleted", no Undo (the confirm says it can't be undone); focus on the next row's Delete, or the previous one's, or the search | — |
+| A domain or a project deleted after the confirm | "Domain deleted" / "Project deleted", no Undo; focus on the card's Add New (DS `TagManagement`) | — |
+| A project Added Values still belong to | Delete is refused: "Can't delete VCP", "used by" them (decided 10 Nov 2026); the dialog stays open | Cancel, or move the Added Values first |
 
 ## Completion or exit
 - **Done:** the domain's people, lists and teams are right; the super admin's accounts and domains too.
@@ -54,7 +56,7 @@ Keep each domain's people, lists and teams right (an admin), and everyone's acco
 - **The cap's warning** counts a person's own points (or an even share) in Development's open cycles, against their Capacity Points.
 - **Teams** are Development's (the domain that plans in cycles). People are those with access to Development.
 - **A delete by bin** has Undo; **a delete after a confirm** has none, because the confirm says it can't be undone.
-- **Focus after a delete** moves on purpose: the next row's Delete, else the previous one's, else Add New or the search (the DS rule, `docs/accounts-table.md`).
+- **Focus after a delete** moves on purpose: the next row's Delete, else the previous one's, else Add New or the search (the DS rule, `docs/accounts-table.md`). On Domains it goes to the card's Add New (DS `TagManagement`).
 - **Domains and projects** live on the Domains page only: the rail's domain switcher and the AV forms keep their own lists.
 - **Personal Info, Manuals, Changelog, Password** are the DS forms, table and changelog with sample data; saving shows a toast. **Announcements** shows "Not in the prototype yet". **Add Manual** is in the admin's top bar on Manuals (Figma `1046:242262`); nothing is uploaded, and the manual is kept in the prototype only.
 
@@ -65,7 +67,8 @@ Keep each domain's people, lists and teams right (an admin), and everyone's acco
 | Admin Panel tab bar | the Personal Info tab underlined, over the Admin Panel's content | the tab that's open is the one underlined |
 | Teams | not drawn | a Teams card in the Admin Panel (decided), with its own dialog from DS parts |
 | Add Manual's dialog | not drawn | a name and one or more files (decided; DS `AddManualModal`, #367) |
-| Deleting a tag or a project | no confirm drawn | the bin deletes, with Undo |
+| Deleting a tag | no confirm drawn | the bin deletes, with Undo |
+| Deleting a project | no confirm drawn | the domain's confirm, in the project's word (DS `TagManagement`, decided 20 Nov 2026) |
 | Domains page title | "Page Title" | "Domains"; Accounts: "Accounts" |
 | Emails | `@vdm.technology` | `@example.com` (sample people) |
 
