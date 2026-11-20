@@ -7,8 +7,6 @@ import { Screen } from "@/components/screen";
    (src/app/<key>/) and take it off this list. */
 const NOT_DESIGNED_YET: Record<string, string> = {
   "my-values": "My Values",
-  "task-log": "Task Log Trail",
-  "contact-list": "Contact List",
 };
 
 /* The static export builds exactly these; any other path is a 404. */

@@ -4,8 +4,7 @@ import * as React from "react";
 import {
   ConfirmDeleteModal,
   HolidayModal,
-  HolidayTable,
-  PageTitle,
+  HolidayRegistryPage,
   useToast,
   type DataTableSort,
   type HolidayDraft,
@@ -111,29 +110,36 @@ export default function HolidayRegistryScreen() {
     }, 150);
 
   return (
-    <Screen active="planning/holiday-registry" header={<PageTitle title="Holiday Registry" />}>
-      {/* Where a guided scenario's step points (Planning · 03): see src/flows/types.ts. */}
-      <div className="py-6" data-flow-step="holidays">
-        <HolidayTable
-          rows={rows}
-          filters={filters}
-          onFiltersChange={setFilters}
-          users={PEOPLE.map((p) => ({ value: p.name, label: p.name }))}
-          periodPresets={PERIODS}
-          today={TODAY}
-          onResetFilters={() => setFilters(NO_FILTERS)}
-          sort={sort}
-          onSortChange={setSort}
-          admin={admin}
-          onAdd={() => setEditing({})}
-          onEdit={(row) => setEditing({ id: row.id })}
-          onDelete={(row) => setRemoving(holidays.find((h) => h.id === row.id) ?? null)}
-          onImport={() =>
-            toast({ tone: "info", title: "Import from Hubstaff", description: "Not in the prototype: Figma doesn't draw the import yet." })
-          }
-          caption="Holidays"
-        />
-      </div>
+    <Screen
+      active="planning/holiday-registry"
+      /* DS 2.0's HolidayRegistryPage is the whole page, title first, with its own 32 at the sides: it goes where the
+         shell takes the title band, not in the body (inset 32 already), as the Domain Budget page does. */
+      header={
+        /* Where a guided scenario's step points (Planning · 03): see src/flows/types.ts. */
+        <div data-flow-step="holidays">
+          <HolidayRegistryPage
+            table={{
+              rows,
+              filters,
+              onFiltersChange: setFilters,
+              users: PEOPLE.map((p) => ({ value: p.name, label: p.name })),
+              periodPresets: PERIODS,
+              today: TODAY,
+              onResetFilters: () => setFilters(NO_FILTERS),
+              sort,
+              onSortChange: setSort,
+              admin,
+              onAdd: () => setEditing({}),
+              onEdit: (row) => setEditing({ id: row.id }),
+              onDelete: (row) => setRemoving(holidays.find((h) => h.id === row.id) ?? null),
+              onImport: () =>
+                toast({ tone: "info", title: "Import from Hubstaff", description: "Not in the prototype: Figma doesn't draw the import yet." }),
+              caption: "Holidays",
+            }}
+          />
+        </div>
+      }
+    >
       <HolidayModal
         key={editing ? (editing.id ?? "new") : "closed"}
         open={!!editing}
