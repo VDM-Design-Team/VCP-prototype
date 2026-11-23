@@ -8,7 +8,7 @@ import { HolidayStoreProvider } from "@/components/holiday-store";
 import { NotificationStoreProvider } from "@/components/notification-store";
 import { BudgetStoreProvider } from "@/components/budget-store";
 import { SettingsStoreProvider } from "@/components/settings-store";
-import { ScenarioBar, ScenarioProvider } from "@/components/scenario";
+import { ScenarioBar, ScenarioProvider, ScenarioScreen } from "@/components/scenario";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -31,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                   <SettingsStoreProvider>
                     <ToastProvider>
                       <ScenarioProvider>
-                        {children}
+                        <ScenarioScreen>{children}</ScenarioScreen>
                         <RoleSwitch />
                         <ScenarioBar />
                       </ScenarioProvider>

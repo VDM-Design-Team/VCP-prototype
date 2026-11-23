@@ -68,7 +68,10 @@ task; a scenario is one set of conditions inside it.
   ways on has `options`, and Next opens a menu of them. A drag step has `drop` (row, section), and Next does the drop. A step's `path` is exact, or
   uses `*` (one segment in the middle, the rest at the end). A scenario that needs
   sample AVs changed lists them in `avs` (matched by id). When the user's own
-  click opens another page, the walk follows to the step for that page. The
+  click opens another page, the walk follows to the step for that page. **Back**
+  puts back what the screen held when that step began (the sample data, the
+  role, the rail and the page) and rebuilds the screen; a step that only shows
+  what a press did on the same page goes back to the press. The
   participant view has no guidance. **Reset, Finish and Leave scenario** put
   everything back: the sample data (anything the scenario created or changed),
   its toasts, the role and the rail. Finish and Leave return to the list.

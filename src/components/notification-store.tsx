@@ -21,6 +21,9 @@ interface NotificationStore {
   dismiss: (id: string, key: string) => void;
   undoDismiss: (id: string) => void;
   reset: () => void;
+  /** The guided walk's Back (scenario.tsx): what the store holds now, and putting it back. */
+  snapshot: () => unknown;
+  restore: (snapshot: unknown) => void;
 }
 
 const Ctx = React.createContext<NotificationStore | null>(null);
@@ -45,6 +48,12 @@ export function NotificationStoreProvider({ children }: { children: React.ReactN
       dismissed,
       dismiss: (id, key) => setDismissed((list) => [...list.filter((d) => d.id !== id), { id, key }]),
       undoDismiss: (id) => setDismissed((list) => list.filter((d) => d.id !== id)),
+      snapshot: () => ({ notifications, dismissed }),
+      restore: (s) => {
+        const snap = s as { notifications: readonly AppNotification[]; dismissed: readonly { id: string; key: string }[] };
+        setNotifications(snap.notifications);
+        setDismissed(snap.dismissed);
+      },
       reset: () => {
         setNotifications(NOTIFICATIONS);
         setDismissed([]);

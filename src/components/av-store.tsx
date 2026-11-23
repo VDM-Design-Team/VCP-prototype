@@ -37,6 +37,9 @@ interface AVStore {
    * over. A scenario's own AVs replace the sample ones with the same id, or are added.
    */
   reset: (overrides?: readonly AddedValue[]) => void;
+  /** The guided walk's Back (scenario.tsx): what the store holds now, and putting it back. */
+  snapshot: () => unknown;
+  restore: (snapshot: unknown) => void;
 }
 
 const AVStoreContext = React.createContext<AVStore | null>(null);
@@ -161,6 +164,8 @@ export function AVStoreProvider({ children }: { children: React.ReactNode }) {
         setAvs((list) => [created, ...list]);
         return created;
       },
+      snapshot: () => avs,
+      restore: (s) => setAvs(s as AddedValue[]),
       /* A scenario's AVs replace the sample ones with the same id; the rest are
          added (they use references kept free for new AVs, which have pages). */
       reset: (overrides = []) =>

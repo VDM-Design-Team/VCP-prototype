@@ -13,6 +13,9 @@ interface HolidayStore {
   update: (id: string, change: Partial<Holiday>) => void;
   remove: (id: string) => void;
   reset: () => void;
+  /** The guided walk's Back (scenario.tsx): what the store holds now, and putting it back. */
+  snapshot: () => unknown;
+  restore: (snapshot: unknown) => void;
 }
 
 const HolidayStoreContext = React.createContext<HolidayStore | null>(null);
@@ -30,6 +33,8 @@ export function HolidayStoreProvider({ children }: { children: React.ReactNode }
       },
       update: (id, change) => setHolidays((list) => list.map((h) => (h.id === id ? { ...h, ...change } : h))),
       remove: (id) => setHolidays((list) => list.filter((h) => h.id !== id)),
+      snapshot: () => holidays,
+      restore: (s) => setHolidays(s as readonly Holiday[]),
       reset: () => setHolidays(HOLIDAYS),
     }),
     [holidays],
