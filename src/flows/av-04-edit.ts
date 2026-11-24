@@ -1,4 +1,3 @@
-import { ADDED_VALUES } from "@/data/added-values";
 import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
 
 /**
@@ -6,11 +5,8 @@ import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
  * is "AV · 04 Edit an AV". Editing opens the creation form, filled in from the
  * AV, at any status (decided 9 Nov 2026). Its scenarios start from Eve's
  * sample draft (VCP-1199), her Pending AV (VCP-1200) and her AV in Review
- * (VCP-1207), changed per scenario through `avs`.
+ * (VCP-1207), as the sample data has them.
  */
-
-const sample = (id: string) => ADDED_VALUES.find((av) => av.id === id)!;
-const DRAFT = sample("vcp-1199");
 
 /* ---------- The guided steps ---------- */
 
@@ -30,37 +26,11 @@ const onEditPage = (text: string, target = "step:actions"): ScenarioStep => ({
   target,
   path: "/added-values/*/edit",
 });
-/* Exact on purpose: "/added-values/*" would match the edit page too, and the walk would move on a blocked Submit. */
-const submitted: ScenarioStep = {
-  text: "Submitted: Draft → Pending. The edit page closes and VCP-1199's own page opens, as in AV · 01, with a toast that confirms it.",
-  path: "/added-values/vcp-1199",
-};
-
 /* ---------- The scenarios ---------- */
 
 const base = { status: "Implemented", testing: "Not tested", role: "user", setup: undefined } as const;
 
 export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
-  {
-    ...base,
-    id: "av-04-edit.finish-draft",
-    start: "/added-values/vcp-1199",
-    steps: [
-      { text: "VCP-1199 is Eve's draft. It has no acceptance criteria and no desired outcome yet.", target: "step:av-menu" },
-      openEdit("vcp-1199"),
-      onEditPage("The edit page is the creation form, filled in from the draft. A draft's has Discard (AV · 02), Save as draft and Submit."),
-      onEditPage("Type an acceptance criterion…", "step:deliverables"),
-      onEditPage("…and the desired outcome.", "step:desired-outcome"),
-      press("Submit", "Press Submit. Every Submit check runs, as in AV · 01."),
-      submitted,
-    ],
-    name: "Finish a draft and submit it",
-    demonstrates: "A saved draft is finished on the edit page and submitted: Draft → Pending.",
-    conditions: "Eve (User) on her draft VCP-1199, which lacks acceptance criteria and a desired outcome.",
-    simulated: "Submit always succeeds once the checks pass.",
-    expected: "Edit opens the filled-in form. Once the two fields are filled, Submit moves it to Pending and opens the Added Value's page with a toast.",
-    task: "Finish your draft about saved filters and send it for review.",
-  },
   {
     ...base,
     id: "av-04-edit.save-draft-changes",
@@ -80,33 +50,6 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
     simulated: "Saving always succeeds.",
     expected: "The draft's page opens with the change and a \"changes saved\" toast; the status stays Draft.",
     task: "Rename your draft about saved filters, but don't send it yet.",
-  },
-  {
-    ...base,
-    id: "av-04-edit.projects-missing",
-    start: "/added-values/vcp-1199/edit",
-    avs: [
-      {
-        ...DRAFT,
-        project: "",
-        deliverables: ["A Save filters button and a list of saved sets in the filter bar."],
-        desiredOutcome: "Nobody sets the same filters twice.",
-      },
-    ],
-    steps: [
-      onEditPage("Everything is filled in except Projects.", "group:Projects"),
-      press("Submit", "Press Submit."),
-      onEditPage("Blocked: \"Please select a project tag before submitting\" under Projects, and a toast (Figma 1026:166742).", "group:Projects"),
-      onEditPage("Pick VCP in Projects: the error clears.", "group:Projects"),
-      press("Submit", "Press Submit again."),
-      submitted,
-    ],
-    name: "Projects left empty",
-    demonstrates: "Projects is required to submit: Figma's \"Projects\" field error.",
-    conditions: "Eve (User), her draft VCP-1199 complete except for Projects.",
-    simulated: "Nothing is sent until Submit passes.",
-    expected: "An error under Projects and a \"Missing input\" toast. Choosing a project clears it; Submit then passes.",
-    task: "Send your draft about saved filters for review.",
   },
   {
     ...base,
