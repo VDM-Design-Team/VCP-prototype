@@ -58,4 +58,8 @@ Throw away an Added Value that isn't wanted, before anyone has accepted it.
 - **Notifications**: they stay and **say it was discarded**; they no longer open the Added Value (DS `NotificationItem` `discarded`, #366).
 
 ## Unresolved questions
-None.
+- **Where does Discard land?** *(raised 24 Nov 2026, for creativedesignlead)* Today every discard, a new one, a draft or a Pending one, goes to My Values (the Dashboard until it's built). Ideally it returns you to where you were before the edit page:
+  - opened from a list or a page in the app: back there;
+  - opened from a link, so there's nowhere in the app to go back to: My Values, or Drafts for a draft;
+  - an admin discarding someone's Pending AV: open. The admins' queue? The Dashboard?
+- **One flow, not three.** A new AV, a draft and a Pending AV discard the same way: the same button, confirm and toast (only a new one's toast names no reference). What differs is where you land (above) and, for a Pending one, the admins' notification. So the scenarios are one for the person discarding (*Discard a draft*, which says Pending has Discard too) and one for the admin and the notification. A never-saved AV has no scenario of its own any more. Is that enough?
