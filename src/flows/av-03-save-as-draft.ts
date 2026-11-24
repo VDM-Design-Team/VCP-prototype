@@ -43,10 +43,9 @@ const base = {
   role: "user",
 } as const;
 
-/** Started, not finished: a title, one problem, no tags, and Lena Novak (on leave 16–20 Nov) assigned for 9–20 Nov. */
+/** Started, not finished: one problem, no title, no tags, and Lena Novak (on leave 16–20 Nov) assigned for 9–20 Nov. */
 const PART_WAY: SubmitDraft = {
   ...EMPTY_DRAFT,
-  title: "Bulk-edit due dates on the Gantt chart",
   problems: ["Moving a cycle's due dates means opening every AV one by one."],
   details: {
     ...EMPTY_DRAFT.details,
@@ -62,57 +61,32 @@ export const DRAFT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     id: "av-03-save-as-draft.part-way",
     steps: [
       {
-        text: "Only the Title and one problem are filled in. The rest can wait.",
+        text: "Only one problem is filled in: no title yet. The rest can wait.",
         target: "step:form",
       },
       {
         text: "No tags, and Lena Novak assigned while she's on leave 16/11/2026–20/11/2026. Both would block Submit.",
         target: "group:Assignee",
       },
-      pressSave("Press Save as draft. Only the Title is checked: Submit's checks don't run."),
+      pressSave("Press Save as draft. Nothing is checked: Submit's checks don't run, and a draft doesn't need a title."),
       onDrafts,
       openIt,
       {
         ...onDraftPage,
-        text: "Everything was kept as it was, gaps included. Submit's checks run when it's submitted, from Edit (AV · 04). The ⋮ menu has Edit, Move to Backlog (AV · 05) and Delete.",
+        text: "It's called \"Draft - \" and the date and time it was saved, and everything else was kept as it was, gaps included. Submit's checks (a title among them) run when it's submitted, from Edit (AV · 04). The ⋮ menu has Edit, Move to Backlog (AV · 05) and Delete.",
       },
     ],
     name: "Save it part-way",
     demonstrates:
-      "A half-filled AV saves as a Draft, and waits on the Drafts page. Save as draft skips Submit's checks: empty fields, missing tags and an away assignee all save.",
+      "A half-filled AV saves as a Draft, and waits on the Drafts page. Nothing is checked: with no title it's named \"Draft - <date and time>\", and empty fields, missing tags and an away assignee all save.",
     conditions:
-      "Eve (User) on the creation page with a Title and one problem, no tags, and Lena Novak (on leave 16–20 Nov) assigned for 9–20 Nov.",
+      "Eve (User) on the creation page with one problem and nothing else: no title, no tags, and Lena Novak (on leave 16–20 Nov) assigned for 9–20 Nov.",
     simulated:
       "Saving always succeeds. The draft gets the next free reference. Lena's leave comes from the sample availability.",
     expected:
-      "No errors and no toasts but the success one. The creation page closes, Drafts opens with the draft listed, and a toast whose Open it shows the draft, kept as it was.",
+      "No errors and no toasts but the success one. The creation page closes, Drafts opens with the draft listed as \"Draft - <date and time>\", and a toast whose Open it shows the draft, kept as it was.",
     task: "You've started this Added Value but can't finish it today. Keep it for later.",
     setup: PART_WAY,
-  },
-  {
-    ...base,
-    id: "av-03-save-as-draft.no-title",
-    steps: [
-      pressSave("The page is blank. Press Save as draft."),
-      {
-        text: "Blocked: a draft needs a Title, so it can be found on Drafts. One toast, and an error under Title.",
-        target: "step:title",
-      },
-      {
-        text: "Type a title: the error clears as you type.",
-        target: "step:title",
-      },
-      pressSave("Press Save as draft again."),
-      onDrafts,
-    ],
-    name: "No title",
-    demonstrates: "The Title is the one thing a draft needs.",
-    conditions: "Eve (User) on a blank creation page.",
-    simulated: "Nothing is sent: the check runs in the page.",
-    expected:
-      'A "Missing input" toast and an error under Title. Typing a title clears it; the draft then saves.',
-    task: "Keep this Added Value as a draft for later.",
-    setup: EMPTY_DRAFT,
   },
 ];
 
