@@ -7,11 +7,11 @@
 **Scenarios:** [`src/flows/av-02-discard.ts`](../src/flows/av-02-discard.ts), runnable from the Flows & Scenarios catalogue (`/flows`)
 
 ## User goal
-Throw away an Added Value that isn't wanted, before anyone has accepted it.
+Throw away a draft that isn't wanted, before it's submitted.
 
 ## Actor, entry points and starting conditions
-- **Whoever raised it**, or **an admin of its domain** (decided 10 Nov 2026), on an Added Value's edit page while it is a **Draft** or **Pending**; and anyone on **Create Added Value** (a new one, not saved yet).
-- Once an admin has accepted it, there is no Discard. Nor is there for anyone else who can open its edit page.
+- **Whoever raised it**, or **an admin of its domain** (decided 10 Nov 2026), on an Added Value's edit page while it is a **Draft**; and anyone on **Create Added Value** (a new one, not saved yet). A new one and a saved draft are the same case *(proposed 24 Nov 2026, for creativedesignlead to confirm)*.
+- Once it's submitted (Pending and on), there is no Discard. Nor is there for anyone else who can open its edit page.
 
 ## Main steps and decision points
 1. **Discard** (DS `Button` `critical-tertiary`, red text) sits before Save as draft and Submit (Figma `1026:166776`).
@@ -20,24 +20,22 @@ Throw away an Added Value that isn't wanted, before anyone has accepted it.
    - with an ID: "Added Value VCP-1199 was discarded.";
    - a new one, never saved: no line under the title (Figma's "Does the AV already have an ID?").
 4. **Where to**: **My Values** in the product (Figma); the prototype goes to the **Dashboard** until My Values is built (decided 10 Nov 2026).
-5. **Notifications** (decided 10 Nov 2026): whoever was told of it (the admins, told of a Pending one) **keeps the row**, which now reads "**Lena Novak discarded** *Empty states for the archive pages*." and **no longer opens it** (DS `NotificationItem` `discarded`, #366). It comes to the top, unread.
+5. **Notifications:** none change. A draft has told nobody: admins are told when it's submitted. (DS `NotificationItem` `discarded`, #366, was for a discarded Pending AV; with Draft-only Discard the prototype no longer uses it.)
 
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
 |---|---|---|
 | Cancel | The confirm closes and nothing happens (Figma); focus back on Discard | — |
-| The AV is past Pending (Accepted and on) | No Discard: Save as draft and Submit only | Move it to the Backlog (AV · 05), or ask an admin to reject it |
+| The AV is submitted (Pending and on) | No Discard: Save as draft and Submit only | An admin rejects it or moves it to the Backlog (AV · 05) |
 | Someone who didn't raise it, and isn't an admin | No Discard | Ask whoever raised it, or an admin |
-| A notification about an AV that's gone | "… discarded *Title*.", plain text: nothing opens | — |
 
 ## Completion or exit
-- **Done:** the Added Value is gone from every list; its notifications say it was discarded.
+- **Done:** the draft is gone from every list.
 - **Not in this flow:** deleting from the AV table (Eve's bulk delete, AV · 09), moving to the Backlog (AV · 05).
 
 ## The prototype's own rules (Figma doesn't say)
 - **After a discard** the prototype goes to the **Dashboard**, as Submit does (AV · 01), because My Values isn't built.
-- **The admin role** stands for "an admin of the AV's domain": Eve is admin of all three. A row an admin's own discard turns into reads "You discarded …".
-- **A discarded notification keeps the title**: the Added Value is gone, so the row carries it.
+- **The admin role** stands for "an admin of the AV's domain": Eve is admin of all three.
 - **Nothing to undo**: the confirm says it can't be undone, so the toast has no Undo.
 
 ## What Figma shows, and what the prototype uses
@@ -48,14 +46,16 @@ Throw away an Added Value that isn't wanted, before anyone has accepted it.
 | The toast | "Deleted!" · "Added Value “12065” has been discarded successfully." | "Draft discarded" · "Added Value VCP-1199 was discarded." (DS `discarded` recipe, 2.0.0) |
 | After | My Values | the Dashboard, until My Values is built (decided) |
 | Who | the initiator's page only | whoever raised it, and the domain's admins (decided) |
-| Notifications | not drawn | the row stays and says "discarded", and opens nothing (decided; DS #366) |
-| Pending | the Discard flow allows it (`1026:168578`); the Pending edit page frame (`1043:239669`) draws no Discard | Discard on Pending, as the flow says |
+| Pending | the Discard flow allows it (`1026:168578`); the Pending edit page frame (`1043:239669`) draws no Discard | no Discard on Pending, as the frame draws it (proposed 24 Nov 2026) |
+
+## Proposed (24 Nov 2026), for creativedesignlead to confirm
+- **Draft only**: Discard while the AV is a **draft**, new or saved, and never once it's submitted. This replaces 10 Nov's "Draft or Pending". It matches Figma's Pending edit page frame (`1043:239669`), not its Discard flow note (`1026:168578`). With it, the discarded notification (10 Nov) never happens: a draft has told nobody.
 
 ## Decided (10 Nov 2026)
-- **Pending**: Discard while the AV is a **Draft or Pending**, as Figma's Discard flow says (its Pending edit page frame `1043:239669` draws none: a Figma fix).
+- ~~**Pending**: Discard while the AV is a **Draft or Pending**~~ (replaced by the proposal above, if confirmed).
 - **Who**: **whoever raised it, and the domain's admins**. Nobody else sees Discard.
 - **Where to**: **My Values** in the product; the **Dashboard** until it's built.
-- **Notifications**: they stay and **say it was discarded**; they no longer open the Added Value (DS `NotificationItem` `discarded`, #366).
+- ~~**Notifications**: they stay and **say it was discarded**~~ (no longer reached with Draft-only Discard).
 
 ## Unresolved questions
 None.

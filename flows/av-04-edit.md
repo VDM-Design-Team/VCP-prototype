@@ -17,7 +17,8 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 ## Main steps and decision points
 1. Open the AV, then ⋮ → **Edit**.
 2. Change what's needed. The buttons depend on the status:
-   - **Draft and Pending:** Discard · Save as draft · Submit (Figma `1026:166675`; Discard is AV · 02, allowed in Draft and Pending by its flow, `1026:168578`, though the Pending frame `1043:239669` draws none).
+   - **Draft:** Discard · Save as draft · Submit (Figma `1026:166675`; Discard is AV · 02).
+   - **Pending:** Save as draft · Submit (Figma `1043:239669`): Discard is only for a draft *(proposed 24 Nov 2026, AV · 02)*.
    - **Any other status:** Save as draft · Submit.
 3. **Submit** runs every check AV · 01 runs, plus **Projects** (Figma `1026:166742`):
    - a **Draft** moves to **Pending**: the edit page closes and the **AV's page** opens with the "VCP-1199 submitted" toast (as AV · 01, decided 13 Nov 2026);
@@ -32,7 +33,7 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 | Any Submit check fails (empty field, unpaired problem, tag rule, assignee away) | As AV · 01: one "Missing input" toast per problem and the field errors; the first error is scrolled to and focused | Fix the field; Submit again |
 | No project | "Please select a project tag before submitting" under Projects, and a "Missing input" toast (Figma `1026:166742`) | Pick a project. *Applies to AV · 01 Submit too* |
 | No Title on Save as draft | As AV · 03 | Type a title |
-| Discard on a Draft or Pending AV | AV · 02: the confirm, then the AV is gone | Cancel keeps it |
+| Discard on a draft | AV · 02: the confirm, then the AV is gone | Cancel keeps it |
 
 ## Completion or exit
 - **Done:** the change is saved; a submitted draft is Pending, anything else keeps its status.

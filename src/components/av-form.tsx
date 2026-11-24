@@ -34,7 +34,6 @@ import { NO_FREE_REFERENCE, useAddedValues } from "@/components/av-store";
 import { useScenario, useScenarioSetup } from "@/components/scenario";
 import { TODAY } from "@/data/gantt";
 import { useShellState } from "@/components/shell-state";
-import { useNotifications } from "@/components/notification-store";
 import { CYCLE_OPTIONS, DOMAINS, VIEWER, isInitiator, stageLabel, type AddedValue, type AVDomain, type Duplicate } from "@/data/added-values";
 import {
   availabilityClash,
@@ -254,17 +253,14 @@ function Form({ editing }: { editing?: AddedValue }) {
   /* AV · 02 Discard (Figma 1026:166776): the confirm before an AV is removed for good. */
   const [askDiscard, setAskDiscard] = React.useState(false);
   const { role } = useShellState();
-  const { markDiscarded } = useNotifications();
-  /* Figma: Discard is there while the AV is a Draft or Pending, and on a new one not yet saved.
-     Decided 10 Nov 2026: only for whoever raised it and the domain's admins. */
-  const canDiscard =
-    !editing || ((editing.status === "Draft" || editing.status === "Pending") && (isInitiator(editing, VIEWER.name) || role === "admin"));
+  /* Proposed 24 Nov 2026: Discard only while it's a draft, a new one or a saved one (Figma's Pending frame 1043:239669
+     draws none). Decided 10 Nov 2026: only for whoever raised it and the domain's admins. */
+  const canDiscard = !editing || (editing.status === "Draft" && (isInitiator(editing, VIEWER.name) || role === "admin"));
   const discard = () => {
     setAskDiscard(false);
     if (editing) {
+      /* A draft has told nobody (notifications start at Submit), so no notification changes. */
       remove(editing.id);
-      /* Decided 10 Nov 2026: whoever was told of it keeps the row, which now says it was discarded and opens nothing. */
-      markDiscarded(editing.id, editing.title, "You");
     }
     dismissAll();
     /* DS 2.0.0's recipe: "Draft discarded", naming the reference when there is one (a new AV has none yet). */
@@ -660,7 +656,7 @@ function Form({ editing }: { editing?: AddedValue }) {
             }
           />
           <div data-flow-step="actions" className="flex justify-end gap-3">
-            {/* AV · 02: Discard, in red text (DS critical-tertiary), while the AV is a Draft or Pending. */}
+            {/* AV · 02: Discard, in red text (DS critical-tertiary), while the AV is a draft. */}
             {canDiscard && (
               <Button variant="critical-tertiary" onClick={() => setAskDiscard(true)}>
                 Discard
