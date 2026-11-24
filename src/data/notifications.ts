@@ -28,5 +28,7 @@ export const NOTIFICATIONS: readonly AppNotification[] = [
   { id: "n5", kind: "moved", actor: "Alice Carter", avId: "vcp-1204", status: "In QA", time: "Yesterday", on: "2026-11-04", unread: false },
   { id: "n6", kind: "assigned", actor: "Marvin Ode", avId: "vcp-1203", time: "a week ago", on: "2026-10-29", unread: false },
   { id: "n7", kind: "commented", actor: "Marvin Ode", avId: "vcp-1201", commentId: "c1", time: "2 days ago", on: "2026-11-03", unread: false },
+  /* AV · 02: an admin is told of a Pending one; if it's discarded, this row says so (decided 10 Nov 2026). */
   { id: "n8", kind: "pending", actor: "Lena Novak", avId: "vcp-1202", time: "4 days ago", on: "2026-11-01", unread: false },
+  { id: "n9", kind: "discarded", actor: "Marvin Ode", avId: "vcp-1198", title: "Bulk export for the archive", time: "5 days ago", on: "2026-10-31", unread: false },
 ];
