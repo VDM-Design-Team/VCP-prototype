@@ -51,7 +51,7 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
     start: "/added-values/vcp-1199/edit",
     steps: [
       fill("Eve's draft, open for editing. Change the title, or press Next.", "step:title", { title: "Saved filter sets on the AV table" }, (d) => d.title.trim() !== "" && d.title !== sample("vcp-1199").title),
-      press("Save as draft", "Press Save as draft. Only the Title is checked, as in AV · 03."),
+      press("Save as draft", "Press Save as draft. Nothing is checked on a draft, as in AV · 03."),
       {
         text: "Saved: the edit page closes and the draft's page opens, with the new title. It's still a Draft.",
         target: "step:av-menu",
@@ -85,7 +85,7 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
         path: "/added-values/*/edit",
         options: [
           { label: "Submit: every check runs", goto: "submit" },
-          { label: "Save as draft: only the Title is checked", goto: "draft" },
+          { label: "Save as draft: only the Title is checked (past Draft)", goto: "draft" },
         ],
       },
       { id: "submit", ...press("Submit", "Press Submit. Every check runs, then the change is saved."), next: "saved" },

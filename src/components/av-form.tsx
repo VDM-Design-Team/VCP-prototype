@@ -151,14 +151,21 @@ const blocked = (p: Problems) => p.toasts.length > 0;
 
 /** Save as draft checks one thing: a Title, so the draft can be found on Drafts (AV · 03). */
 const DRAFT_TITLE = "You need to fill in this field before saving the Added Value as a draft";
-function checkDraft(d: SubmitDraft): Problems {
+/* A draft needs nothing: with no title it's saved as "Draft - Nov 24, 2026 6:19 PM", as the live product does
+   (24 Nov 2026). An AV past Draft keeps needing its title (it isn't a draft, so it can't be named one), and an
+   initiated domain's copy still needs its own (`withCopies`). */
+function checkDraft(d: SubmitDraft, isDraft: boolean): Problems {
   const p: Problems = { problems: {}, solutions: {}, deliverables: {}, details: {}, toasts: [], warnings: [], copies: {} };
-  if (blank(d.title)) {
+  if (!isDraft && blank(d.title)) {
     p.title = DRAFT_TITLE;
-    p.toasts.push("Title Field can't be empty, please fill it in before saving a draft.");
+    p.toasts.push("Title Field can't be empty, please fill it in before saving.");
   }
   return p;
 }
+
+/** The title a draft saved without one gets: "Draft - Nov 24, 2026 6:19 PM". */
+const untitledDraft = (now = new Date()) =>
+  `Draft - ${now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} ${now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 
 /** An AV as the form holds it (AV · 04 opens the form on it). An empty list keeps one blank card to type in. */
 function fromAV(av: AddedValue): SubmitDraft {
@@ -234,7 +241,8 @@ const domainName = (value: string) => DOMAINS.find((d) => d.value === value)?.na
  * buttons under them. Submit runs every check at once; a blocked Submit raises
  * one "Missing Input" toast per problem (not announced: the field errors
  * announce themselves) and an error under each field until it's fixed. Save as
- * draft checks only the Title.
+ * draft checks nothing on a draft (no title: "Draft - <date and time>"), and
+ * only the Title past Draft.
  */
 export function AVForm({ editing }: { editing?: AddedValue }) {
   const { run } = useScenario();
@@ -303,7 +311,7 @@ function Form({ editing }: { editing?: AddedValue }) {
     [initiate, copies],
   );
   const problems = React.useMemo(() => withCopies(check(draft, avDomain), "submitting"), [draft, avDomain, withCopies]);
-  const draftProblems = React.useMemo(() => withCopies(checkDraft(draft), "saving a draft"), [draft, withCopies]);
+  const draftProblems = React.useMemo(() => withCopies(checkDraft(draft, !editing || editing.status === "Draft"), "saving a draft"), [draft, editing, withCopies]);
   /* Each blocked press, once its inline errors are on screen: bring the first
      one into view and put the cursor in it (Figma: "scroll to the highest
      missing field"; the DS's focusFirstInvalid). An assignee the card can't
@@ -346,7 +354,8 @@ function Form({ editing }: { editing?: AddedValue }) {
 
   /** What the form holds, as the AV's fields. Call it once per save: it uploads the picked files. */
   const content = () => ({
-    title: draft.title.trim(),
+    /* Submit needs a title; a draft saved without one gets "Draft - <date and time>". */
+    title: draft.title.trim() || untitledDraft(),
     urgency: draft.details.urgency ?? "Normal",
     type: draft.details.type ?? "Type 3",
     project: draft.details.projects?.[0] ?? "",
@@ -438,7 +447,7 @@ function Form({ editing }: { editing?: AddedValue }) {
     backToAV(editing, `${editing.ref}: changes saved`, `It stays ${stageLabel(editing)}.${initiatedNote}`);
   };
 
-  /* AV · 03: only the Title is checked. A new draft closes the page and opens
+  /* AV · 03: nothing is checked on a draft, the Title past Draft. A new draft closes the page and opens
      Drafts, where it waits until it's edited and submitted (inferred: Figma
      draws no landing page). */
   const saveDraft = () => {
