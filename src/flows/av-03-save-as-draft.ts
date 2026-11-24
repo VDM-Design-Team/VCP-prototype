@@ -76,7 +76,7 @@ export const DRAFT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
         text: "It's called \"Draft - \" and the date and time it was saved, and everything else was kept as it was, gaps included. Submit's checks (a title among them) run when it's submitted, from Edit (AV · 04). The ⋮ menu has Edit, Move to Backlog (AV · 05) and Delete.",
       },
     ],
-    name: "Save it part-way",
+    name: "Save as draft",
     demonstrates:
       "A half-filled AV saves as a Draft, and waits on the Drafts page. Nothing is checked: with no title it's named \"Draft - <date and time>\", and empty fields, missing tags and an away assignee all save.",
     conditions:
