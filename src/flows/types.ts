@@ -44,15 +44,40 @@ export interface ScenarioStep {
    * walk on by itself, and Next presses it for them, so the screen always shows
    * what the step after describes. Never skipped past. When the step after is
    * on another page, the walk moves only once that page opens, so a press that
-   * fails (a blocked Submit) leaves it on this step.
+   * fails (a blocked Submit) leaves it on this step. A `step:` target presses
+   * the first button inside it (the ⋮ menu, the back arrow).
    */
   action?: boolean;
+  /**
+   * The step asks the user to change the form (type a title, pick a tag, set a
+   * date). Next makes the change for them, unless it's made already; making it
+   * themselves moves the walk on once it's done, a moment after they stop
+   * typing. Back puts back the fills walked before the step it goes to.
+   */
+  fill?: StepFill;
+  /**
+   * The step asks the user to open another page ("open VCP-1203, then Edit").
+   * Next opens it for them; opening it themselves moves the walk on too (the
+   * walk follows to the step for that page).
+   */
+  open?: string;
   /**
    * The step asks the user to drag a row (the Planning List) onto a section:
    * `row` is the AV's reference, `on` the section's title ("Cycle 45").
    * Next does the drop for them when the row isn't there yet.
    */
   drop?: { row: string; on: string };
+}
+
+/**
+ * What a `fill` step changes: `set` is merged into the form's values (a nested
+ * object, such as `details`, one level deep). `done` says when the user's own
+ * change counts; without it, when the form holds `set`.
+ */
+export interface StepFill {
+  set: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each form has its own values (SubmitDraft for the AV form)
+  done?: (values: any) => boolean;
 }
 
 export interface ScenarioDef<Setup = unknown> {

@@ -65,13 +65,21 @@ task; a scenario is one set of conditions inside it.
   reviewer card walks through them with Back and Next, outlining the part of
   the screen each step is about (`target`: `step:<name>` for an element marked
   `data-flow-step`, `group:<Label>`, `button:<Text>`, `link:<href>`). A step with two or more
-  ways on has `options`, and Next opens a menu of them. A drag step has `drop` (row, section), and Next does the drop. A step's `path` is exact, or
+  ways on has `options`, and Next opens a menu of them. **Next does what the
+  step asks**, and doing it yourself moves the walk on too, so the card and the
+  screen never disagree: a press step has `action` (Next presses the target;
+  a `step:` target presses the button inside it), a change on the form has
+  `fill` (Next fills it in; your own change counts once it's done and you stop
+  typing), a page to open has `open` (Next opens it), and a drag step has
+  `drop` (row, section). Write such a step as "Type a title, or press Next".
+  A step's `path` is exact, or
   uses `*` (one segment in the middle, the rest at the end). A scenario that needs
   sample AVs changed lists them in `avs` (matched by id). When the user's own
   click opens another page, the walk follows to the step for that page. **Back**
   puts back what the screen held when that step began (the sample data, the
-  role, the rail and the page) and rebuilds the screen; a step that only shows
-  what a press did on the same page goes back to the press. The
+  role, the rail and the page) and rebuilds the screen, then redoes the fills
+  and presses walked on that page before it; a step that only shows what a
+  press did on the same page goes back to the press. The
   participant view has no guidance. **Reset, Finish and Leave scenario** put
   everything back: the sample data (anything the scenario created or changed),
   its toasts, the role and the rail. Finish and Leave return to the list.

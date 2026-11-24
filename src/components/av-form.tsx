@@ -31,7 +31,7 @@ import {
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { NO_FREE_REFERENCE, useAddedValues } from "@/components/av-store";
-import { useScenario, useScenarioSetup } from "@/components/scenario";
+import { useScenario, useScenarioForm, useScenarioSetup } from "@/components/scenario";
 import { TODAY } from "@/data/gantt";
 import { useShellState } from "@/components/shell-state";
 import { useNotifications } from "@/components/notification-store";
@@ -249,6 +249,8 @@ function Form({ editing }: { editing?: AddedValue }) {
   const setup = useScenarioSetup<SubmitDraft>([SUBMIT_FLOW.id, DRAFT_FLOW.id]);
   const [initial] = React.useState<SubmitDraft>(() => structuredClone(editing ? fromAV(editing) : (setup ?? EMPTY_DRAFT)));
   const [draft, setDraft] = React.useState<SubmitDraft>(() => structuredClone(initial));
+  /* A scenario's fill steps change the form: Next fills a field in, or the walk moves on once you have. */
+  useScenarioForm(draft, setDraft);
   /* AV · 04, decided 9 Nov 2026: the back arrow asks before dropping unsaved edits. */
   const [askLeave, setAskLeave] = React.useState(false);
   /* AV · 02 Discard (Figma 1026:166776): the confirm before an AV is removed for good. */

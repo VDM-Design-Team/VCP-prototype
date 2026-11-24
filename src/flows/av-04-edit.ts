@@ -1,3 +1,5 @@
+import { ADDED_VALUES } from "@/data/added-values";
+import type { SubmitDraft } from "./av-01-submit";
 import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
 
 /**
@@ -10,11 +12,23 @@ import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
 
 /* ---------- The guided steps ---------- */
 
-const openEdit = (id: string, text = "Open the ⋮ menu and choose Edit."): ScenarioStep => ({
+const sample = (id: string) => ADDED_VALUES.find((av) => av.id === id)!;
+
+/* Next opens the edit page, as ⋮ → Edit does. */
+const openEdit = (id: string, text = "Open the ⋮ menu and choose Edit, or press Next."): ScenarioStep => ({
   text,
   target: "step:av-menu",
   path: `/added-values/${id}`,
+  open: `/added-values/${id}/edit`,
 });
+/* A step that changes the form: Next fills it in, or the walk moves on once you have. */
+const fill = (text: string, target: string, set: Record<string, unknown>, done: (d: SubmitDraft) => boolean): ScenarioStep => ({
+  text,
+  target,
+  path: "/added-values/*/edit",
+  fill: { set, done },
+});
+const pressHere = (text: string, target: string): ScenarioStep => ({ text, target, path: "/added-values/*/edit", action: true });
 const press = (button: "Submit" | "Save as draft", text: string): ScenarioStep => ({
   text,
   target: `button:${button}`,
@@ -36,7 +50,7 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
     id: "av-04-edit.save-draft-changes",
     start: "/added-values/vcp-1199/edit",
     steps: [
-      onEditPage("Eve's draft, open for editing. Change the title.", "step:title"),
+      fill("Eve's draft, open for editing. Change the title, or press Next.", "step:title", { title: "Saved filter sets on the AV table" }, (d) => d.title.trim() !== "" && d.title !== sample("vcp-1199").title),
       press("Save as draft", "Press Save as draft. Only the Title is checked, as in AV · 03."),
       {
         text: "Saved: the edit page closes and the draft's page opens, with the new title. It's still a Draft.",
@@ -59,7 +73,12 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
       { text: "VCP-1200 is Eve's, Pending: it waits for an admin.", target: "step:av-menu" },
       openEdit("vcp-1200"),
       onEditPage("Pending: Discard, Save as draft and Submit. Figma's Pending frame (1043:239669) draws no Discard, but its Discard flow allows it in Draft and Pending (1026:168578), and AV · 02 follows the flow."),
-      onEditPage("Change something: add a second acceptance criterion.", "step:deliverables"),
+      fill(
+        "Change something: add a second acceptance criterion, or press Next.",
+        "step:deliverables",
+        { deliverables: [...sample("vcp-1200").deliverables, "Undo also works after a bulk edit."] },
+        (d) => d.deliverables.filter((x) => x.trim()).length > sample("vcp-1200").deliverables.length,
+      ),
       {
         text: "Both buttons save the change, and it stays Pending. Which one?",
         target: "step:actions",
@@ -92,7 +111,12 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
     steps: [
       { text: "VCP-1207 is Eve's and in Review: well past Pending.", target: "step:av-menu" },
       openEdit("vcp-1207"),
-      onEditPage("The same edit page as a Draft or Pending AV (decided 9 Nov 2026). Change the desired outcome.", "step:desired-outcome"),
+      fill(
+        "The same edit page as a Draft or Pending AV (decided 9 Nov 2026). Change the desired outcome, or press Next.",
+        "step:desired-outcome",
+        { desiredOutcome: `${sample("vcp-1207").desiredOutcome} Measured a month after release.` },
+        (d) => d.desiredOutcome.trim() !== "" && d.desiredOutcome !== sample("vcp-1207").desiredOutcome,
+      ),
       press("Submit", "Press Submit. Every check runs, then the change is saved."),
       {
         text: "Saved: its page opens with the change, still in Review.",
@@ -112,10 +136,11 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
     id: "av-04-edit.unsaved-changes",
     start: "/added-values/vcp-1199/edit",
     steps: [
-      onEditPage("Eve's draft, open for editing. Change the title.", "step:title"),
-      onEditPage("Press the back arrow. A dialog asks before your change is dropped.", "step:back"),
-      onEditPage("Keep editing closes it and keeps the change. Leave drops it. Press Keep editing, then Next.", "step:back"),
-      onEditPage("Press the back arrow again, and this time choose Leave.", "step:back"),
+      fill("Eve's draft, open for editing. Change the title, or press Next.", "step:title", { title: "Saved filter sets on the AV table" }, (d) => d.title.trim() !== "" && d.title !== sample("vcp-1199").title),
+      pressHere("Press the back arrow. A dialog asks before your change is dropped.", "step:back"),
+      pressHere("Keep editing closes it and keeps the change. Leave drops it. Press Keep editing.", "button:Keep editing"),
+      pressHere("Press the back arrow again…", "step:back"),
+      pressHere("…and this time choose Leave.", "button:Leave"),
       {
         text: "Left without saving: the draft's page opens with the title as it was.",
         target: "step:av-menu",

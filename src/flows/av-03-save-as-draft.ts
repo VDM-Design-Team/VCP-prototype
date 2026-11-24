@@ -99,8 +99,9 @@ export const DRAFT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
         target: "step:title",
       },
       {
-        text: "Type a title: the error clears as you type.",
+        text: "Type a title, or press Next: the error clears as you type.",
         target: "step:title",
+        fill: { set: { title: "Bulk-edit due dates on the Gantt chart" }, done: (d: SubmitDraft) => d.title.trim() !== "" },
       },
       pressSave("Press Save as draft again."),
       onDrafts,

@@ -10,21 +10,46 @@ import { useBudgets } from "./budget-store";
 import { useSettings } from "./settings-store";
 import { ADMIN_DOMAINS, useShellState } from "./shell-state";
 import { findScenario } from "@/flows/catalogue";
-import type { FlowDef, ScenarioDef, ScenarioStep } from "@/flows/types";
+import type { FlowDef, ScenarioDef, ScenarioStep, StepFill } from "@/flows/types";
 
 export type ScenarioView = "reviewer" | "participant";
 
 /**
  * One step walked: which step, the page it happened on, and how the walk got
  * there. `action`: the reviewer (or Next) pressed the previous step's target on
- * the same page, so what this step shows is that press's result. `page`: the
+ * the same page, so what this step shows is that press's result. `fill`: the
+ * previous step's change was made (by Next, or by the reviewer). `page`: the
  * reviewer's own click opened another page.
  */
 export interface WalkedStep {
   index: number;
   path: string;
-  via: "start" | "next" | "action" | "page";
+  via: "start" | "next" | "action" | "fill" | "page";
 }
+
+type FormValues = Record<string, unknown>;
+/** What Back does again after rebuilding a form's page: a fill, or a press (a blocked Submit's errors). */
+type Redo = { set: FormValues } | { press: string };
+interface ScenarioForm {
+  set: (patch: FormValues) => void;
+}
+
+const isObject = (v: unknown): v is FormValues => typeof v === "object" && v !== null && !Array.isArray(v);
+
+/** `set` merged into the form's values, a nested object (`details`) one level deep. */
+const merged = <T extends object>(values: T, set: FormValues): T => {
+  const out: FormValues = { ...(values as FormValues) };
+  for (const [k, v] of Object.entries(set)) out[k] = isObject(v) && isObject(out[k]) ? { ...out[k], ...v } : v;
+  return out as T;
+};
+
+/** Whether the form holds `set` (each key the same; a nested object, key by key). */
+const holds = (values: FormValues, set: FormValues): boolean =>
+  Object.entries(set).every(([k, v]) =>
+    isObject(v) && isObject(values[k]) ? holds(values[k], v) : JSON.stringify(values[k]) === JSON.stringify(v),
+  );
+
+const fillDone = (fill: StepFill, values: FormValues) => (fill.done ? fill.done(values) : holds(values, fill.set));
 
 interface ScenarioState {
   /** The scenario running now, if one was started. Explore prototype has none. */
@@ -40,14 +65,22 @@ interface ScenarioState {
    * Go on: to the step with id `goto` (a branch), else to the current step's
    * `next`, else the following step. With `from`, only if the walk is still on
    * that step (a press that also opened another page has already moved it).
-   * `byAction`: the walk moves because the current step's target was pressed.
+   * `via`: the walk moves because the current step's target was pressed (`action`) or its change made (`fill`).
    */
-  next: (goto?: string, from?: number, byAction?: boolean) => void;
+  next: (goto?: string, from?: number, via?: "action" | "fill") => void;
   back: () => void;
   /** Set the scenario's conditions (fresh data, its role, an open rail) and return the route it opens on. */
   start: (flowId: string, scenarioKey: string, view?: ScenarioView) => string | undefined;
   /** Leave the scenario (Finish, Leave scenario): the sample data, toasts, role and rail all go back to how they were. */
   clear: () => void;
+  /** The values of the form on screen (the AV form), for `fill` steps; undefined when there's none. */
+  formValues?: FormValues;
+  /** Makes a `fill` step's change on the form on screen. */
+  fillForm: (set: FormValues) => void;
+  /** For `useScenarioForm`: the form on screen registers itself, reports its values, and takes the fills to put back. */
+  connectForm: (form: ScenarioForm | null) => void;
+  reportForm: (values: FormValues | undefined) => void;
+  takeReplay: () => Redo[];
 }
 
 const ScenarioContext = React.createContext<ScenarioState | null>(null);
@@ -93,6 +126,10 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
   const [run, setRun] = React.useState(0);
   const [rebuilt, setRebuilt] = React.useState(0);
   const [trail, setTrail] = React.useState<WalkedStep[]>([{ index: 0, path: pathname, via: "start" }]);
+  /* The form on screen, for fill steps: how to change it, what it holds, and the fills Back puts back into it. */
+  const form = React.useRef<ScenarioForm | null>(null);
+  const [formValues, setFormValues] = React.useState<FormValues>();
+  const replay = React.useRef<{ at?: WalkedStep; redo: Redo[] }>({ redo: [] });
 
   /* What everything looked like when each walked step began: the sample data,
      the role, the rail. Taken once the step's page has drawn, so a press's
@@ -139,14 +176,14 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
       run,
       rebuilt,
       trail,
-      next: (goto, from, byAction) => {
+      next: (goto, from, via) => {
         if (!active) return;
         const steps = active.scenario.steps;
         const current = trail[trail.length - 1].index;
         if (from !== undefined && from !== current) return;
         const target = goto ?? steps[current]?.next;
         const to = target ? steps.findIndex((s) => s.id === target) : current + 1;
-        if (to >= 0 && to < steps.length) setTrail([...trail, { index: to, path: pathname, via: byAction ? "action" : "next" }]);
+        if (to >= 0 && to < steps.length) setTrail([...trail, { index: to, path: pathname, via: via ?? "next" }]);
       },
       back: () => {
         if (!active || trail.length < 2) return;
@@ -157,6 +194,19 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         while (to > 1 && trail[to - 1].via === "action" && trail[to - 1].path === trail[to - 2].path) to -= 1;
         const kept = trail.slice(0, to);
         const landing = kept[kept.length - 1];
+        /* The form isn't sample data: it's rebuilt from the scenario's setup. So what the walk did on this page
+           before the landing step is done again, in order: its fills (as the steps wrote them, not as typed) and
+           its presses that stayed on the page (a blocked Submit, so its errors are back). */
+        const arrived = kept.findLastIndex((w, i) => i === 0 || kept[i - 1].path !== w.path);
+        replay.current = {
+          at: landing,
+          redo: kept.slice(arrived, -1).flatMap((w, i, walked): Redo[] => {
+            const step = active.scenario.steps[w.index];
+            if (step?.fill) return [{ set: step.fill.set }];
+            if (step?.action && step.target && walked[i + 1]?.via === "action") return [{ press: step.target }];
+            return [];
+          }),
+        };
         const snap = snapshots.current.get(landing);
         if (snap) {
           latestStores.current.forEach((s, i) => s.restore(snap.stores[i]));
@@ -188,6 +238,7 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         setActive(found);
         setView(nextView);
         setTrail([{ index: 0, path: found.scenario.start, via: "start" }]);
+        replay.current = { redo: [] };
         setRun((n) => n + 1);
         return found.scenario.start;
       },
@@ -207,8 +258,17 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         setView("reviewer");
         setTrail([{ index: 0, path: "/flows", via: "start" }]);
       },
+      formValues,
+      fillForm: (set) => form.current?.set(set),
+      connectForm: (f) => {
+        form.current = f;
+      },
+      reportForm: setFormValues,
+      /* Only while the walk is still on the step Back landed on. Not emptied on reading: a form can mount twice
+         (React's development checks), and the second one must redo it too. */
+      takeReplay: () => (replay.current.at === trail[trail.length - 1] ? replay.current.redo : []),
     }),
-    [active, view, run, rebuilt, trail, pathname, router, reset, resetHolidays, resetNotifications, resetBudgets, resetSettings, dismissAll, setRole, setCollapsed, setDomain, setDashboardView],
+    [active, view, run, rebuilt, trail, formValues, pathname, router, reset, resetHolidays, resetNotifications, resetBudgets, resetSettings, dismissAll, setRole, setCollapsed, setDomain, setDashboardView],
   );
 
   return <ScenarioContext.Provider value={value}>{children}</ScenarioContext.Provider>;
@@ -228,6 +288,38 @@ export function useScenario() {
   const state = React.useContext(ScenarioContext);
   if (!state) throw new Error("useScenario needs <ScenarioProvider> above it (it's in the root layout).");
   return state;
+}
+
+/**
+ * A form a scenario's `fill` steps can change (the AV form): Next makes a step's
+ * change through `setValues`, and the walk moves on when the user makes it
+ * themselves. After Back rebuilds the screen, the fills walked before go back in.
+ */
+export function useScenarioForm<T extends object>(values: T, setValues: React.Dispatch<React.SetStateAction<T>>) {
+  const { connectForm, reportForm, takeReplay } = useScenario();
+  React.useEffect(() => {
+    connectForm({ set: (set) => setValues((v) => merged(v, set)) });
+    const redo = takeReplay();
+    let stopped = false;
+    void (async () => {
+      for (const r of redo) {
+        /* Each after the page has drawn the one before. */
+        await new Promise((done) => window.setTimeout(done, 60));
+        if (stopped) return;
+        if ("set" in r) setValues((v) => merged(v, r.set));
+        else redoPress(r.press);
+      }
+    })();
+    return () => {
+      stopped = true;
+      connectForm(null);
+      reportForm(undefined);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per form: a rebuilt screen mounts a new one
+  }, []);
+  React.useEffect(() => {
+    reportForm(values as FormValues);
+  }, [values, reportForm]);
 }
 
 /** The scenario's setup, when the running scenario belongs to one of the flows that open this screen. */
@@ -276,6 +368,22 @@ function findTarget(target: string): HTMLElement | null {
     return [...document.querySelectorAll<HTMLElement>("a")].find((a) => outsideBar(a) && a.getAttribute("href") === value) ?? null;
   return null;
 }
+
+/** What a press step presses: its target, or for a `step:` wrapper the button in it (the ⋮ menu's trigger, the back arrow). */
+function pressable(target: string): HTMLElement | null {
+  const found = findTarget(target);
+  return found && found.tagName !== "BUTTON" ? (found.querySelector<HTMLElement>("button") ?? found) : found;
+}
+/* Back's own presses (redoing a blocked Submit) aren't the reviewer's: the walk doesn't move on them. */
+let redoing = false;
+const redoPress = (target: string) => {
+  redoing = true;
+  try {
+    pressable(target)?.click();
+  } finally {
+    redoing = false;
+  }
+};
 
 /**
  * A drag a reviewer would make with the mouse (`ScenarioStep.drop`), done with
@@ -353,11 +461,31 @@ function ActionWatcher({ target, onDone }: { target: string; onDone: () => void 
     const onClick = (event: MouseEvent) => {
       const el = findTarget(target);
       /* After the page has handled the press, so the step after sees its result. */
-      if (el && event.target instanceof Node && el.contains(event.target)) window.setTimeout(() => done.current());
+      if (!redoing && el && event.target instanceof Node && el.contains(event.target)) window.setTimeout(() => done.current());
     };
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);
   }, [target]);
+  return null;
+}
+
+/**
+ * Moves the walk on when the user makes a fill step's change themselves: once
+ * it's done and they've stopped typing for a moment, so it doesn't move on the
+ * first letter.
+ */
+function FillWatcher({ fill, values, onDone }: { fill: StepFill; values: FormValues; onDone: () => void }) {
+  const done = React.useRef(onDone);
+  React.useEffect(() => {
+    done.current = onDone;
+  });
+  /* Only a change made on this step counts: a step that starts done waits for Next. */
+  const [start] = React.useState(values);
+  React.useEffect(() => {
+    if (values === start || !fillDone(fill, values)) return;
+    const t = window.setTimeout(() => done.current(), 800);
+    return () => window.clearTimeout(t);
+  }, [fill, values, start]);
   return null;
 }
 
@@ -373,7 +501,7 @@ function ActionWatcher({ target, onDone }: { target: string; onDone: () => void 
 export function ScenarioBar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { active, view, trail, next, back, start, clear } = useScenario();
+  const { active, view, trail, next, back, start, clear, formValues, fillForm } = useScenario();
   const headingId = React.useId();
   if (!active || pathname.startsWith("/flows")) return null;
   const { flow, scenario } = active;
@@ -408,24 +536,53 @@ export function ScenarioBar() {
      the click. */
   const following = step?.next ? scenario.steps.find((s) => s.id === step.next) : scenario.steps[index + 1];
   const movesOnClick = !following || onPage(following, scenario, pathname);
-  /* An action step: Next does the action (presses Submit), which then moves the walk on. */
+  /* Next does what the step asks: the press, the change, the page, the drop. The walk then moves on as it would
+     if the reviewer had done it. */
   const actOrNext = () => {
     if (step?.drop && !document.querySelector('[role="dialog"]')) {
-      void dropRow(step.drop).then(() => next(undefined, undefined, true));
+      void dropRow(step.drop).then(() => next(undefined, undefined, "action"));
       return;
     }
-    const el = step?.action && step.target ? findTarget(step.target) : null;
-    /* After Next's own click is done: a menu the press opens would otherwise take that click as one
-       outside it and close at once. */
-    if (el) window.setTimeout(() => el.click());
-    else next();
+    if (step?.fill && here && formValues) {
+      if (!fillDone(step.fill, formValues)) fillForm(step.fill.set);
+      next(undefined, undefined, "fill");
+      return;
+    }
+    if (step?.open && pathname !== step.open) {
+      router.push(step.open);
+      return;
+    }
+    if (step?.action && step.target) {
+      const target = step.target;
+      /* After Next's own click is done: a menu the press opens would otherwise take that click as one
+         outside it and close at once. */
+      window.setTimeout(() => {
+        const el = pressable(target);
+        if (el) return el.click();
+        /* Not on screen: Next's click closed the menu it's in. Open it again with the step before's press, then
+           press it. Never move on without doing it, unless it can't be found at all. */
+        const before = trail.length > 1 ? scenario.steps[trail[trail.length - 2].index] : undefined;
+        if (!before?.action || !before.target) return next();
+        pressable(before.target)?.click();
+        window.setTimeout(() => {
+          const again = pressable(target);
+          if (again) again.click();
+          else next();
+        }, 150);
+      });
+      return;
+    }
+    next();
   };
 
   return (
     <>
       {step?.target && here && <StepHighlight target={step.target} stepKey={`${scenario.id}:${index}`} />}
       {step?.action && step.target && here && movesOnClick && (
-        <ActionWatcher target={step.target} onDone={() => next(undefined, index, true)} />
+        <ActionWatcher target={step.target} onDone={() => next(undefined, index, "action")} />
+      )}
+      {step?.fill && here && formValues && (
+        <FillWatcher key={index} fill={step.fill} values={formValues} onDone={() => next(undefined, index, "fill")} />
       )}
       <aside
         data-scenario-bar
