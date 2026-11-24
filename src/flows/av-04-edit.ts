@@ -138,9 +138,10 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
     steps: [
       fill("Eve's draft, open for editing. Change the title, or press Next.", "step:title", { title: "Saved filter sets on the AV table" }, (d) => d.title.trim() !== "" && d.title !== sample("vcp-1199").title),
       pressHere("Press the back arrow. A dialog asks before your change is dropped.", "step:back"),
-      pressHere("Keep editing closes it and keeps the change. Leave drops it. Press Keep editing.", "button:Keep editing"),
+      pressHere("\"Are you sure you want to leave?\" Cancel closes it and keeps the change; Confirm drops it. Press Cancel.", "button:Cancel"),
+      onEditPage("Every way out asks the same: try a page in the sidebar, or the browser's back button, and press Cancel again. Then Next.", "step:back"),
       pressHere("Press the back arrow again…", "step:back"),
-      pressHere("…and this time choose Leave.", "button:Leave"),
+      pressHere("…and this time press Confirm.", "button:Confirm"),
       {
         text: "Left without saving: the draft's page opens with the title as it was.",
         target: "step:av-menu",
@@ -148,10 +149,10 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
       },
     ],
     name: "Leave with unsaved changes",
-    demonstrates: "The back arrow asks before dropping unsaved changes.",
+    demonstrates: "Leaving with unsaved changes asks first, however you leave: the back arrow, the sidebar, the browser's back.",
     conditions: "Eve (User) on the edit page of her draft VCP-1199.",
     simulated: "Nothing is saved.",
-    expected: "\"Leave without saving?\": Keep editing keeps the change; Leave drops it and opens the AV's page. With nothing changed, the arrow leaves at once.",
+    expected: "\"Are you sure you want to leave?\" (the design system's leave question): Cancel keeps the change; Confirm drops it and goes where you were going. The sidebar and the browser's back ask the same. With nothing changed, you leave at once.",
     task: "Start renaming your draft about saved filters, then change your mind and go back without saving.",
   },
 ];

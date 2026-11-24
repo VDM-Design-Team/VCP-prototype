@@ -20,7 +20,6 @@ import {
   InitiateToOtherDomain,
   Input,
   missingInput,
-  Modal,
   PageTitle,
   useAttachmentFiles,
   useToast,
@@ -34,6 +33,7 @@ import { NO_FREE_REFERENCE, useAddedValues } from "@/components/av-store";
 import { useScenario, useScenarioForm, useScenarioSetup } from "@/components/scenario";
 import { TODAY } from "@/data/gantt";
 import { useShellState } from "@/components/shell-state";
+import { useLeaveGuard } from "@/components/leave-guard";
 import { useNotifications } from "@/components/notification-store";
 import { CYCLE_OPTIONS, DOMAINS, VIEWER, isInitiator, stageLabel, type AddedValue, type AVDomain, type Duplicate } from "@/data/added-values";
 import {
@@ -259,8 +259,6 @@ function Form({ editing }: { editing?: AddedValue }) {
   const [draft, setDraft] = React.useState<SubmitDraft>(() => structuredClone(initial));
   /* A scenario's fill steps change the form: Next fills a field in, or the walk moves on once you have. */
   useScenarioForm(draft, setDraft);
-  /* AV · 04, decided 9 Nov 2026: the back arrow asks before dropping unsaved edits. */
-  const [askLeave, setAskLeave] = React.useState(false);
   /* AV · 02 Discard (Figma 1026:166776): the confirm before an AV is removed for good. */
   const [askDiscard, setAskDiscard] = React.useState(false);
   const { role } = useShellState();
@@ -488,6 +486,9 @@ function Form({ editing }: { editing?: AddedValue }) {
     attached.length !== (editing?.files.length ?? 0) ||
     picked.files.length > 0 ||
     initiate.length > 0;
+  /* AV · 04, decided 9 Nov 2026: leaving with unsaved changes asks first, now however you leave (the back
+     arrow, the rail, the browser's back, closing the tab), on a new one too. */
+  const { leave, goBack, dialog: leaveDialog } = useLeaveGuard(dirty);
 
   /* AV · 08: one copy's description, as editable as the AV's own. */
   const setCopy = (d: string, change: Partial<Copy>) => setCopies((c) => ({ ...c, [d]: { ...c[d], ...change } }));
@@ -533,12 +534,14 @@ function Form({ editing }: { editing?: AddedValue }) {
     <div data-flow-step="back">
       <PageTitle
         title={`Edit ${editing.ref}`}
-        onBack={() => (dirty ? setAskLeave(true) : router.push(`/added-values/${editing.id}`))}
+        onBack={() => leave(() => router.push(`/added-values/${editing.id}`))}
         backLabel={`Back to ${editing.ref}`}
       />
     </div>
   ) : (
-    <PageTitle title="Added Value Creation" onBack={() => router.back()} backLabel="Back" />
+    <div data-flow-step="back">
+      <PageTitle title="Added Value Creation" onBack={() => leave(goBack)} backLabel="Back" />
+    </div>
   );
 
   return (
@@ -686,23 +689,8 @@ function Form({ editing }: { editing?: AddedValue }) {
       </div>
       {/* AV · 02: the plain confirm question (DS 2.0.0's ConfirmModal with the discardAV recipe, Figma's copy). */}
       <ConfirmModal open={askDiscard} onClose={() => setAskDiscard(false)} onConfirm={discard} {...confirmations.discardAV()} />
-      {editing && (
-        <Modal
-          open={askLeave}
-          onClose={() => setAskLeave(false)}
-          title="Leave without saving?"
-          tone="critical"
-          size="sm"
-          actions={{
-            cancelLabel: "Keep editing",
-            confirm: { label: "Leave", onClick: () => router.push(`/added-values/${editing.id}`) },
-          }}
-        >
-          <p className="text-body-md-regular text-text-secondary">
-            Your changes to {editing.ref} aren&apos;t saved. If you leave now, they&apos;re lost.
-          </p>
-        </Modal>
-      )}
+      {/* Leaving with unsaved changes: DS ConfirmModal, confirmations.leavePage(). */}
+      {leaveDialog}
     </Screen>
   );
 }
