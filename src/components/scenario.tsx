@@ -14,20 +14,35 @@ import type { FlowDef, ScenarioDef, ScenarioStep } from "@/flows/types";
 
 export type ScenarioView = "reviewer" | "participant";
 
+/**
+ * One step walked: which step, the page it happened on, and how the walk got
+ * there. `action`: the reviewer (or Next) pressed the previous step's target on
+ * the same page, so what this step shows is that press's result. `page`: the
+ * reviewer's own click opened another page.
+ */
+export interface WalkedStep {
+  index: number;
+  path: string;
+  via: "start" | "next" | "action" | "page";
+}
+
 interface ScenarioState {
   /** The scenario running now, if one was started. Explore prototype has none. */
   active?: { flow: FlowDef; scenario: ScenarioDef };
   view: ScenarioView;
   /** Bumped on every start and Reset, so the screen remounts from the scenario's setup. */
   run: number;
-  /** The steps walked so far (indexes into `scenario.steps`); the last is the current one. Back pops it. */
-  trail: readonly number[];
+  /** Bumped on Back, so the whole screen is rebuilt from the data put back (not on start: the start page would restart). */
+  rebuilt: number;
+  /** The steps walked so far; the last is the current one. Back goes to an earlier one. */
+  trail: readonly WalkedStep[];
   /**
    * Go on: to the step with id `goto` (a branch), else to the current step's
    * `next`, else the following step. With `from`, only if the walk is still on
    * that step (a press that also opened another page has already moved it).
+   * `byAction`: the walk moves because the current step's target was pressed.
    */
-  next: (goto?: string, from?: number) => void;
+  next: (goto?: string, from?: number, byAction?: boolean) => void;
   back: () => void;
   /** Set the scenario's conditions (fresh data, its role, an open rail) and return the route it opens on. */
   start: (flowId: string, scenarioKey: string, view?: ScenarioView) => string | undefined;
@@ -36,6 +51,14 @@ interface ScenarioState {
 }
 
 const ScenarioContext = React.createContext<ScenarioState | null>(null);
+
+interface Snapshot {
+  stores: unknown[];
+  role: ReturnType<typeof useShellState>["role"];
+  collapsed: boolean;
+  domain: string;
+  dashboardView: ReturnType<typeof useShellState>["dashboardView"];
+}
 
 /** Whether a step happens on this page. A `*` at the end matches the rest; one in the middle, one segment. */
 const onPage = (step: ScenarioStep, scenario: ScenarioDef, pathname: string) => {
@@ -56,13 +79,43 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
   const { reset: resetNotifications } = useNotifications();
   const { reset: resetBudgets } = useBudgets();
   const { reset: resetSettings } = useSettings();
-  const { setRole, setCollapsed, setDomain, setDashboardView } = useShellState();
+  const avStore = useAddedValues();
+  const holidayStore = useHolidays();
+  const notificationStore = useNotifications();
+  const budgetStore = useBudgets();
+  const settingsStore = useSettings();
+  const { role, collapsed, domain, dashboardView, setRole, setCollapsed, setDomain, setDashboardView } = useShellState();
+  const router = useRouter();
   const { dismissAll } = useToast();
   const pathname = usePathname();
   const [active, setActive] = React.useState<ScenarioState["active"]>();
   const [view, setView] = React.useState<ScenarioView>("reviewer");
   const [run, setRun] = React.useState(0);
-  const [trail, setTrail] = React.useState<number[]>([0]);
+  const [rebuilt, setRebuilt] = React.useState(0);
+  const [trail, setTrail] = React.useState<WalkedStep[]>([{ index: 0, path: pathname, via: "start" }]);
+
+  /* What everything looked like when each walked step began: the sample data,
+     the role, the rail. Taken once the step's page has drawn, so a press's
+     result is in it. Back puts it back. */
+  const snapshots = React.useRef(new WeakMap<WalkedStep, Snapshot>());
+  const take = (): Snapshot => ({
+    stores: [avStore, holidayStore, notificationStore, budgetStore, settingsStore].map((s) => s.snapshot()),
+    role,
+    collapsed,
+    domain,
+    dashboardView,
+  });
+  const latestTake = React.useRef(take);
+  const stores = [avStore, holidayStore, notificationStore, budgetStore, settingsStore];
+  const latestStores = React.useRef(stores);
+  React.useEffect(() => {
+    latestTake.current = take;
+    latestStores.current = stores;
+  });
+  const top = trail[trail.length - 1];
+  React.useEffect(() => {
+    if (active && !snapshots.current.has(top)) snapshots.current.set(top, latestTake.current());
+  }, [active, top]);
 
   /* When the user's own click lands them on another page (Submit opens the AV),
      the walk follows: to the first later step that happens there. */
@@ -71,10 +124,10 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
     setSeenPath(pathname);
     if (active) {
       const steps = active.scenario.steps;
-      const current = trail[trail.length - 1];
+      const current = trail[trail.length - 1].index;
       if (steps[current] && !onPage(steps[current], active.scenario, pathname)) {
         const later = steps.findIndex((s, i) => i > current && onPage(s, active.scenario, pathname));
-        if (later !== -1) setTrail([...trail, later]);
+        if (later !== -1) setTrail([...trail, { index: later, path: pathname, via: "page" }]);
       }
     }
   }
@@ -84,17 +137,40 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
       active,
       view,
       run,
+      rebuilt,
       trail,
-      next: (goto, from) => {
+      next: (goto, from, byAction) => {
         if (!active) return;
         const steps = active.scenario.steps;
-        const current = trail[trail.length - 1];
+        const current = trail[trail.length - 1].index;
         if (from !== undefined && from !== current) return;
         const target = goto ?? steps[current]?.next;
         const to = target ? steps.findIndex((s) => s.id === target) : current + 1;
-        if (to >= 0 && to < steps.length) setTrail([...trail, to]);
+        if (to >= 0 && to < steps.length) setTrail([...trail, { index: to, path: pathname, via: byAction ? "action" : "next" }]);
       },
-      back: () => setTrail((t) => (t.length > 1 ? t.slice(0, -1) : t)),
+      back: () => {
+        if (!active || trail.length < 2) return;
+        /* Back rebuilds the screen as it was when that step began. A step that only shows what a press did on the
+           same page (a blocked Submit's errors, an open dialog) can't be rebuilt without the press, so Back goes on
+           to the step that asks for it: Next presses it again. */
+        let to = trail.length - 1;
+        while (to > 1 && trail[to - 1].via === "action" && trail[to - 1].path === trail[to - 2].path) to -= 1;
+        const kept = trail.slice(0, to);
+        const landing = kept[kept.length - 1];
+        const snap = snapshots.current.get(landing);
+        if (snap) {
+          latestStores.current.forEach((s, i) => s.restore(snap.stores[i]));
+          setRole(snap.role);
+          setCollapsed(snap.collapsed);
+          setDomain(snap.domain);
+          setDashboardView(snap.dashboardView);
+        }
+        dismissAll();
+        setTrail(kept);
+        setRun((n) => n + 1);
+        setRebuilt((n) => n + 1);
+        if (landing.path !== pathname) router.push(landing.path);
+      },
       start: (flowId, scenarioKey, nextView = "reviewer") => {
         const found = findScenario(flowId, scenarioKey);
         if (!found) return undefined;
@@ -111,7 +187,7 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         setCollapsed(false);
         setActive(found);
         setView(nextView);
-        setTrail([0]);
+        setTrail([{ index: 0, path: found.scenario.start, via: "start" }]);
         setRun((n) => n + 1);
         return found.scenario.start;
       },
@@ -129,13 +205,23 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         setCollapsed(false);
         setActive(undefined);
         setView("reviewer");
-        setTrail([0]);
+        setTrail([{ index: 0, path: "/flows", via: "start" }]);
       },
     }),
-    [active, view, run, trail, reset, resetHolidays, resetNotifications, resetBudgets, resetSettings, dismissAll, setRole, setCollapsed, setDomain, setDashboardView],
+    [active, view, run, rebuilt, trail, pathname, router, reset, resetHolidays, resetNotifications, resetBudgets, resetSettings, dismissAll, setRole, setCollapsed, setDomain, setDashboardView],
   );
 
   return <ScenarioContext.Provider value={value}>{children}</ScenarioContext.Provider>;
+}
+
+/**
+ * The screen, rebuilt on Back: it starts again from the data put back, with
+ * nothing left open from the step it came from. (Start and Reset rebuild the
+ * form through `run`; keying this on `run` would restart the start page.)
+ */
+export function ScenarioScreen({ children }: { children: React.ReactNode }) {
+  const { rebuilt } = useScenario();
+  return <React.Fragment key={rebuilt}>{children}</React.Fragment>;
 }
 
 export function useScenario() {
@@ -312,7 +398,7 @@ export function ScenarioBar() {
     );
   }
 
-  const index = trail[trail.length - 1];
+  const index = trail[trail.length - 1].index;
   const step = scenario.steps[index];
   const last = !step?.options && !step?.next && index >= scenario.steps.length - 1;
   const here = step && onPage(step, scenario, pathname);
@@ -325,7 +411,7 @@ export function ScenarioBar() {
   /* An action step: Next does the action (presses Submit), which then moves the walk on. */
   const actOrNext = () => {
     if (step?.drop && !document.querySelector('[role="dialog"]')) {
-      void dropRow(step.drop).then(() => next());
+      void dropRow(step.drop).then(() => next(undefined, undefined, true));
       return;
     }
     const el = step?.action && step.target ? findTarget(step.target) : null;
@@ -339,7 +425,7 @@ export function ScenarioBar() {
     <>
       {step?.target && here && <StepHighlight target={step.target} stepKey={`${scenario.id}:${index}`} />}
       {step?.action && step.target && here && movesOnClick && (
-        <ActionWatcher target={step.target} onDone={() => next(undefined, index)} />
+        <ActionWatcher target={step.target} onDone={() => next(undefined, index, true)} />
       )}
       <aside
         data-scenario-bar

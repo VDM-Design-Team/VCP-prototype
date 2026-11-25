@@ -24,7 +24,7 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
    - any other AV keeps its status: the edit page closes and the AV's page opens, with "VCP-1200: changes saved" *(inferred)*.
 4. **Save as draft** checks nothing on a Draft (with no title it's named "Draft - *date time*", as AV · 03), and only the Title past Draft *(24 Nov 2026)*:
    - **it only saves the changes**: the AV keeps its status, Draft or not *(decided 9 Nov 2026)*. The AV's page opens, with "changes saved" *(inferred)*.
-5. **The back arrow** leaves at once if nothing changed. With unsaved changes it asks first *(decided 9 Nov 2026)*: **"Leave without saving?"** (the DS `Modal`, critical tone): **Keep editing** closes it and keeps the changes, focus back on the arrow; **Leave** drops them and opens the AV's page.
+5. **Leaving** happens at once if nothing changed. With unsaved changes it asks first *(decided 9 Nov 2026)*, however you leave: the back arrow, the sidebar or any other link in the app, or the browser's back *(24 Nov 2026, for creativedesignlead to confirm)*. The question is the design system's (`ConfirmModal`, `confirmations.leavePage()`): **"Are you sure you want to leave?"**, "You have unsaved changes which will be lost if you leave this page.", **Cancel** keeps the changes, a red **Confirm** drops them and goes on. Closing or reloading the tab gets the browser's own prompt. Create Added Value asks the same.
 
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
@@ -36,7 +36,7 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 
 ## Completion or exit
 - **Done:** the change is saved; a submitted draft is Pending, anything else keeps its status.
-- **Leave early:** the back arrow, which asks first if anything changed. The sidebar and the browser's own back don't ask yet. **Discard** (AV · 02) is a separate flow.
+- **Leave early:** the back arrow, the sidebar or the browser's back, which all ask first if anything changed. **Discard** (AV · 02) is a separate flow.
 - **Not covered yet:** Figma's AV View/Edit pages also draw how the parts of the form behave: assignee chips (`221:38212`), the tag dropdown (`221:38266`), deliverable links (`219:34084`), undo after removing a card (`23:5379`) and the viewers popover (`779:13784`). The prototype uses the design system's pieces as they are; those details get their own pass.
 
 ## Unresolved questions
@@ -44,7 +44,7 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 - **Where an edit lands.** The prototype opens the AV's page after a save, and after a draft is submitted too (AV · 01's rule since 13 Nov 2026).
 - **May an admin edit someone else's AV?** The ⋮ menu gives an admin Edit; the prototype lets them.
 - **Past Draft, Save as draft and Submit both save.** Submit runs every check, Save as draft only the Title. Is a second button needed there?
-- **The sidebar and the browser's back** don't ask about unsaved changes yet; only the page's back arrow does.
+- **Which leave question?** The prototype now uses the design system's `confirmations.leavePage()` ("Are you sure you want to leave?", Cancel and Confirm) instead of its own "Leave without saving?" with Keep editing and Leave. The design system's Domain Budget edit page doc still describes the older one. Which is VCP's?
 - **"Initiate to other Domains"** checkboxes sit on Figma's edit pages: AV · 08 Initiate to another domain.
 - **The page title.** Figma strikes through "Added Value Creation" on its edit pages; the prototype says "Edit VCP-1199".
 - **Design system:** Figma's Discard is red text: DS `Button` `critical-tertiary` (built for AV · 02; `danger-tertiary` before 1.0.0).

@@ -249,6 +249,17 @@ function AdminPanel({ domainValue }: { domainValue: string }) {
     }
     return null;
   };
+  /* The lists as they are now, for an Undo pressed after other changes: it puts the row back where it was
+     and keeps those changes, rather than going back to the copy from before the delete. */
+  const latest = React.useRef({ lists, teams });
+  React.useEffect(() => {
+    latest.current = { lists, teams };
+  });
+  const putBack = <T,>(now: readonly T[], before: readonly T[], at: (x: T) => boolean): T[] => {
+    const i = before.findIndex(at);
+    const row = before[i];
+    return row === undefined || now.some(at) ? [...now] : [...now.slice(0, i), row, ...now.slice(i)];
+  };
   const remove = (list: PanelList, item: PanelItem) => {
     const why = inUse(list, item);
     if (why) {
@@ -259,7 +270,13 @@ function AdminPanel({ domainValue }: { domainValue: string }) {
     /* Only rows with a bin: the locked ones have none. */
     focusAfter(neighbours(before.filter((i) => i.variant !== "locked").map((i) => i.label), item.label, "Add New"));
     setPanelList(domainValue, list, before.filter((i) => i.id !== item.id));
-    toast(undoDeletion(item.label, () => setPanelList(domainValue, list, before)));
+    toast(
+      undoDeletion(item.label, () => {
+        setPanelList(domainValue, list, putBack(latest.current.lists[list], before, (i) => i.id === item.id));
+        /* The toast's Undo goes with the toast: focus moves to the row that came back. */
+        focusAfter([`Delete ${item.label}`, "Add New"]);
+      }),
+    );
   };
   const card = (list: PanelList, title: string) => (
     <DomainCard
@@ -290,7 +307,12 @@ function AdminPanel({ domainValue }: { domainValue: string }) {
             const before = teams;
             focusAfter(neighbours(teams.map((t) => t.name), item.label, "Add New"));
             setTeams(teams.filter((t) => t.id !== item.id));
-            toast(undoDeletion(item.label, () => setTeams(before)));
+            toast(
+              undoDeletion(item.label, () => {
+                setTeams(putBack(latest.current.teams, before, (t) => t.id === item.id));
+                focusAfter([`Delete ${item.label}`, "Add New"]);
+              }),
+            );
           }}
         />
       )}
