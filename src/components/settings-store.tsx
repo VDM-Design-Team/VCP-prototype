@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ACCOUNTS, DOMAIN_LIST, MANUALS, PANEL, PROJECT_LIST, TEAMS, chainOf, type Account, type PanelItem, type Team } from "@/data/settings";
 import type { ManualRow } from "@vdm-design-team/vcp-design-system";
-import { CHAINS_AS_SHIPPED, setChain } from "@/data/added-values";
+import { CHAINS, CHAINS_AS_SHIPPED, setChain } from "@/data/added-values";
 
 /* Admin · 04: what Settings, Accounts and Domains edit. In the root layout, so a change survives moving
    around the app (the dashboard's team filter reads the teams); a scenario starting puts the samples back. */
@@ -24,6 +24,9 @@ interface SettingsStore {
   manuals: ManualRow[];
   addManual: (manual: ManualRow) => void;
   reset: () => void;
+  /** The guided walk's Back (scenario.tsx): what the store holds now, and putting it back. */
+  snapshot: () => unknown;
+  restore: (snapshot: unknown) => void;
 }
 
 const Ctx = React.createContext<SettingsStore | null>(null);
@@ -55,6 +58,19 @@ export function SettingsStoreProvider({ children }: { children: React.ReactNode 
       setProjects,
       manuals,
       addManual: (manual) => setManuals((all) => [manual, ...all]),
+      /* CHAINS is module state (every screen reads it when it draws), so it travels with the snapshot. */
+      snapshot: () => ({ accounts, panel, teams, domains, projects, manuals, chains: { ...CHAINS } }),
+      restore: (s) => {
+        const snap = s as { accounts: typeof accounts; panel: typeof panel; teams: typeof teams; domains: typeof domains; projects: typeof projects; manuals: typeof manuals; chains: typeof CHAINS };
+        setAccounts(snap.accounts);
+        setChain("development", snap.chains.development);
+        setChain("design", snap.chains.design);
+        setPanel(snap.panel);
+        setTeams(snap.teams);
+        setDomains(snap.domains);
+        setProjects(snap.projects);
+        setManuals(snap.manuals);
+      },
       reset: () => {
         setAccounts(ACCOUNTS);
         setChain("development", CHAINS_AS_SHIPPED.development);
