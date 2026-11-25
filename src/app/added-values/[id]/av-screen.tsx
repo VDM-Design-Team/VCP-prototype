@@ -7,7 +7,6 @@ import {
   ChildPartModal,
   MultipartParentChip,
   MultipartSection,
-  AVHeader,
   Banner,
   backloggedBanner,
   rejectedBanner,
@@ -29,6 +28,7 @@ import {
   RejectPendingAVModal,
   ReviewAVModal,
   StatusHistory,
+  StatusProgression,
   useToast,
   type AVProgressionRole,
   type AVTransition,
@@ -61,7 +61,7 @@ const BEFORE_ACCEPTANCE = { remarks: undefined, rejection: undefined, dateAccept
 /** "05-11-2026" — the handoff dialog's date format. */
 const ddmmyyyy = (iso: string) => iso.split("-").reverse().join("-");
 
-/** Who the viewer is to this AV, as AVHeader's buttons need it. */
+/** Who the viewer is to this AV, as the status buttons need it. */
 function headerRole(av: AddedValue, admin: boolean): AVProgressionRole | undefined {
   if (admin) return "admin";
   const assignee = av.assignees.some((a) => a.name === VIEWER.name);
@@ -73,8 +73,9 @@ function headerRole(av: AddedValue, admin: boolean): AVProgressionRole | undefin
 }
 
 /**
- * An Added Value's page. Figma "AV Page: Viewing AVs" (153:13170): AVHeader
- * (the ID row, with the status buttons for who is looking), then the title
+ * An Added Value's page. Figma "AV Page: Viewing AVs" (153:13170): the page
+ * title (`PageTitle size="sm"`: the ID, the status buttons for who is looking
+ * and the ⋮ menu), then the title
  * card and the description on the left, the details and deliverables on the
  * right. The status buttons open the design system's dialogs — accept,
  * reject, hand off, review — and the AV moves when they are answered.
@@ -172,43 +173,49 @@ export function AVScreen({ id }: { id: string }) {
     <Screen
       active=""
       header={
-        <AVHeader
+        <PageTitle
           ref={headerRef}
+          size="sm"
           title={av.ref}
           onBack={back}
           backLabel="Back to the list"
-          role={viewer}
-          /* A draft's page has no status buttons (Figma 1331:26533): it's
-             submitted from its edit page (AV · 04). */
-          showStatusActions={!!viewer && av.status !== "Draft"}
-          {...(av.step ? { step: av.step } : { status: av.status })}
-          chain={chain}
-          onTransition={onTransition}
           actions={
-            /* Where a guided scenario's step points: see src/flows/types.ts. */
-            <div data-flow-step="av-menu" className="flex">
-              <DetailCardMenu
-                role={admin ? "admin" : "user"}
-                status={av.status}
-                /* Decided 9 Nov 2026: the same edit page at every status (AV · 04). */
-                onEdit={() => router.push(`/added-values/${av.id}/edit`)}
-                onDelete={() => setDialog("delete")}
-                /* `DetailCardMenu` owns which moves a role and a status get. Decided
-                   13 Nov 2026: an admin also gets them on a Rejected AV (Backlog,
-                   Pending, Draft) and on one that is accepted, on a domain step or in
-                   Review (Backlog, Draft). Every move is the same whatever it leaves. */
-                /* AV · 05: the Feedback dialog first. */
-                onMoveToBacklog={() => setDialog("backlog")}
-                onMoveToDraft={() => {
-                  moveTo(av.id, "Draft", BEFORE_ACCEPTANCE);
-                  toast({ tone: "success", title: `${av.ref} moved back to Draft` });
-                }}
-                onMoveToPending={() => {
-                  moveTo(av.id, "Pending", BEFORE_ACCEPTANCE);
-                  toast({ tone: "success", title: `${av.ref} moved to Pending` });
-                }}
-              />
-            </div>
+            <>
+              {/* A draft's page has no status buttons (Figma 1331:26533): it's
+                  submitted from its edit page (AV · 04). */}
+              {viewer && av.status !== "Draft" && (
+                <StatusProgression
+                  role={viewer}
+                  {...(av.step ? { step: av.step } : { status: av.status })}
+                  chain={chain}
+                  onTransition={onTransition}
+                />
+              )}
+              {/* The ⋮ menu comes after the buttons (DS 3.0.0). Where a guided scenario's step points: see src/flows/types.ts. */}
+              <div data-flow-step="av-menu" className="flex">
+                <DetailCardMenu
+                  role={admin ? "admin" : "user"}
+                  status={av.status}
+                  /* Decided 9 Nov 2026: the same edit page at every status (AV · 04). */
+                  onEdit={() => router.push(`/added-values/${av.id}/edit`)}
+                  onDelete={() => setDialog("delete")}
+                  /* `DetailCardMenu` owns which moves a role and a status get. Decided
+                     13 Nov 2026: an admin also gets them on a Rejected AV (Backlog,
+                     Pending, Draft) and on one that is accepted, on a domain step or in
+                     Review (Backlog, Draft). Every move is the same whatever it leaves. */
+                  /* AV · 05: the Feedback dialog first. */
+                  onMoveToBacklog={() => setDialog("backlog")}
+                  onMoveToDraft={() => {
+                    moveTo(av.id, "Draft", BEFORE_ACCEPTANCE);
+                    toast({ tone: "success", title: `${av.ref} moved back to Draft` });
+                  }}
+                  onMoveToPending={() => {
+                    moveTo(av.id, "Pending", BEFORE_ACCEPTANCE);
+                    toast({ tone: "success", title: `${av.ref} moved to Pending` });
+                  }}
+                />
+              </div>
+            </>
           }
         />
       }
