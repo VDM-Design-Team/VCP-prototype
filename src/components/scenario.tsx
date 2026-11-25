@@ -463,8 +463,10 @@ function ActionWatcher({ target, onDone }: { target: string; onDone: () => void 
       /* After the page has handled the press, so the step after sees its result. */
       if (!redoing && el && event.target instanceof Node && el.contains(event.target)) window.setTimeout(() => done.current());
     };
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
+    /* In the capture phase: a dialog takes its buttons off the page while it handles the click, so by the
+       time the click bubbles up to `document`, its Cancel or Confirm is gone and can't be found. */
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
   }, [target]);
   return null;
 }

@@ -52,8 +52,18 @@ export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
     steps: [
       { text: "VCP-1199 is Eve's saved draft. It has no acceptance criteria and no desired outcome yet.", target: "step:av-menu" },
       openEdit("vcp-1199"),
-      onEditPage("The creation form, filled in from the draft. Type an acceptance criterion…", "step:deliverables"),
-      onEditPage("…and the desired outcome.", "step:desired-outcome"),
+      fill(
+        "The creation form, filled in from the draft. Type an acceptance criterion, or press Next…",
+        "step:deliverables",
+        { deliverables: ["A Save filters button and a list of saved sets in the filter bar."] },
+        (d) => d.deliverables.some((x) => x.trim() !== ""),
+      ),
+      fill(
+        "…and the desired outcome, or press Next.",
+        "step:desired-outcome",
+        { desiredOutcome: "Nobody sets the same filters twice." },
+        (d) => d.desiredOutcome.trim() !== "",
+      ),
       press("Submit", "Press Submit. The checks are AV · 01's: left empty, these two fields would block it."),
       {
         text: "Submitted: Draft → Pending. The edit page closes and VCP-1199's own page opens, with a toast that confirms it.",
