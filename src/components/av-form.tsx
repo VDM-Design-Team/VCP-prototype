@@ -20,6 +20,7 @@ import {
   InitiateToOtherDomain,
   Input,
   missingInput,
+  undoDeletion,
   PageTitle,
   useAttachmentFiles,
   useToast,
@@ -310,10 +311,53 @@ function Form({ editing }: { editing?: AddedValue }) {
   }, [blockedPresses]);
   const shown = attempted === "submit" ? problems : attempted === "draft" ? draftProblems : undefined;
 
-  const setList = (key: ListKey, list: string[]) => setDraft((d) => ({ ...d, [key]: list }));
   const setItem = (key: ListKey, i: number, value: string) =>
     setDraft((d) => ({ ...d, [key]: d[key].map((v, j) => (j === i ? value : v)) }));
-  const removeItem = (key: ListKey, i: number) => setList(key, draft[key].filter((_, j) => j !== i));
+
+  /* DS 3.0.0 ("A problem is a set", docs/description-section.md): a problem, its solution and its acceptance
+     criterion are one set. Only the Problems section adds and only a problem card removes, and both act on the
+     whole set, so the lists never get out of step. (The desired outcome is still one field in the prototype.) */
+  type Sets = Pick<SubmitDraft, "problems" | "solutions" | "deliverables">;
+  const withSetAdded = <T extends Sets>(d: T): T => ({ ...d, problems: [...d.problems, ""], solutions: [...d.solutions, ""], deliverables: [...d.deliverables, ""] });
+  const withSetRemoved = <T extends Sets>(d: T, i: number): T => ({
+    ...d,
+    problems: d.problems.filter((_, j) => j !== i),
+    solutions: d.solutions.filter((_, j) => j !== i),
+    deliverables: d.deliverables.filter((_, j) => j !== i),
+  });
+  /* Undo puts the set back in its place, keeping whatever was typed since. */
+  const withSetRestored = <T extends Sets>(d: T, i: number, set: Record<keyof Sets, string | undefined>): T => {
+    const put = (list: string[], v: string | undefined) => (v === undefined ? list : [...list.slice(0, i), v, ...list.slice(i)]);
+    return { ...d, problems: put(d.problems, set.problems), solutions: put(d.solutions, set.solutions), deliverables: put(d.deliverables, set.deliverables) };
+  };
+  /* Never drop focus: once a set is removed, the problem that took its place (or Add problem when it was the
+     last); once Undo puts it back, its problem. `where` names the section, `at` the card. */
+  const focusTarget = React.useRef<{ where: string; at: number }>(undefined);
+  const [focusTick, setFocusTick] = React.useState(0);
+  const setFocusAfter = (target: { where: string; at: number }) => {
+    focusTarget.current = target;
+    setFocusTick((n) => n + 1);
+  };
+  React.useEffect(() => {
+    const t = focusTarget.current;
+    if (!t) return;
+    focusTarget.current = undefined;
+    const section = document.querySelector<HTMLElement>(`[data-flow-step="${t.where}"]`);
+    const fields = section?.querySelectorAll<HTMLElement>("textarea, input");
+    const target = fields?.[t.at] ?? section?.querySelector<HTMLElement>("button[title^='Add']");
+    target?.focus();
+  }, [focusTick]);
+  const removeSet = (i: number) => {
+    const set = { problems: draft.problems[i], solutions: draft.solutions[i], deliverables: draft.deliverables[i] };
+    setDraft((d) => withSetRemoved(d, i));
+    setFocusAfter({ where: "problems", at: i });
+    toast(
+      undoDeletion("Problem set", () => {
+        setDraft((d) => withSetRestored(d, i, set));
+        setFocusAfter({ where: "problems", at: i });
+      }),
+    );
+  };
 
   /* One press of Submit or Save as draft: its checks, its toasts. A new press
      replaces the last one's toasts rather than stacking on them. */
@@ -481,15 +525,28 @@ function Form({ editing }: { editing?: AddedValue }) {
 
   /* AV · 08: one copy's description, as editable as the AV's own. */
   const setCopy = (d: string, change: Partial<Copy>) => setCopies((c) => ({ ...c, [d]: { ...c[d], ...change } }));
+  /* A copy's description works in sets too: its Problems section adds one, its problem cards remove one. */
   const copySection = (d: string, key: ListKey, type: "problem" | "solution" | "deliverable", noun: string) => (
-    <DescriptionSection type={type} onAdd={() => setCopy(d, { [key]: [...copies[d][key], ""] })} addLabel={`Add ${noun} to the ${domainName(d)} copy`}>
+    <DescriptionSection
+      type={type}
+      onAdd={type === "problem" ? () => setCopies((c) => ({ ...c, [d]: withSetAdded(c[d]) })) : undefined}
+      addLabel={`Add ${noun} to the ${domainName(d)} copy`}
+      data-flow-step={`copy-${d}-${key}`}
+    >
       {copies[d][key].map((value, i) => (
         <DescriptionCard
           key={i}
           editing
           value={value}
           onChange={(v) => setCopy(d, { [key]: copies[d][key].map((x, j) => (j === i ? v : x)) })}
-          onRemove={copies[d][key].length > 1 ? () => setCopy(d, { [key]: copies[d][key].filter((_, j) => j !== i) }) : undefined}
+          onRemove={
+            type === "problem" && copies[d].problems.length > 1
+              ? () => {
+                  setCopies((c) => ({ ...c, [d]: withSetRemoved(c[d], i) }));
+                  setFocusAfter({ where: `copy-${d}-problems`, at: i });
+                }
+              : undefined
+          }
           removeLabel={`Remove ${noun} ${i + 1} from the ${domainName(d)} copy`}
         />
       ))}
@@ -499,7 +556,7 @@ function Form({ editing }: { editing?: AddedValue }) {
   const section = (key: ListKey, type: "problem" | "solution" | "deliverable", noun: string) => (
     <DescriptionSection
       type={type}
-      onAdd={() => setList(key, [...draft[key], ""])}
+      onAdd={type === "problem" ? () => setDraft((d) => withSetAdded(d)) : undefined}
       addLabel={`Add ${noun}`}
       /* Where a guided scenario's step points: see src/flows/types.ts. */
       data-flow-step={key}
@@ -511,7 +568,7 @@ function Form({ editing }: { editing?: AddedValue }) {
           value={value}
           onChange={(v) => setItem(key, i, v)}
           error={shown?.[key][i]}
-          onRemove={draft[key].length > 1 ? () => removeItem(key, i) : undefined}
+          onRemove={type === "problem" && draft.problems.length > 1 ? () => removeSet(i) : undefined}
           removeLabel={`Remove ${noun} ${i + 1}`}
         />
       ))}

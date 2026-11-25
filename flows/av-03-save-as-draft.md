@@ -35,5 +35,5 @@ Keep an Added Value that isn't finished, to finish and submit it later.
 - **Where does a saved draft land?** The prototype opens Drafts, with an Open it toast. Staying on the page, or opening the draft's page, are the alternatives.
 - **What the draft's details hold when left blank.** `AddedValue` always has an Urgency and Type, so a draft saved without them shows Normal and Type 3. Should a draft show them empty?
 - **Can an admin see other people's drafts?** The prototype says no: Manage leaves drafts out. But an admin's "Move to Draft" (DetailCardMenu) sends someone's AV back to Draft, after which only its initiator can find it.
-- **Design system:** `AVHeader`/`StatusProgression` give a Draft "Save as Draft" and "Submit" buttons, but Figma's Draft page (`1331:26533`) has none; the prototype turns them off there. Those two buttons belong on the edit page (AV · 04).
+- **Design system:** `StatusProgression` gives a Draft "Save as Draft" and "Submit" buttons, but Figma's Draft page (`1331:26533`) has none; the prototype turns them off there. Those two buttons belong on the edit page (AV · 04).
 - **Design system (already logged):** `DetailCard` (viewing) draws an empty Assignee heading when a draft has no assignee.

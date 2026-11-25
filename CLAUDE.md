@@ -42,7 +42,7 @@ app from them. `main` is the prototype everyone clicks through.
   Dashboard is `/`.
 - Every screen renders `<Screen active="<rail-key>" header={…}>` from
   `src/components/screen.tsx`: VCP's `AppShell` with the rail, the app bar
-  and the screen's title band (`PageTitle` or `AVHeader`).
+  and the screen's title band (`PageTitle`; an Added Value's page uses `size="sm"` with its status buttons and ⋮ menu).
 - `src/app/[screen]/page.tsx` lists the rail rows not designed yet. When you
   build one, give it its own folder and take it off that list.
 - Sample data lives in the screen's file, or in `src/data/` once more than
