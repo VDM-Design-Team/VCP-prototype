@@ -33,6 +33,30 @@ const base = { status: "Implemented", testing: "Not tested", role: "user", setup
 export const EDIT_SCENARIOS: readonly ScenarioDef[] = [
   {
     ...base,
+    id: "av-04-edit.finish-draft",
+    start: "/added-values/vcp-1199",
+    steps: [
+      { text: "VCP-1199 is Eve's saved draft. It has no acceptance criteria and no desired outcome yet.", target: "step:av-menu" },
+      openEdit("vcp-1199"),
+      onEditPage("The creation form, filled in from the draft. Type an acceptance criterion…", "step:deliverables"),
+      onEditPage("…and the desired outcome.", "step:desired-outcome"),
+      press("Submit", "Press Submit. The checks are AV · 01's: left empty, these two fields would block it."),
+      {
+        text: "Submitted: Draft → Pending. The edit page closes and VCP-1199's own page opens, with a toast that confirms it.",
+        target: "step:av-menu",
+        /* Exact on purpose: "/added-values/*" would match the edit page too, and the walk would move on a blocked Submit. */
+        path: "/added-values/vcp-1199",
+      },
+    ],
+    name: "Finish a draft and submit it",
+    demonstrates: "A saved draft is opened in Edit, finished and submitted from there: Draft → Pending. AV · 01 starts on the blank creation page; this is the other way in.",
+    conditions: "Eve (User) on her draft VCP-1199, which lacks acceptance criteria and a desired outcome.",
+    simulated: "Submit always succeeds once the checks pass.",
+    expected: "Edit opens the filled-in form. Once the two fields are filled, Submit moves it to Pending and opens the Added Value's page with a toast.",
+    task: "Finish your draft about saved filters and send it for review.",
+  },
+  {
+    ...base,
     id: "av-04-edit.save-draft-changes",
     start: "/added-values/vcp-1199/edit",
     steps: [
