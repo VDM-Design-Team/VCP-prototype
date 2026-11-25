@@ -9,6 +9,9 @@ interface BudgetStore {
   budgets: Budgets;
   save: (key: QuarterKey, rows: Record<string, DomainBudget>) => void;
   reset: () => void;
+  /** The guided walk's Back (scenario.tsx): what the store holds now, and putting it back. */
+  snapshot: () => unknown;
+  restore: (snapshot: unknown) => void;
 }
 
 const Ctx = React.createContext<BudgetStore | null>(null);
@@ -19,6 +22,8 @@ export function BudgetStoreProvider({ children }: { children: React.ReactNode })
     () => ({
       budgets,
       save: (key, rows) => setBudgets((all) => ({ ...all, [key]: rows })),
+      snapshot: () => budgets,
+      restore: (s) => setBudgets(s as Budgets),
       reset: () => setBudgets(BUDGETS),
     }),
     [budgets],
