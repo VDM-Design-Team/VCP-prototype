@@ -83,6 +83,13 @@ task; a scenario is one set of conditions inside it.
   participant view has no guidance. **Reset, Finish and Leave scenario** put
   everything back: the sample data (anything the scenario created or changed),
   its toasts, the role and the rail. Finish and Leave return to the list.
+- **One card per outcome.** A scenario keeps its own card when its starting
+  data, its person or its result differs. Cancel paths, "who sees it" checks
+  and single validations are steps or branches of the scenario they belong to,
+  and the flow doc's failures table still lists every rule on its own row. A
+  different person keeps a card only when they *do* something different: what
+  a role can't do (no Accept for a user, no Add Part for a non-editor) is a row
+  in the flow doc, not a card. A cut scenario's id is never reused.
 - `/flows/<flow-id>/<scenario>` is a scenario's shareable link. Opening it
   resets the sample data, the role and the rail, then opens its screen.
   `?view=participant` hides the reviewer controls for a usability session.
