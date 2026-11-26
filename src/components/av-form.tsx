@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
-  Banner,
   Button,
   ConfirmModal,
   confirmations,
@@ -30,6 +29,7 @@ import {
   type DetailCardValue,
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
+import { cameFromAV, forgetEditOrigin } from "@/components/edit-return";
 import { NO_FREE_REFERENCE, useAddedValues } from "@/components/av-store";
 import { useScenario, useScenarioForm, useScenarioSetup } from "@/components/scenario";
 import { TODAY } from "@/data/gantt";
@@ -39,10 +39,7 @@ import { useNotifications } from "@/components/notification-store";
 import { CYCLE_OPTIONS, DOMAINS, VIEWER, isInitiator, stageLabel, type AddedValue, type AVDomain, type Duplicate } from "@/data/added-values";
 import {
   availabilityClash,
-  DOMAIN_NAMES,
-  DOMAIN_TAG_SETS,
   EMPTY_DRAFT,
-  GLOBAL_TAGS,
   SUBMIT_FLOW,
   SUBMIT_PEOPLE,
   tagOptions,
@@ -62,10 +59,6 @@ interface Problems {
   details: Partial<Record<DetailCardField, string>>;
   /** One "Missing Input" toast each, in the page's order. */
   toasts: string[];
-  /** Busy assignees: a warning, never a block. */
-  warnings: string[];
-  /** Assignees away during the AV's dates: a block. Shown as a banner, because DetailCard draws no error on its people fields. */
-  unavailable?: string;
   /** A copy for another domain with no title (AV · 08), by domain value. */
   copies: Record<string, string>;
 }
@@ -74,9 +67,22 @@ const EMPTY_FIELD = "You need to fill in this field before submitting the Added 
 const PAIR = "Problem and solution should be filled together";
 const blank = (s: string) => !s.trim();
 const range = (from: string, to: string) => `${formatDate(from)}–${formatDate(to)}`;
+/** A picked person as the draft keeps them: their availability is worked out from the dates, never stored. */
+const withoutAvailability = <P extends { availability?: unknown; until?: unknown }>(person: P) => {
+  const kept = { ...person };
+  delete kept.availability;
+  delete kept.until;
+  return kept;
+};
+/** When someone away until `to` (ISO) is free again: the day after, as the card's "until" ("Nov 21"). */
+const freeFrom = (to: string) => {
+  const day = new Date(`${to}T00:00:00`);
+  day.setDate(day.getDate() + 1);
+  return day.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
 
-function check(d: SubmitDraft, avDomain: AVDomain): Problems {
-  const p: Problems = { problems: {}, solutions: {}, deliverables: {}, details: {}, toasts: [], warnings: [], copies: {} };
+function check(d: SubmitDraft): Problems {
+  const p: Problems = { problems: {}, solutions: {}, deliverables: {}, details: {}, toasts: [], copies: {} };
   if (blank(d.title)) {
     p.title = EMPTY_FIELD;
     p.toasts.push("Title Field can't be empty, please fill it in before submitting.");
@@ -119,19 +125,10 @@ function check(d: SubmitDraft, avDomain: AVDomain): Problems {
     p.toasts.push("Projects Field can't be empty, please fill it in before submitting.");
   }
 
-  /* The tag rule: one global tag and at least one of the AV's own domain. */
-  const domainName = DOMAIN_NAMES[avDomain];
-  const tags = d.details.tags ?? [];
-  if (tags.length === 0) {
+  /* The tag rule (decided 26 Nov 2026): at least one tag, of any kind, global or the domain's (Figma's message). */
+  if (!d.details.tags?.length) {
     p.details.tags = "Please select at least one tag before submitting";
     p.toasts.push("Please select at least one Tag before submitting");
-  } else {
-    const global = tags.some((t) => (GLOBAL_TAGS as readonly string[]).includes(t));
-    const domain = tags.some((t) => DOMAIN_TAG_SETS[avDomain].includes(t));
-    if (!global || !domain) {
-      p.details.tags = `Add ${!global ? "one global tag" : ""}${!global && !domain ? " and " : ""}${!domain ? `at least one ${domainName} tag` : ""} before submitting`;
-      p.toasts.push(`Tags need one global tag and at least one ${domainName} tag before submitting`);
-    }
   }
 
   /* An assignee away during the AV's dates blocks it; a busy one only warns. */
@@ -139,12 +136,9 @@ function check(d: SubmitDraft, avDomain: AVDomain): Problems {
   for (const a of d.details.assignees ?? []) {
     const clash = availabilityClash(a.name, d.details.startDate, d.details.dueDate);
     if (clash?.state === "unavailable") away.push(`${a.name} is ${clash.why} ${range(clash.from, clash.to)}`);
-    else if (clash?.state === "busy") p.warnings.push(`${a.name} is ${clash.why} ${range(clash.from, clash.to)}, during this Added Value's dates.`);
   }
-  if (away.length) {
-    p.unavailable = `${away.join("; ")}, during this Added Value's dates. Change the dates or remove them.`;
-    p.toasts.push(`Assignee unavailable: ${away.join("; ")}.`);
-  }
+  /* The card marks the chip (red edge, a line under it); refusing the Submit is the page's, with its toast. */
+  if (away.length) p.toasts.push(`Assignee unavailable: ${away.join("; ")}.`);
   return p;
 }
 
@@ -156,7 +150,7 @@ const DRAFT_TITLE = "You need to fill in this field before saving the Added Valu
    (24 Nov 2026). An AV past Draft keeps needing its title (it isn't a draft, so it can't be named one), and an
    initiated domain's copy still needs its own (`withCopies`). */
 function checkDraft(d: SubmitDraft, isDraft: boolean): Problems {
-  const p: Problems = { problems: {}, solutions: {}, deliverables: {}, details: {}, toasts: [], warnings: [], copies: {} };
+  const p: Problems = { problems: {}, solutions: {}, deliverables: {}, details: {}, toasts: [], copies: {} };
   if (!isDraft && blank(d.title)) {
     p.title = DRAFT_TITLE;
     p.toasts.push("Title Field can't be empty, please fill it in before saving.");
@@ -309,7 +303,7 @@ function Form({ editing }: { editing?: AddedValue }) {
     },
     [initiate, copies],
   );
-  const problems = React.useMemo(() => withCopies(check(draft, avDomain), "submitting"), [draft, avDomain, withCopies]);
+  const problems = React.useMemo(() => withCopies(check(draft), "submitting"), [draft, withCopies]);
   const draftProblems = React.useMemo(() => withCopies(checkDraft(draft, !editing || editing.status === "Draft"), "saving a draft"), [draft, editing, withCopies]);
   /* Each blocked press, once its inline errors are on screen: bring the first
      one into view and put the cursor in it (Figma: "scroll to the highest
@@ -320,6 +314,24 @@ function Form({ editing }: { editing?: AddedValue }) {
     if (blockedPresses) focusFirstInvalid(document.querySelector("main"));
   }, [blockedPresses]);
   const shown = attempted === "submit" ? problems : attempted === "draft" ? draftProblems : undefined;
+  /* Who's free over the AV's dates (DS DetailCard's Assignee availability): a busy or unavailable assignee's chip
+     takes an amber or red edge and says so under it, and the list groups people by it. Development only, as
+     capacity planning is (decided 13 Nov 2026). With no dates yet, the card says availability is unknown. */
+  const { startDate, dueDate } = draft.details;
+  const withAvailability = React.useCallback(
+    <P extends { name: string }>(person: P) => {
+      if (avDomain !== "development") return person;
+      const clash = availabilityClash(person.name, startDate, dueDate);
+      return clash ? { ...person, availability: clash.state, until: freeFrom(clash.to) } : { ...person, availability: "available" as const };
+    },
+    [avDomain, startDate, dueDate],
+  );
+  /* On the list to pick from, and on the picked chips: the card marks a chip from its own person. */
+  const people = React.useMemo(() => SUBMIT_PEOPLE.map(withAvailability), [withAvailability]);
+  const details = React.useMemo(
+    () => ({ ...draft.details, assignees: draft.details.assignees?.map(withAvailability) }),
+    [draft.details, withAvailability],
+  );
 
   const setItem = (key: ListKey, i: number, value: string) =>
     setDraft((d) => ({ ...d, [key]: d[key].map((v, j) => (j === i ? value : v)) }));
@@ -450,8 +462,13 @@ function Form({ editing }: { editing?: AddedValue }) {
   };
   /* AV · 04: an edit that keeps the AV where it is, or moves it back, closes
      the form and opens the AV's page (inferred: Figma draws no landing page). */
+  /* Back to the AV's page: the one behind this page when the AV page opened it, so the history doesn't keep the
+     edit page between them (its back arrow would come back here); otherwise in this page's place. */
+  const [openedFromAV] = React.useState(() => !!editing && cameFromAV(editing.id));
+  React.useEffect(() => forgetEditOrigin, []);
+  const returnToAV = (id: string) => (openedFromAV ? router.back() : router.replace(`/added-values/${id}`));
   const backToAV = (av: Pick<AddedValue, "id" | "ref">, title: string, description: string) => {
-    router.push(`/added-values/${av.id}`);
+    returnToAV(av.id);
     toast({ tone: "success", title, description });
   };
 
@@ -591,7 +608,7 @@ function Form({ editing }: { editing?: AddedValue }) {
     <div data-flow-step="back">
       <PageTitle
         title={`Edit ${editing.ref}`}
-        onBack={() => leave(() => router.push(`/added-values/${editing.id}`))}
+        onBack={() => leave(() => returnToAV(editing.id))}
         backLabel={`Back to ${editing.ref}`}
       />
     </div>
@@ -673,29 +690,19 @@ function Form({ editing }: { editing?: AddedValue }) {
           ))}
         </div>
         <div className="flex flex-col gap-4">
-          {shown?.unavailable && (
-            <div data-flow-step="assignee-unavailable">
-              <Banner tone="critical" title="Assignee unavailable">
-                {shown.unavailable}
-              </Banner>
-            </div>
-          )}
-          {problems.warnings.length > 0 && (
-            <div data-flow-step="assignee-busy" className="flex flex-col gap-4">
-              {problems.warnings.map((w) => (
-                <Banner key={w} tone="warning" title="Assignee busy">
-                  {w} You can still submit.
-                </Banner>
-              ))}
-            </div>
-          )}
           <div data-flow-step="details">
             <DetailCard
               type="editing"
-              value={draft.details}
-              onChange={(details: DetailCardValue) => setDraft((d) => ({ ...d, details }))}
+              value={details}
+              /* The availability is worked out each time from the dates: it isn't kept on the draft. */
+              onChange={(next: DetailCardValue) =>
+                setDraft((d) => ({
+                  ...d,
+                  details: { ...next, assignees: next.assignees?.map(withoutAvailability) },
+                }))
+              }
               options={{
-                people: SUBMIT_PEOPLE,
+                people,
                 cycles: CYCLE_OPTIONS,
                 projects: ["VCP"],
                 categories: ["Improvement", "New feature", "Fix"],
