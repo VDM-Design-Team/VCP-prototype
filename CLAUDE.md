@@ -76,8 +76,12 @@ task; a scenario is one set of conditions inside it.
   them, your own entries count once they all hold something), a page to open
   has `open` (Next opens it), and a drag step has `drop` (row, section). A step
   can press `first` what it takes to reach its fields (`field:Date`, then the
-  picker's days). With a dialog or menu open, targets and fields are looked for
-  in it first. Write such a step as "Type a title, or press Next".
+  picker's days), skipping a button that's already open. Next's own click
+  closes a popover (the bell's, a palette), so a step inside one presses its
+  trigger `first`. With a dialog or menu open, targets and fields are looked for
+  in it first; `button:<Text>[n]` picks the nth of a name ("Add reaction[2]").
+  `enter` also types into a comment box, and gives a file field a stand-in file
+  of the name it's given. Write such a step as "Type a title, or press Next".
   A step's `path` is exact, or
   uses `*` (one segment in the middle, the rest at the end). A scenario that needs
   sample AVs changed lists them in `avs` (matched by id). When the user's own
