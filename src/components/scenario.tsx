@@ -195,7 +195,9 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         /* Entries in a dialog or on a list (a reason, ticked rows) aren't sample data either: Back goes on to the step
            that asks for them, and Next enters them again. */
         const redone = (via: WalkedStep["via"]) => via === "action" || via === "enter";
-        while (to > 1 && redone(trail[to - 1].via) && trail[to - 1].path === trail[to - 2].path) to -= 1;
+        /* A branch picked on a press's result ("Which reason?" in the reject dialog) belongs to that press too. */
+        const branched = (i: number) => trail[i].via === "next" && !!active.scenario.steps[trail[i - 1].index]?.options;
+        while (to > 1 && (redone(trail[to - 1].via) || branched(to - 1)) && trail[to - 1].path === trail[to - 2].path) to -= 1;
         const kept = trail.slice(0, to);
         const landing = kept[kept.length - 1];
         /* The form isn't sample data: it's rebuilt from the scenario's setup. So what the walk did on this page
@@ -353,12 +355,14 @@ const spokenText = (el: HTMLElement) => {
 
 /** See `ScenarioStep.target`: `step:<name>`, `group:<Label>`, `button:<Text>` or `link:<href>`. */
 /**
- * Where to look: the topmost open dialog first, then the whole page. A dialog over a dialog (the review's reason
- * over the review) or over the page can share a button's words ("Reject"), and the one in front is the one meant.
+ * Where to look: what's in front first (the topmost open dialog, then an open menu, its submenu before it), then
+ * the whole page. A dialog over a dialog (the review's reason over the review), a menu over the page, can share a
+ * button's words ("Reject", "Backlog"), and the one in front is the one meant.
  */
 function scopes(): ParentNode[] {
   const dialogs = [...document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]')];
-  return dialogs.length ? [dialogs[dialogs.length - 1], document] : [document];
+  const menus = [...document.querySelectorAll<HTMLElement>('[role="menu"]')].reverse();
+  return [...dialogs.slice(-1), ...menus, document];
 }
 
 function findTarget(target: string): HTMLElement | null {
@@ -381,6 +385,7 @@ function findTarget(target: string): HTMLElement | null {
   }
   if (kind === "group")
     return [...document.querySelectorAll<HTMLElement>('[role="group"]')].find((g) => nameOf(g).startsWith(value)) ?? null;
+  if (kind === "field") return findField(value);
   if (kind === "link")
     return [...document.querySelectorAll<HTMLElement>("a")].find((a) => outsideBar(a) && a.getAttribute("href") === value) ?? null;
   return null;
@@ -394,6 +399,7 @@ function pressable(target: string): HTMLElement | null {
 /* ---------- Entering fields (`ScenarioStep.enter`) ---------- */
 
 type Field = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | HTMLElement;
+type Entry = string | boolean | readonly string[];
 
 /** A field's names: its `aria-label`, its labels' words and its placeholder. */
 const fieldNames = (el: HTMLElement) =>
@@ -407,15 +413,18 @@ const fieldNames = (el: HTMLElement) =>
     .filter((n): n is string => !!n);
 
 /**
- * The field `name` names (its start is enough): a text field, a `<select>`, a checkbox or a combobox. Looked for
- * in the topmost dialog, then in the step's own part of the screen (a copy's "Title", not the AV's), then anywhere.
+ * The field `name` names (its start is enough): a text field, a `<select>`, a checkbox, or a dropdown button (a
+ * combobox, or a button that opens a list of options). Looked for in the topmost dialog, then in the step's own
+ * part of the screen (a copy's "Title", not the AV's), then anywhere.
  */
 function findField(name: string, within?: HTMLElement | null): Field | null {
   const roots = scopes();
   if (within) roots.splice(roots.length - 1, 0, within);
   for (const root of roots) {
     const found = [
-      ...root.querySelectorAll<HTMLElement>('input:not([type="hidden"]):not([type="file"]), textarea, select, button[role="combobox"]'),
+      ...root.querySelectorAll<HTMLElement>(
+        'input:not([type="hidden"]):not([type="file"]), textarea, select, button[role="combobox"], button[aria-haspopup="listbox"]',
+      ),
     ].find((el) => !el.closest("[data-scenario-bar]") && fieldNames(el).some((n) => n.startsWith(name)));
     if (found) return found;
   }
@@ -423,17 +432,36 @@ function findField(name: string, within?: HTMLElement | null): Field | null {
 }
 
 const isCheck = (el: Field): el is HTMLInputElement => el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio");
+const isText = (el: Field): el is HTMLInputElement | HTMLTextAreaElement => el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
+const wordsOf = (value: Entry) => (Array.isArray(value) ? value : [String(value)]) as readonly string[];
+/** A dropdown button's options: in its list, or its lists when they're grouped (`aria-controls` names each). */
+const optionsOf = (el: HTMLElement) =>
+  (el.getAttribute("aria-controls") ?? "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .flatMap((id) => [...(document.getElementById(id)?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])]);
+const says = (option: HTMLElement, words: string) => (spokenText(option) ?? "").includes(words);
+const selectText = (el: HTMLSelectElement) => el.options[el.selectedIndex]?.text.trim() ?? "";
 
 /**
- * Whether the field holds something: a checkbox as asked, a dropdown with a choice, a text field with text. An
- * empty value asks for the field to be cleared ("clear the copy's title"), so it holds when it's empty.
+ * Whether the field holds what the step asks. `exact` is Next's question: a checkbox as asked, a dropdown on the
+ * asked option(s). Without it, the reviewer's: anything chosen counts (they may pick another reason). Text counts
+ * once there is some either way, so Next never types over what the reviewer wrote. An empty value asks for the
+ * field to be cleared ("clear the copy's title"), so it holds when it's empty.
  */
-function holdsEntry(el: Field, value: string | boolean): boolean {
+function holdsEntry(el: Field, value: Entry, exact: boolean, before?: string): boolean {
   if (isCheck(el)) return el.checked === value;
-  if (value === "" && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return el.value === "";
-  if (el instanceof HTMLSelectElement || el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return el.value.trim() !== "";
-  /* A combobox shows its choice as its text; empty, it shows its placeholder (the field's own name). */
+  if (value === "" && isText(el)) return el.value === "";
+  /* Text the field held when the step began (an edit's old name) is the page's, not the reviewer's: Next types over it. */
+  if (isText(el)) return el.value.trim() !== "" && !(exact && before !== undefined && el.value === before && el.value !== value);
+  if (el instanceof HTMLSelectElement) return exact ? selectText(el).startsWith(String(value)) : el.value !== "";
+  const options = optionsOf(el);
+  const chosen = options.filter((o) => o.getAttribute("aria-selected") === "true");
+  /* The reviewer's own picks count once there are as many as the step asks for ("pick VCP and NT"). */
+  if (options.length) return exact ? wordsOf(value).every((w) => chosen.some((o) => says(o, w))) : chosen.length >= wordsOf(value).length;
+  /* No list on the page while it's shut: the button shows its choice as its text, or its placeholder. */
   const shown = spokenText(el) ?? "";
+  if (exact) return wordsOf(value).every((w) => shown.includes(w));
   return shown !== "" && !fieldNames(el).includes(shown) && !/^Select\b/.test(shown);
 }
 
@@ -446,45 +474,65 @@ function setNative(el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElemen
 
 const pause = (ms: number) => new Promise((done) => window.setTimeout(done, ms));
 
-/** Enter one value: tick or untick, pick an option by its words, or type the text. */
-async function enterValue(el: Field, value: string | boolean) {
+/** Enter one value: tick or untick, pick an option (or several) by its words, or type the text. */
+async function enterValue(el: Field, value: Entry) {
   if (isCheck(el)) {
     if (el.checked !== value) el.click();
     return;
   }
-  const words = String(value);
   if (el instanceof HTMLSelectElement) {
-    const option = [...el.options].find((o) => o.text.trim().startsWith(words));
+    const words = String(value);
+    const options = [...el.options];
+    const option = options.find((o) => o.text.trim() === words) ?? options.find((o) => o.text.trim().startsWith(words));
     if (option) setNative(el, option.value, "change");
     return;
   }
-  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
-    setNative(el, words, "input");
+  if (isText(el)) {
+    setNative(el, String(value), "input");
     return;
   }
-  /* A combobox (SearchSelect): open it, then press the option that says it. */
-  el.click();
-  await pause(150);
-  const list = document.getElementById(el.getAttribute("aria-controls") ?? "") ?? document;
-  const option = [...list.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => (spokenText(o) ?? "").includes(words));
-  option?.click();
+  /* A dropdown button: press each option that isn't chosen yet, opening the list first if its options aren't on
+     the page. Some lists choose on the press (mouse-down) rather than the click, so that follows if the click
+     didn't choose it. */
+  if (!optionsOf(el).length) {
+    el.click();
+    await pause(150);
+  }
+  for (const words of wordsOf(value)) {
+    const option = optionsOf(el).find((o) => says(o, words));
+    if (!option || option.getAttribute("aria-selected") === "true") continue;
+    option.click();
+    await pause(60);
+    if (option.getAttribute("aria-selected") !== "true") option.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    await pause(100);
+  }
 }
 
 /** The step's own part of the screen, when its target is a `step:` element. */
 const stepArea = (target?: string) => (target?.startsWith("step:") ? findTarget(target) : null);
 
-/** Every field the step names holds something. */
-const entered = (enter: Record<string, string | boolean>, target?: string) =>
+/** Every field the step names holds something (`exact`: what the step asks). */
+const entered = (enter: Record<string, Entry>, target?: string, exact = false) =>
   Object.entries(enter).every(([name, value]) => {
     const el = findField(name, stepArea(target));
-    return !!el && holdsEntry(el, value);
+    return !!el && holdsEntry(el, value, exact);
   });
 
+/** The text fields' words when the current step began, so Next can tell the page's text from the reviewer's. */
+let textAtStart = new Map<string, string>();
+const noteTextAtStart = (enter: Record<string, Entry> | undefined, target?: string) => {
+  textAtStart = new Map();
+  for (const name of Object.keys(enter ?? {})) {
+    const el = findField(name, stepArea(target));
+    if (el && isText(el)) textAtStart.set(name, el.value);
+  }
+};
+
 /** Next's part: enter what isn't entered yet, in order, each after the page has drawn the one before. */
-async function enterAll(enter: Record<string, string | boolean>, target?: string) {
+async function enterAll(enter: Record<string, Entry>, target?: string) {
   for (const [name, value] of Object.entries(enter)) {
     const el = findField(name, stepArea(target));
-    if (el && !holdsEntry(el, value)) await enterValue(el, value);
+    if (el && !holdsEntry(el, value, true, textAtStart.get(name))) await enterValue(el, value);
     await pause(60);
   }
 }
@@ -610,7 +658,7 @@ function FillWatcher({ fill, values, onDone }: { fill: StepFill; values: FormVal
  * Moves the walk on when the user enters an `enter` step's fields themselves: once they all hold something and
  * the user has stopped typing for a moment. A step whose fields start filled waits for Next.
  */
-function EnterWatcher({ enter, target, onDone }: { enter: Record<string, string | boolean>; target?: string; onDone: () => void }) {
+function EnterWatcher({ enter, target, onDone }: { enter: Record<string, Entry>; target?: string; onDone: () => void }) {
   const done = React.useRef(onDone);
   React.useEffect(() => {
     done.current = onDone;
@@ -652,6 +700,12 @@ export function ScenarioBar() {
   const pathname = usePathname();
   const { active, view, trail, next, back, start, clear, formValues, fillForm } = useScenario();
   const headingId = React.useId();
+  /* What the step's text fields hold as it begins (once the page has drawn it), for Next's `enter`. */
+  const current = active?.scenario.steps[trail[trail.length - 1].index];
+  React.useEffect(() => {
+    const t = window.setTimeout(() => noteTextAtStart(current?.enter, current?.target), 50);
+    return () => window.clearTimeout(t);
+  }, [current, pathname]);
   if (!active || pathname.startsWith("/flows")) return null;
   const { flow, scenario } = active;
   const key = scenario.id.slice(flow.id.length + 1);
@@ -701,9 +755,15 @@ export function ScenarioBar() {
       router.push(step.open);
       return;
     }
-    if (step?.enter && here) {
-      const { enter, action, target } = step;
-      void enterAll(enter, target).then(() => {
+    if ((step?.enter || step?.first) && here) {
+      const { enter, first, action, target } = step;
+      void (async () => {
+        for (const t of first ?? []) {
+          pressable(t)?.click();
+          await pause(150);
+        }
+        if (enter) await enterAll(enter, target);
+      })().then(() => {
         /* With a press too ("pick a reason and press Reject"), the press moves the walk on, as the reviewer's would. */
         if (action && target) window.setTimeout(() => pressable(target)?.click(), 60);
         else next(undefined, undefined, "enter");
@@ -744,7 +804,7 @@ export function ScenarioBar() {
       {step?.fill && here && formValues && (
         <FillWatcher key={index} fill={step.fill} values={formValues} onDone={() => next(undefined, index, "fill")} />
       )}
-      {step?.enter && !step.action && here && (
+      {step?.enter && !step.action && !step.first && here && (
         <EnterWatcher key={index} enter={step.enter} target={step.target} onDone={() => next(undefined, index, "enter")} />
       )}
       <aside

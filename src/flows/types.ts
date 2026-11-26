@@ -18,7 +18,8 @@ export type TestingStatus = "Not tested" | "Tested";
  * - `group:<Label>`: a field group named by its label (DetailCard's "Tags", "Assignee");
  * - `button:<Text>`: a button by its words ("Submit"), or an icon-only one by its name; a trailing `*`
  *   matches the start ("Part 2:*"); in an open dialog, the dialog's own buttons come first;
- * - `link:<href>`: a link by where it goes ("/added-values/vcp-1104", a Gantt bar).
+ * - `link:<href>`: a link by where it goes ("/added-values/vcp-1104", a Gantt bar);
+ * - `field:<Name>`: a field by its label or name, as `enter` finds it ("Date", to open its picker).
  * Without a target, the step is text only.
  */
 export interface ScenarioStep {
@@ -59,13 +60,21 @@ export interface ScenarioStep {
   /**
    * The step asks the user to enter something in fields that aren't the AV form: a dialog's reason, a demo
    * link, a part's title, a row's checkbox, an assignee. Each key names a field by its label, `aria-label` or
-   * placeholder (its start is enough), looked for in the topmost open dialog first. Each value is the text for
-   * a text field, the option's words for a dropdown (`<select>` or a combobox), or true / false for a checkbox.
+   * placeholder (its start is enough), looked for in the topmost open dialog first, then in the step's own
+   * `step:` part of the screen. Each value is the text for a text field ("" clears it), the option's words for a
+   * dropdown (`<select>`, a combobox, a button that opens a list), a list of words for a multi-select, or true /
+   * false for a checkbox.
    * Next enters them, leaving a field that already holds something alone; entering them yourself moves the walk
    * on once they all hold something and you've stopped typing. With `action` too, Next then presses the target
    * ("pick a reason and press Reject"), and your own press moves the walk on.
    */
-  enter?: Record<string, string | boolean>;
+  enter?: Record<string, string | boolean | readonly string[]>;
+  /**
+   * Targets Next presses first, in order, before the step's entries and its own press: what it takes to reach
+   * them (open a date picker, press its start and end days). Doing it yourself and pressing the step's target
+   * moves the walk on as usual.
+   */
+  first?: readonly string[];
   /**
    * The step asks the user to open another page ("open VCP-1203, then Edit").
    * Next opens it for them; opening it themselves moves the walk on too (the
