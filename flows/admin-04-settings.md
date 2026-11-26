@@ -81,4 +81,4 @@ Keep each domain's people, lists and teams right (an admin), and everyone's acco
 - **Add Manual asks for a name and one or more files**, with the shared attachments (DS #364); every user in the domain can read it. The dialog is DS `AddManualModal` (#367).
 
 ## Unresolved questions
-None.
+- **Add Manual** (for creativedesignlead): the dialog (a name and one or more files) and who sees the manuals come from Figma `1046:242262` and the 10 Nov 2026 decisions. Is this how manuals are added?

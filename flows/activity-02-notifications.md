@@ -48,4 +48,4 @@ Know what happened to your Added Values and comments, and act on it without hunt
 - **An empty popover** keeps the DS's "No notifications" state.
 
 ## Unresolved questions
-- None for this flow.
+- **When the bell's dot goes** (for creativedesignlead and the dev team). The prototype keeps it until nothing is unread, and opening the popover doesn't read anything (decided 9 Nov 2026). The implemented app clears it when the popover opens, and it comes back on refresh. In a competitive check, 5 of 8 products keep the dot until everything is read ([the comparison](https://docs.google.com/spreadsheets/d/1RuLHM97ITPNrt7b6E9Rc--OaFubcks735OHHUVPZdGA/edit?gid=0#gid=0)). Proposed: the dot shows while the popover lists something unread, so a very old unread notification that the popover no longer shows doesn't keep it on.
