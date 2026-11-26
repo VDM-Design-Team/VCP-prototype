@@ -14,15 +14,16 @@ Keep an Added Value that isn't finished, to finish and submit it later.
 - Starts from **Save as draft** on **Added Value Creation** (`/added-values/new`), the same page as AV · 01 Submit. Anything may be filled in, or nothing.
 
 ## Main steps and decision points
-1. Fill in whatever is ready. Only the **Title** matters here *(inferred: a draft needs a name to be found on Drafts)*.
-2. Press **Save as draft**. One check runs: is there a Title?
-3. Yes → the AV is saved in **Draft** with the next free reference (VCP-1211), the creation page closes and **Drafts** opens, with a success toast ("VCP-1211 saved as a draft", "Only you can see it until it's submitted.", or "Only you and Marvin Ode…" when it has more initiators) whose **Open it** shows the draft *(inferred: Figma draws no landing page; Drafts mirrors Submit's "close and go back")*.
+1. Fill in whatever is ready, or nothing.
+2. Press **Save as draft**. Nothing is checked. With no Title, it's saved as **"Draft - Nov 24, 2026 6:19 PM"** (the date and time it's saved), as the live product does *(24 Nov 2026, for creativedesignlead to confirm; it replaces the prototype's inferred "a draft needs a Title")*. Submit still needs a Title (AV · 01).
+3. The AV is saved in **Draft** with the next free reference (VCP-1211), the creation page closes and **Drafts** opens, with a success toast ("VCP-1211 saved as a draft", "Only you can see it until it's submitted.", or "Only you and Marvin Ode…" when it has more initiators) whose **Open it** shows the draft *(inferred: Figma draws no landing page; Drafts mirrors Submit's "close and go back")*.
 4. The draft is listed on **Drafts** (its initiator's own drafts only) and opens on its AV page: status Draft, no status buttons, the ⋮ menu with Move to Backlog, Edit and Delete (Figma `1331:26533`). Its Status History has one entry, Initial Creation → Draft.
 
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
 |---|---|---|
-| No Title | A critical **"Missing input"** toast ("Title Field can't be empty, please fill it in before saving a draft.", ✕, times out since DS 2.0.0 while the field error stays, `announce: false`) and "You need to fill in this field before saving the Added Value as a draft" under Title. The page scrolls to Title and focuses it | Type a title: the error clears at once. Save again |
+| No Title | Nothing blocks: the draft is saved as "Draft - *date time*" | Rename it later in Edit (AV · 04) |
+| A domain ticked in "Initiate to other Domains" whose copy has no title | A "Missing input" toast and an error under that copy's Title | Type the copy's title |
 | Anything Submit would block (empty fields, an unpaired problem, the tag rule, an assignee away) | Nothing: **Submit's checks don't run** on a draft | Not needed. They run when the draft is submitted (AV · 04) |
 | Submit was pressed first and blocked | Save as draft clears Submit's toasts and errors, then saves | — |
 
@@ -31,7 +32,7 @@ Keep an Added Value that isn't finished, to finish and submit it later.
 - **Next:** Edit (AV · 04) to finish and submit it; Move to Backlog (AV · 05); Delete. Leaving without saving is Discard (AV · 02).
 
 ## Unresolved questions
-- **Is the Title the only thing a draft needs?** Figma says nothing; the prototype checks the Title only. Could a draft save with nothing at all (and get a name like "Untitled")?
+- **A copy for another domain still needs its own title** to save as a draft (AV · 08). Should it get an automatic title too?
 - **Where does a saved draft land?** The prototype opens Drafts, with an Open it toast. Staying on the page, or opening the draft's page, are the alternatives.
 - **What the draft's details hold when left blank.** `AddedValue` always has an Urgency and Type, so a draft saved without them shows Normal and Type 3. Should a draft show them empty?
 - **Can an admin see other people's drafts?** The prototype says no: Manage leaves drafts out. But an admin's "Move to Draft" (DetailCardMenu) sends someone's AV back to Draft, after which only its initiator can find it.

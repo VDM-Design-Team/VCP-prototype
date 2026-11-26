@@ -1,5 +1,5 @@
 import { VIEWER } from "@/data/added-values";
-import { COMPLETE_DRAFT, EMPTY_DRAFT, type SubmitDraft } from "./av-01-submit";
+import { EMPTY_DRAFT, type SubmitDraft } from "./av-01-submit";
 import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
 
 /**
@@ -43,11 +43,16 @@ const base = {
   role: "user",
 } as const;
 
-/** Started, not finished: a title and one problem. */
+/** Started, not finished: one problem, no title, no tags, and Lena Novak (on leave 16–20 Nov) assigned for 9–20 Nov. */
 const PART_WAY: SubmitDraft = {
   ...EMPTY_DRAFT,
-  title: "Bulk-edit due dates on the Gantt chart",
   problems: ["Moving a cycle's due dates means opening every AV one by one."],
+  details: {
+    ...EMPTY_DRAFT.details,
+    assignees: [{ name: "Lena Novak", description: "Assignee", points: 5 }],
+    startDate: "2026-11-09",
+    dueDate: "2026-11-20",
+  },
 };
 
 export const DRAFT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
@@ -56,131 +61,32 @@ export const DRAFT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     id: "av-03-save-as-draft.part-way",
     steps: [
       {
-        text: "Only the Title and one problem are filled in. The rest can wait.",
+        text: "Only one problem is filled in: no title yet. The rest can wait.",
         target: "step:form",
       },
-      pressSave("Press Save as draft. Only the Title is checked."),
-      onDrafts,
-      openIt,
-      onDraftPage,
-    ],
-    name: "Save it part-way",
-    demonstrates:
-      "A half-filled AV saves as a Draft, and waits on the Drafts page.",
-    conditions:
-      "Eve (User) on the creation page with a Title and one problem, nothing else.",
-    simulated:
-      "Saving always succeeds. The draft gets the next free reference.",
-    expected:
-      "The creation page closes, Drafts opens with the draft listed, and a toast whose Open it shows the draft.",
-    task: "You've started this Added Value but can't finish it today. Keep it for later.",
-    setup: PART_WAY,
-  },
-  {
-    ...base,
-    id: "av-03-save-as-draft.no-title",
-    steps: [
-      pressSave("The page is blank. Press Save as draft."),
       {
-        text: "Blocked: a draft needs a Title, so it can be found on Drafts. One toast, and an error under Title.",
-        target: "step:title",
-      },
-      {
-        text: "Type a title: the error clears as you type.",
-        target: "step:title",
-      },
-      pressSave("Press Save as draft again."),
-      onDrafts,
-    ],
-    name: "No title",
-    demonstrates: "The Title is the one thing a draft needs.",
-    conditions: "Eve (User) on a blank creation page.",
-    simulated: "Nothing is sent: the check runs in the page.",
-    expected:
-      'A "Missing input" toast and an error under Title. Typing a title clears it; the draft then saves.',
-    task: "Keep this Added Value as a draft for later.",
-    setup: EMPTY_DRAFT,
-  },
-  {
-    ...base,
-    id: "av-03-save-as-draft.skips-submit-checks",
-    steps: [
-      {
-        text: "This one would fail Submit: two problems with one solution, no tags…",
-        target: "step:problems",
-      },
-      {
-        text: "…and Lena Novak assigned while she's on leave 16/11/2026–20/11/2026.",
+        text: "No tags, and Lena Novak assigned while she's on leave 16/11/2026–20/11/2026. Both would block Submit.",
         target: "group:Assignee",
       },
-      pressSave("Press Save as draft. Submit's checks don't run."),
+      pressSave("Press Save as draft. Nothing is checked: Submit's checks don't run, and a draft doesn't need a title."),
       onDrafts,
       openIt,
       {
         ...onDraftPage,
-        text: "Everything was kept as it was, gaps included. Submit's checks run when it's submitted, from Edit (AV · 04).",
+        text: "It's called \"Draft - \" and the date and time it was saved, and everything else was kept as it was, gaps included. Submit's checks (a title among them) run when it's submitted, from Edit (AV · 04). The ⋮ menu has Edit, Move to Backlog (AV · 05) and Delete.",
       },
     ],
-    name: "Would fail Submit",
+    name: "Save as draft",
     demonstrates:
-      "Save as draft skips Submit's checks: unpaired problems, missing tags and an away assignee all save.",
+      "A half-filled AV saves as a Draft, and waits on the Drafts page. Nothing is checked: with no title it's named \"Draft - <date and time>\", and empty fields, missing tags and an away assignee all save.",
     conditions:
-      "Eve (User), a draft with an unpaired problem, no tags, and Lena Novak (on leave 16–20 Nov) assigned for 9–20 Nov.",
+      "Eve (User) on the creation page with one problem and nothing else: no title, no tags, and Lena Novak (on leave 16–20 Nov) assigned for 9–20 Nov.",
     simulated:
-      "Saving always succeeds. Lena's leave comes from the sample availability.",
+      "Saving always succeeds. The draft gets the next free reference. Lena's leave comes from the sample availability.",
     expected:
-      "No errors and no toasts but the success one: the draft saves as it is.",
-    task: "Keep this Added Value as a draft for later.",
-    setup: {
-      ...COMPLETE_DRAFT,
-      problems: [
-        ...COMPLETE_DRAFT.problems,
-        "Focus jumps to the top of the page after sorting a column.",
-      ],
-      details: {
-        ...COMPLETE_DRAFT.details,
-        tags: [],
-        assignees: [{ name: "Lena Novak", description: "Assignee", points: 5 }],
-      },
-    },
-  },
-  {
-    ...base,
-    id: "av-03-save-as-draft.after-blocked-submit",
-    steps: [
-      { text: "Desired Outcome is empty.", target: "step:desired-outcome" },
-      { text: "Press Submit.", target: "button:Submit", action: true },
-      {
-        text: "Blocked: a toast and an error under Desired Outcome. What now?",
-        target: "step:desired-outcome",
-        options: [
-          { label: "Save it as a draft instead", goto: "save" },
-          { label: "Fill it in and submit", goto: "fill" },
-        ],
-      },
-      {
-        id: "fill",
-        text: "Filling it in and submitting is AV · 01 Submit's \"One required field empty\". Here, go on and save it as a draft instead.",
-        target: "step:desired-outcome",
-        next: "save",
-      },
-      {
-        id: "save",
-        ...pressSave(
-          "Press Save as draft: Submit's toast and errors go, and the draft saves.",
-        ),
-      },
-      onDrafts,
-    ],
-    name: "Submit blocked, save it for later",
-    demonstrates:
-      "After a blocked Submit, Save as draft still works: the errors and toasts clear.",
-    conditions: "Eve (User), a complete draft with Desired Outcome left empty.",
-    simulated: "Nothing is sent until the save, which always succeeds.",
-    expected:
-      "Submit is blocked as in AV · 01. Save as draft then clears its toast and errors, and the draft saves to Drafts.",
-    task: "Submit this Added Value. If you can't, keep it for later.",
-    setup: { ...COMPLETE_DRAFT, desiredOutcome: "" },
+      "No errors and no toasts but the success one. The creation page closes, Drafts opens with the draft listed as \"Draft - <date and time>\", and a toast whose Open it shows the draft, kept as it was.",
+    task: "You've started this Added Value but can't finish it today. Keep it for later.",
+    setup: PART_WAY,
   },
 ];
 

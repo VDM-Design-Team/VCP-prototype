@@ -23,9 +23,10 @@ export const BACKLOG_SCENARIOS: readonly ScenarioDef[] = [
     steps: [
       menu("VCP-1199 is Eve's draft. On a draft, the ⋮ menu has Move to Backlog.", "vcp-1199"),
       menu(
-        "Open ⋮ and choose Move to Backlog. The dialog asks for Feedback, which is required: the cursor is in the field, and Move to Backlog stays off until something is typed. Type why (\"Waiting for the filter bar redesign\"), press Move to Backlog, then Next.",
+        "Open ⋮ and choose Move to Backlog. The dialog asks for Feedback, which is required (decided 13 Nov 2026): the cursor is in the field, and with it empty, or with only spaces in it, Move to Backlog stays off and Enter does nothing. Type something, then press Cancel, then Next.",
         "vcp-1199",
       ),
+      menu("Nothing moved: it's still a Draft. Open the dialog again: the field is empty; it resets every time. Type why (\"Waiting for the filter bar redesign\"): Move to Backlog turns on. Press it, then Next.", "vcp-1199"),
       {
         text: "It stays open, now Backlog. A yellow banner, \"This Added Value was moved to the backlog\", shows the feedback (Figma 1090:27191); the toast's link opens the archive.",
         target: "step:remarks",
@@ -46,36 +47,11 @@ export const BACKLOG_SCENARIOS: readonly ScenarioDef[] = [
       menu("Back to Draft: the Remarks are gone, and it's on Drafts again.", "vcp-1199"),
     ],
     name: "Move your draft to the backlog, and back",
-    demonstrates: "The initiator parks a draft in the Backlog with a reason (Remarks), then brings it back with Edit → Save as draft.",
+    demonstrates: "The initiator parks a draft in the Backlog with a reason (Remarks), then brings it back with Edit → Save as draft. Nothing goes to the Backlog without feedback; Cancel moves nothing, and the dialog starts empty each time.",
     conditions: "Eve (User) on her draft VCP-1199.",
     simulated: "The move always succeeds.",
-    expected: "The Feedback dialog, with Move to Backlog off until feedback is typed. Then the AV in Backlog with a \"moved to the backlog\" banner, a toast, and the AV listed in Archive → Backlogs. Edit → Save as draft moves it back to Draft.",
+    expected: "The Feedback dialog, with Move to Backlog off until feedback is typed (spaces don't count, and there is no error message). Cancel closes it with nothing changed, and it opens empty again. Then the AV in Backlog with a \"moved to the backlog\" banner, a toast, and the AV listed in Archive → Backlogs. Edit → Save as draft moves it back to Draft.",
     task: "You won't work on your saved-filters draft for a while. Park it, and say why.",
-  },
-  {
-    ...base,
-    id: "av-05-move-to-backlog.no-feedback",
-    role: "user",
-    start: "/added-values/vcp-1199",
-    steps: [
-      menu(
-        "Open ⋮ and choose Move to Backlog. Feedback is required (decided 13 Nov 2026): with the field empty, or with only spaces in it, Move to Backlog stays off and Enter does nothing. Press Cancel, then Next.",
-        "vcp-1199",
-      ),
-      menu("Nothing moved: it's still a Draft. Open the dialog again, type something, then press Cancel: nothing moves either. Then Next.", "vcp-1199"),
-      menu("Open it once more: the field is empty; it resets every time. Type a reason: Move to Backlog turns on. Press it, then Next.", "vcp-1199"),
-      {
-        text: "Moved, with the reason as Remarks. There is no way into the Backlog without one, the same as a rejection needs its reason.",
-        target: "step:remarks",
-        path: "/added-values/vcp-1199",
-      },
-    ],
-    name: "Feedback is required, and Cancel",
-    demonstrates: "Nothing goes to the Backlog without feedback; Cancel moves nothing, and the dialog starts empty each time.",
-    conditions: "Eve (User) on her draft VCP-1199.",
-    simulated: "The move succeeds once there is feedback.",
-    expected: "With no feedback (or only spaces) Move to Backlog stays disabled, with no error message. Cancel closes the dialog with nothing changed. With feedback the AV moves, and its banner shows it.",
-    task: "Park your saved-filters draft in the backlog without saying why. Can you?",
   },
   {
     ...base,

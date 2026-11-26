@@ -22,7 +22,7 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 3. **Submit** runs every check AV · 01 runs, plus **Projects** (Figma `1026:166742`):
    - a **Draft** moves to **Pending**: the edit page closes and the **AV's page** opens with the "VCP-1199 submitted" toast (as AV · 01, decided 13 Nov 2026);
    - any other AV keeps its status: the edit page closes and the AV's page opens, with "VCP-1200: changes saved" *(inferred)*.
-4. **Save as draft** checks only the Title (as AV · 03):
+4. **Save as draft** checks nothing on a Draft (with no title it's named "Draft - *date time*", as AV · 03), and only the Title past Draft *(24 Nov 2026)*:
    - **it only saves the changes**: the AV keeps its status, Draft or not *(decided 9 Nov 2026)*. The AV's page opens, with "changes saved" *(inferred)*.
 5. **Leaving** happens at once if nothing changed. With unsaved changes it asks first *(decided 9 Nov 2026)*, however you leave: the back arrow, the sidebar or any other link in the app, or the browser's back *(24 Nov 2026, for creativedesignlead to confirm)*. The question is the design system's (`ConfirmModal`, `confirmations.leavePage()`): **"Are you sure you want to leave?"**, "You have unsaved changes which will be lost if you leave this page.", **Cancel** keeps the changes, a red **Confirm** drops them and goes on. Closing or reloading the tab gets the browser's own prompt. Create Added Value asks the same.
 
