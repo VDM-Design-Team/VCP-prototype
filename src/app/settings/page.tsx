@@ -292,8 +292,10 @@ function AdminPanel({ domainValue }: { domainValue: string }) {
     />
   );
 
+  /* The cards on a row share its height (the grid's default stretch), so Roles and Assignee Types run as deep as
+     Status beside them rather than stopping at their last row. */
   return (
-    <div ref={area} className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+    <div ref={area} className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       {card("roles", "Roles")}
       {card("statuses", "Status")}
       {card("assigneeTypes", "Assignee Types")}
