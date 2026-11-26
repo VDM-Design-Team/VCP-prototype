@@ -56,6 +56,16 @@ export interface ScenarioStep {
    */
   fill?: StepFill;
   /**
+   * The step asks the user to enter something in fields that aren't the AV form: a dialog's reason, a demo
+   * link, a part's title, a row's checkbox, an assignee. Each key names a field by its label, `aria-label` or
+   * placeholder (its start is enough), looked for in the topmost open dialog first. Each value is the text for
+   * a text field, the option's words for a dropdown (`<select>` or a combobox), or true / false for a checkbox.
+   * Next enters them, leaving a field that already holds something alone; entering them yourself moves the walk
+   * on once they all hold something and you've stopped typing. With `action` too, Next then presses the target
+   * ("pick a reason and press Reject"), and your own press moves the walk on.
+   */
+  enter?: Record<string, string | boolean>;
+  /**
    * The step asks the user to open another page ("open VCP-1203, then Edit").
    * Next opens it for them; opening it themselves moves the walk on too (the
    * walk follows to the step for that page).
