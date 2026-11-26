@@ -107,6 +107,16 @@ const pressSubmit = (text = "Press Submit. Every check runs at once."): Scenario
   action: true,
 });
 
+/* A step that changes the form: Next fills it in, or the walk moves on once you have. */
+const fill = (text: string, target: string, set: Record<string, unknown>, done: (d: SubmitDraft) => boolean): ScenarioStep => ({
+  text,
+  target,
+  fill: { set, done },
+});
+const typed = (text?: string) => !!text?.trim();
+const tagRuleMet = (tags: readonly string[] = []) =>
+  tags.some((t) => (GLOBAL_TAGS as readonly string[]).includes(t)) && tags.some((t) => (DOMAIN_TAGS as readonly string[]).includes(t));
+
 /* ---------- The scenarios ---------- */
 
 const base = {
@@ -143,10 +153,24 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
       pressSubmit("The page is blank. Press Submit without filling anything in."),
       { text: "Every check runs at once: a toast per empty field, and an error under each one. Together they're everything Submit needs.", target: "step:form" },
       { text: "Projects is required too: its error is under the details card.", target: "group:Projects" },
-      { text: "Fill in the Title: its error clears as you type. The others stay until their fields are filled.", target: "step:title" },
-      { text: "Type a problem, but leave its solution empty…", target: "step:problems" },
-      { text: "…both cards of the pair now say \"Problem and solution should be filled together\". Type the solution: both errors clear.", target: "step:solutions" },
-      { text: "Fill in the rest: an acceptance criterion, the desired outcome, VCP in Projects, and a global and a Development tag.", target: "step:form" },
+      fill("Type a title, or press Next: its error clears as you type. The others stay until their fields are filled.", "step:title", { title: COMPLETE_DRAFT.title }, (d) => typed(d.title)),
+      fill("Type a problem, but leave its solution empty (or press Next)…", "step:problems", { problems: COMPLETE_DRAFT.problems }, (d) => d.problems.some(typed)),
+      fill(
+        "…both cards of the pair now say \"Problem and solution should be filled together\". Type the solution, or press Next: both errors clear.",
+        "step:solutions",
+        { solutions: COMPLETE_DRAFT.solutions },
+        (d) => d.solutions.some(typed),
+      ),
+      fill(
+        "Fill in the rest, or press Next: an acceptance criterion, the desired outcome, VCP in Projects, and a global and a Development tag.",
+        "step:form",
+        {
+          deliverables: COMPLETE_DRAFT.deliverables,
+          desiredOutcome: COMPLETE_DRAFT.desiredOutcome,
+          details: { projects: ["VCP"], tags: COMPLETE_DRAFT.details.tags },
+        },
+        (d) => d.deliverables.some(typed) && typed(d.desiredOutcome) && !!d.details.projects?.length && tagRuleMet(d.details.tags),
+      ),
       pressSubmit("Press Submit again."),
       submitted,
     ],
@@ -165,7 +189,12 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
       { text: "One tag, Accessibility, which is global. There's no Development tag.", target: "group:Tags" },
       pressSubmit(),
       { text: "Blocked: the error under Tags says which kind is missing.", target: "group:Tags" },
-      { text: "Add a Development tag (Development, Frontend or Backend): the error clears.", target: "group:Tags" },
+      fill(
+        "Add a Development tag (Development, Frontend or Backend), or press Next: the error clears.",
+        "group:Tags",
+        { details: { tags: ["Accessibility", "Frontend"] } },
+        (d) => tagRuleMet(d.details.tags),
+      ),
       pressSubmit("Press Submit again."),
       submitted,
     ],
@@ -193,8 +222,17 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
           { label: "Remove Lena", goto: "remove" },
         ],
       },
-      { id: "dates", text: "Set the due date to 13/11/2026 or earlier: Lena's banner goes. Jack's warning stays.", target: "group:Due Date", next: "again" },
-      { id: "remove", text: "Hover Lena's chip and press its ✕: her banner goes. Jack's warning stays.", target: "group:Assignee", next: "again" },
+      {
+        id: "dates",
+        ...fill(
+          "Set the due date to 13/11/2026 or earlier, or press Next: Lena's banner goes. Jack's warning stays.",
+          "group:Due Date",
+          { details: { dueDate: "2026-11-13" } },
+          (d) => !!d.details.dueDate && d.details.dueDate < "2026-11-16",
+        ),
+        next: "again",
+      },
+      { id: "remove", text: "Press the ✕ on Lena's chip, or Next: her banner goes. Jack's warning stays.", target: "button:Remove Lena Novak", action: true, next: "again" },
       { id: "again", ...pressSubmit("Press Submit again: it goes through, with Jack still busy.") },
       submitted,
     ],
