@@ -369,9 +369,11 @@ function findTarget(target: string): HTMLElement | null {
   if (kind === "step") return document.querySelector<HTMLElement>(`[data-flow-step="${CSS.escape(value)}"]`);
   if (kind === "button") {
     for (const root of scopes()) {
+      /* A trailing `*` matches the start of the name ("Part 2:*"), for a name that depends on what was typed. */
+      const matches = (name: string | null | undefined) => !!name && (value.endsWith("*") ? name.startsWith(value.slice(0, -1)) : name === value);
       const found = [...root.querySelectorAll<HTMLElement>("button")].find(
         /* By its words, or for an icon-only button its name (`aria-label`, or a `title`, as IconButton's). */
-        (b) => outsideBar(b) && [b.textContent?.trim(), spokenText(b), b.getAttribute("aria-label"), b.title].includes(value),
+        (b) => outsideBar(b) && [b.textContent?.trim(), spokenText(b), b.getAttribute("aria-label"), b.title].some(matches),
       );
       if (found) return found;
     }
@@ -404,9 +406,14 @@ const fieldNames = (el: HTMLElement) =>
     .map((n) => n?.replace(/\s+/g, " ").trim())
     .filter((n): n is string => !!n);
 
-/** The field `name` names (its start is enough): a text field, a `<select>`, a checkbox or a combobox, topmost dialog first. */
-function findField(name: string): Field | null {
-  for (const root of scopes()) {
+/**
+ * The field `name` names (its start is enough): a text field, a `<select>`, a checkbox or a combobox. Looked for
+ * in the topmost dialog, then in the step's own part of the screen (a copy's "Title", not the AV's), then anywhere.
+ */
+function findField(name: string, within?: HTMLElement | null): Field | null {
+  const roots = scopes();
+  if (within) roots.splice(roots.length - 1, 0, within);
+  for (const root of roots) {
     const found = [
       ...root.querySelectorAll<HTMLElement>('input:not([type="hidden"]):not([type="file"]), textarea, select, button[role="combobox"]'),
     ].find((el) => !el.closest("[data-scenario-bar]") && fieldNames(el).some((n) => n.startsWith(name)));
@@ -417,9 +424,13 @@ function findField(name: string): Field | null {
 
 const isCheck = (el: Field): el is HTMLInputElement => el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio");
 
-/** Whether the field holds something: a checkbox as asked, a dropdown with a choice, a text field with text. */
+/**
+ * Whether the field holds something: a checkbox as asked, a dropdown with a choice, a text field with text. An
+ * empty value asks for the field to be cleared ("clear the copy's title"), so it holds when it's empty.
+ */
 function holdsEntry(el: Field, value: string | boolean): boolean {
   if (isCheck(el)) return el.checked === value;
+  if (value === "" && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return el.value === "";
   if (el instanceof HTMLSelectElement || el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return el.value.trim() !== "";
   /* A combobox shows its choice as its text; empty, it shows its placeholder (the field's own name). */
   const shown = spokenText(el) ?? "";
@@ -459,17 +470,20 @@ async function enterValue(el: Field, value: string | boolean) {
   option?.click();
 }
 
+/** The step's own part of the screen, when its target is a `step:` element. */
+const stepArea = (target?: string) => (target?.startsWith("step:") ? findTarget(target) : null);
+
 /** Every field the step names holds something. */
-const entered = (enter: Record<string, string | boolean>) =>
+const entered = (enter: Record<string, string | boolean>, target?: string) =>
   Object.entries(enter).every(([name, value]) => {
-    const el = findField(name);
+    const el = findField(name, stepArea(target));
     return !!el && holdsEntry(el, value);
   });
 
 /** Next's part: enter what isn't entered yet, in order, each after the page has drawn the one before. */
-async function enterAll(enter: Record<string, string | boolean>) {
+async function enterAll(enter: Record<string, string | boolean>, target?: string) {
   for (const [name, value] of Object.entries(enter)) {
-    const el = findField(name);
+    const el = findField(name, stepArea(target));
     if (el && !holdsEntry(el, value)) await enterValue(el, value);
     await pause(60);
   }
@@ -596,17 +610,17 @@ function FillWatcher({ fill, values, onDone }: { fill: StepFill; values: FormVal
  * Moves the walk on when the user enters an `enter` step's fields themselves: once they all hold something and
  * the user has stopped typing for a moment. A step whose fields start filled waits for Next.
  */
-function EnterWatcher({ enter, onDone }: { enter: Record<string, string | boolean>; onDone: () => void }) {
+function EnterWatcher({ enter, target, onDone }: { enter: Record<string, string | boolean>; target?: string; onDone: () => void }) {
   const done = React.useRef(onDone);
   React.useEffect(() => {
     done.current = onDone;
   });
   React.useEffect(() => {
-    const startedDone = entered(enter);
+    const startedDone = entered(enter, target);
     let timer: number | undefined;
     const onChange = () => {
       window.clearTimeout(timer);
-      if (startedDone || !entered(enter)) return;
+      if (startedDone || !entered(enter, target)) return;
       timer = window.setTimeout(() => done.current(), 800);
     };
     /* A pick in a combobox is a click, not an input event. */
@@ -620,7 +634,7 @@ function EnterWatcher({ enter, onDone }: { enter: Record<string, string | boolea
       document.removeEventListener("change", onChange, true);
       document.removeEventListener("click", onClick, true);
     };
-  }, [enter]);
+  }, [enter, target]);
   return null;
 }
 
@@ -689,7 +703,7 @@ export function ScenarioBar() {
     }
     if (step?.enter && here) {
       const { enter, action, target } = step;
-      void enterAll(enter).then(() => {
+      void enterAll(enter, target).then(() => {
         /* With a press too ("pick a reason and press Reject"), the press moves the walk on, as the reviewer's would. */
         if (action && target) window.setTimeout(() => pressable(target)?.click(), 60);
         else next(undefined, undefined, "enter");
@@ -702,6 +716,8 @@ export function ScenarioBar() {
          outside it and close at once. */
       window.setTimeout(() => {
         const el = pressable(target);
+        /* "Open Status" when it's open already (the reviewer left it open): pressing would close it. Leave it open. */
+        if (el?.getAttribute("aria-expanded") === "true") return next(undefined, undefined, "action");
         if (el) return el.click();
         /* Not on screen: Next's click closed the menu it's in. Open it again with the step before's press, then
            press it. Never move on without doing it, unless it can't be found at all. */
@@ -729,7 +745,7 @@ export function ScenarioBar() {
         <FillWatcher key={index} fill={step.fill} values={formValues} onDone={() => next(undefined, index, "fill")} />
       )}
       {step?.enter && !step.action && here && (
-        <EnterWatcher key={index} enter={step.enter} onDone={() => next(undefined, index, "enter")} />
+        <EnterWatcher key={index} enter={step.enter} target={step.target} onDone={() => next(undefined, index, "enter")} />
       )}
       <aside
         data-scenario-bar

@@ -16,7 +16,8 @@ export type TestingStatus = "Not tested" | "Tested";
  * which part of the screen it's about. `target` finds that part:
  * - `step:<name>`: an element marked `data-flow-step="<name>"` on the screen;
  * - `group:<Label>`: a field group named by its label (DetailCard's "Tags", "Assignee");
- * - `button:<Text>`: a button by its words ("Submit"), or an icon-only one by its name;
+ * - `button:<Text>`: a button by its words ("Submit"), or an icon-only one by its name; a trailing `*`
+ *   matches the start ("Part 2:*"); in an open dialog, the dialog's own buttons come first;
  * - `link:<href>`: a link by where it goes ("/added-values/vcp-1104", a Gantt bar).
  * Without a target, the step is text only.
  */
