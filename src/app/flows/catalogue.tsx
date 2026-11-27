@@ -87,7 +87,7 @@ export function Catalogue() {
   return (
     <main className="min-h-screen bg-surface-canvas px-6 py-10">
       {/* Not centred: the contents sit at the window's left edge, with the list beside them. */}
-      <div className="flex max-w-7xl flex-col gap-10 lg:flex-row lg:items-start lg:gap-8">
+      <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-10">
         {/* Contents: every flow by area, a jump to each, and the way out. Sticky beside the list on a wide window;
             above it on a narrow one. */}
         <nav aria-label="Flows" className="flex shrink-0 flex-col gap-4 lg:sticky lg:top-10 lg:max-h-screen lg:w-64 lg:overflow-y-auto lg:pb-10">
@@ -254,7 +254,8 @@ function FlowGroup({ flow }: { flow: FlowDef }) {
           </a>
         )}
       </div>
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* As many columns as the window has room for: 2, 3, then 4 on a wide screen. */}
+      <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {flow.scenarios.map((s) => (
           <ScenarioCard key={s.id} flow={flow} scenario={s} />
         ))}
@@ -272,7 +273,7 @@ function ScenarioCard({ flow, scenario }: { flow: FlowDef; scenario: ScenarioDef
       /* Leaving the scenario comes back to this card (`/flows#<id>`). */
       id={scenario.id}
       aria-labelledby={headingId}
-      className="flex flex-col gap-2 rounded-md border border-stroke-default bg-surface-elevated p-4"
+      className="flex flex-col gap-3 rounded-md border border-stroke-default bg-surface-elevated p-6"
     >
       <h3 id={headingId} className="text-body-md-semibold text-text-primary">
         {scenario.name}
@@ -289,7 +290,7 @@ function ScenarioCard({ flow, scenario }: { flow: FlowDef; scenario: ScenarioDef
         </li>
       </ul>
       <p className="flex-1 text-body-sm-regular text-text-secondary">{scenario.demonstrates}</p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button size="sm" onClick={() => router.push(href)}>
           Start<span className="sr-only"> {scenario.name}</span>
         </Button>
