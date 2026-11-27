@@ -173,10 +173,14 @@ export function Catalogue() {
                     Two controls, because one that both links and toggles would be neither (DS sidebar-item: a
                     disclosure is not a link). */}
                 <div className="flex items-center gap-1">
+                  {/* Closed while you read one of its flows: the area itself is marked, as its flow would be. */}
                   <a
                     href={`#flow-${flows[0].id}`}
                     onClick={() => toggle(area, true)}
-                    className="flex-1 rounded-sm px-2 py-1 text-label-sm-semibold text-text-secondary hover:bg-surface-neutral-subtle"
+                    aria-current={!isOpen && area === currentArea ? "location" : undefined}
+                    className={`flex-1 rounded-sm px-2 py-1 text-label-sm-semibold hover:bg-surface-neutral-subtle ${
+                      !isOpen && area === currentArea ? "bg-surface-neutral-subtle text-text-primary" : "text-text-secondary"
+                    }`}
                   >
                     {area} <span className="text-text-tertiary">· {flows.length}</span>
                   </a>
