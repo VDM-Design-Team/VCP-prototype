@@ -234,7 +234,7 @@ export function Catalogue() {
             <strong className="font-semibold text-text-primary">Start</strong> walks you through a scenario step by step,
             with Back and Next. <strong className="font-semibold text-text-primary">As participant</strong> is for a
             usability test: the same scenario with only its task, no steps, so you can watch someone find their own way;
-            they press I&apos;m done when they think they&apos;ve finished. Or explore the prototype freely.
+            they press I&apos;m done when they think they&apos;ve finished, which brings them back here. Or explore the prototype freely.
           </p>
         </header>
         {shown.map((flow) => (
