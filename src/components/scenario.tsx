@@ -290,6 +290,13 @@ export function ScenarioScreen({ children }: { children: React.ReactNode }) {
   return <React.Fragment key={rebuilt}>{children}</React.Fragment>;
 }
 
+/**
+ * Whether a scenario shows how the roles differ: one of its steps says to switch View as, or presses a role.
+ * Only then is View as usable while it's open; otherwise it shows the scenario's role, disabled.
+ */
+export const switchesRole = (scenario: ScenarioDef) =>
+  scenario.steps.some((s) => /\bView as\b/.test(s.text) || /^button:(User|Admin|Super Admin)$/.test(s.target ?? ""));
+
 export function useScenario() {
   const state = React.useContext(ScenarioContext);
   if (!state) throw new Error("useScenario needs <ScenarioProvider> above it (it's in the root layout).");
@@ -624,9 +631,15 @@ function StepHighlight({ target, stepKey }: { target: string; stepKey: string })
       const el = findTarget(target);
       if (el && !scrolled) {
         /* Only when it's out of view, and only as far as needed, so it never
-           fights the page's own scrolling (a blocked Submit scrolls to its first error). */
+           fights the page's own scrolling (a blocked Submit scrolls to its first error). A part taller than the
+           screen (the whole form) is in view once any of it shows: scrolling to its nearest edge would pull the
+           page away from that first error. And none while the page has just put the cursor in an invalid field. */
         const box = el.getBoundingClientRect();
-        if (box.top < 0 || box.bottom > window.innerHeight) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        const showing = box.bottom > 0 && box.top < window.innerHeight;
+        const fits = box.height <= window.innerHeight;
+        const onError = document.activeElement?.getAttribute("aria-invalid") === "true";
+        if (!onError && (!showing || (fits && (box.top < 0 || box.bottom > window.innerHeight))))
+          el.scrollIntoView({ block: "nearest", behavior: "smooth" });
         scrolled = true;
       }
       const r = el?.getBoundingClientRect() ?? null;
@@ -744,9 +757,10 @@ export function ScenarioBar() {
   if (!active || pathname.startsWith("/flows")) return null;
   const { flow, scenario } = active;
   const key = scenario.id.slice(flow.id.length + 1);
+  /* Back to the list, at this scenario's card. */
   const leave = () => {
     clear();
-    router.push("/flows");
+    router.push(`/flows#${encodeURIComponent(scenario.id)}`);
   };
 
   if (view === "participant") {

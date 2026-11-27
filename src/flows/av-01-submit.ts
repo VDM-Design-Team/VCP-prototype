@@ -22,8 +22,8 @@ export interface SubmitDraft {
 /* ---------- Sample data the flow needs (inferred where Figma is silent) ---------- */
 
 /**
- * The tag rule: one global tag and at least one tag of the AV's own domain.
- * Figma names the rule, not the tags, so these lists are placeholders.
+ * The tags: global ones and each domain's own. Submit needs at least one, of any kind (decided 26 Nov 2026).
+ * Figma names no tags, so these lists are placeholders.
  */
 export const GLOBAL_TAGS = ["Performance", "Accessibility", "UX debt"] as const;
 export const DOMAIN_TAGS = ["Development", "Frontend", "Backend"] as const;
@@ -114,8 +114,7 @@ const fill = (text: string, target: string, set: Record<string, unknown>, done: 
   fill: { set, done },
 });
 const typed = (text?: string) => !!text?.trim();
-const tagRuleMet = (tags: readonly string[] = []) =>
-  tags.some((t) => (GLOBAL_TAGS as readonly string[]).includes(t)) && tags.some((t) => (DOMAIN_TAGS as readonly string[]).includes(t));
+const tagged = (tags: readonly string[] = []) => tags.length > 0;
 
 /* ---------- The scenarios ---------- */
 
@@ -140,7 +139,7 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
     ],
     name: "Everything filled in",
     demonstrates: "Submit passes every check and the AV moves from Draft to Pending.",
-    conditions: "Eve (User) on the creation page with every required field filled and the tag rule met.",
+    conditions: "Eve (User) on the creation page with every required field filled, tags included.",
     simulated: "Submit always succeeds. The new AV gets the next free reference and waits for an admin.",
     expected: "The creation page closes and the new Added Value's page opens, Pending, with a success toast. Nothing is blocked.",
     task: "Submit this Added Value for review.",
@@ -162,14 +161,14 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
         (d) => d.solutions.some(typed),
       ),
       fill(
-        "Fill in the rest, or press Next: an acceptance criterion, the desired outcome, VCP in Projects, and a global and a Development tag.",
+        "Fill in the rest, or press Next: an acceptance criterion, the desired outcome, VCP in Projects, and a tag.",
         "step:form",
         {
           deliverables: COMPLETE_DRAFT.deliverables,
           desiredOutcome: COMPLETE_DRAFT.desiredOutcome,
           details: { projects: ["VCP"], tags: COMPLETE_DRAFT.details.tags },
         },
-        (d) => d.deliverables.some(typed) && typed(d.desiredOutcome) && !!d.details.projects?.length && tagRuleMet(d.details.tags),
+        (d) => d.deliverables.some(typed) && typed(d.desiredOutcome) && !!d.details.projects?.length && tagged(d.details.tags),
       ),
       pressSubmit("Press Submit again."),
       submitted,
@@ -184,39 +183,15 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
   },
   {
     ...base,
-    id: "av-01-submit.tag-rule",
-    steps: [
-      { text: "One tag, Accessibility, which is global. There's no Development tag.", target: "group:Tags" },
-      pressSubmit(),
-      { text: "Blocked: the error under Tags says which kind is missing.", target: "group:Tags" },
-      fill(
-        "Add a Development tag (Development, Frontend or Backend), or press Next: the error clears.",
-        "group:Tags",
-        { details: { tags: ["Accessibility", "Frontend"] } },
-        (d) => tagRuleMet(d.details.tags),
-      ),
-      pressSubmit("Press Submit again."),
-      submitted,
-    ],
-    name: "Tag rule not met",
-    demonstrates: "Tags need one global tag and at least one in-domain tag.",
-    conditions: "Eve (User), a complete draft tagged only \"Accessibility\" (global, no Development tag).",
-    simulated: "Nothing is sent: the checks run in the page.",
-    expected: "A toast and an error under Tags. Adding a Development tag clears it.",
-    task: "Submit this Added Value for review.",
-    setup: { ...COMPLETE_DRAFT, details: { ...COMPLETE_DRAFT.details, tags: ["Accessibility"] } },
-  },
-  {
-    ...base,
     id: "av-01-submit.assignee-unavailable",
     steps: [
       { text: "Two assignees. Lena Novak is on leave 16/11/2026–20/11/2026; Jack Morgan is fully booked 09/11/2026–13/11/2026.", target: "group:Assignee" },
       { text: "The AV runs 09/11/2026 to 20/11/2026, so it overlaps both.", target: "group:Due Date" },
-      { text: "Jack is busy: an amber warning, not a block. It shows straight away.", target: "step:assignee-busy" },
+      { text: "The chips say so at once: Lena's edge is red (she can't be assigned for these dates), Jack's amber (busy, but he can still be assigned). Jack's is a warning, not a block.", target: "group:Assignee" },
       pressSubmit(),
       {
-        text: "Blocked, by Lena only: the Assignee unavailable banner says why. Jack's warning doesn't block. How do you fix it?",
-        target: "step:assignee-unavailable",
+        text: "Blocked, by Lena only: her chip's red edge and the line under it say why, and a toast. Jack's warning doesn't block. How do you fix it?",
+        target: "group:Assignee",
         options: [
           { label: "Move the due date earlier", goto: "dates" },
           { label: "Remove Lena", goto: "remove" },
@@ -225,14 +200,14 @@ export const SUBMIT_SCENARIOS: readonly ScenarioDef<SubmitDraft>[] = [
       {
         id: "dates",
         ...fill(
-          "Set the due date to 13/11/2026 or earlier, or press Next: Lena's banner goes. Jack's warning stays.",
+          "Set the due date to 13/11/2026 or earlier, or press Next: Lena's red edge goes. Jack's warning stays.",
           "group:Due Date",
           { details: { dueDate: "2026-11-13" } },
           (d) => !!d.details.dueDate && d.details.dueDate < "2026-11-16",
         ),
         next: "again",
       },
-      { id: "remove", text: "Press the ✕ on Lena's chip, or Next: her banner goes. Jack's warning stays.", target: "button:Remove Lena Novak", action: true, next: "again" },
+      { id: "remove", text: "Press the ✕ on Lena's chip, or Next: her chip goes. Jack's warning stays.", target: "button:Remove Lena Novak", action: true, next: "again" },
       { id: "again", ...pressSubmit("Press Submit again: it goes through, with Jack still busy.") },
       submitted,
     ],
