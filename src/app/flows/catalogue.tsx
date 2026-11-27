@@ -54,7 +54,8 @@ export function Catalogue() {
   }, []);
   return (
     <main className="min-h-screen bg-surface-canvas px-6 py-10">
-      <div className="mx-auto flex max-w-7xl flex-col gap-10 lg:flex-row lg:items-start">
+      {/* Not centred: the contents sit at the window's left edge, with the list beside them. */}
+      <div className="flex max-w-7xl flex-col gap-10 lg:flex-row lg:items-start lg:gap-8">
         {/* Contents: every flow by area, a jump to each, and the way out. Sticky beside the list on a wide window;
             above it on a narrow one. */}
         <nav aria-label="Flows" className="flex shrink-0 flex-col gap-4 lg:sticky lg:top-10 lg:max-h-screen lg:w-64 lg:overflow-y-auto lg:pb-10">
@@ -87,7 +88,7 @@ export function Catalogue() {
                   </a>
                   <IconButton
                     size="xs"
-                    variant="neutral-tertiary"
+                    variant="tonal"
                     icon={isOpen ? "caret-up" : "caret-down"}
                     label={isOpen ? `Hide ${area} flows` : `Show ${area} flows`}
                     aria-expanded={isOpen}
