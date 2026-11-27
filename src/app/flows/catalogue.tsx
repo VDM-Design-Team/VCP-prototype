@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Button, Chip, Field, Icon, IconButton, Input, Select, Tag, type TagProps } from "@vdm-design-team/vcp-design-system";
+import { Button, Field, Icon, IconButton, Input, SearchSelect, Select, Tag, type TagProps } from "@vdm-design-team/vcp-design-system";
 import { useScenario } from "@/components/scenario";
 import { ROLES, type Role } from "@/components/roles";
 import { rolesOf, startPageOf } from "@/flows/scenario-tags";
@@ -52,13 +52,6 @@ export function Catalogue() {
   }, [roles, page, query]);
   const areas = [...new Set(shown.map((f) => f.area))];
   const count = shown.reduce((n, f) => n + f.scenarios.length, 0);
-  const toggleRole = (role: Role) =>
-    setRoles((was) => {
-      const next = new Set(was);
-      if (next.has(role)) next.delete(role);
-      else next.add(role);
-      return next;
-    });
   /* Back from a scenario (Finish, Leave scenario) the address names its card: show it, and put focus on its Start,
      so the list doesn't open at the top again. */
   React.useEffect(() => {
@@ -122,16 +115,21 @@ export function Catalogue() {
                 onChange={(e) => setQuery(e.target.value)}
               />
             </Field>
-            <div role="group" aria-labelledby="filter-roles" className="flex flex-col gap-2">
-              <span id="filter-roles" className="text-label-sm-medium text-text-secondary">
-                Roles
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {ROLES.map((r) => (
-                  <Chip key={r.value} label={r.label} selected={roles.has(r.value)} onClick={() => toggleRole(r.value)} />
-                ))}
-              </div>
-            </div>
+            <Field label="Roles">
+              <SearchSelect
+                size="sm"
+                multiple
+                display="tags"
+                rows="tag"
+                searchable={false}
+                edge="neutral"
+                emphasis="regular"
+                placeholder="Any role"
+                options={ROLES.map((r) => ({ value: r.value, label: r.label, tone: ROLE_TONE[r.value] }))}
+                value={[...roles]}
+                onChange={(picked) => setRoles(new Set(picked as Role[]))}
+              />
+            </Field>
             <Field label="Starts on">
               <Select
                 size="sm"
