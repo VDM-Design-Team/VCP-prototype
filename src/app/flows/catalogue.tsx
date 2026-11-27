@@ -97,8 +97,9 @@ export function Catalogue() {
       {/* Not centred: the contents sit at the window's left edge, with the list beside them. */}
       <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-10">
         {/* Contents: every flow by area, a jump to each, and the way out. Sticky beside the list on a wide window;
-            above it on a narrow one. */}
-        <nav aria-label="Flows" className="flex shrink-0 flex-col gap-4 lg:sticky lg:top-10 lg:max-h-screen lg:w-64 lg:overflow-y-auto lg:pb-10">
+            above it on a narrow one. It scrolls on its own, which clips at its edges: 4 inside (offset outside) keeps
+            the fields' focus rings whole. */}
+        <nav aria-label="Flows" className="flex shrink-0 flex-col gap-4 lg:sticky lg:top-10 lg:-mx-1 lg:-mt-1 lg:max-h-screen lg:w-66 lg:overflow-y-auto lg:px-1 lg:pb-10 lg:pt-1">
           <Button
             size="sm"
             variant="secondary"
