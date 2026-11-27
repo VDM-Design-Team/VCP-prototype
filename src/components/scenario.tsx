@@ -290,6 +290,13 @@ export function ScenarioScreen({ children }: { children: React.ReactNode }) {
   return <React.Fragment key={rebuilt}>{children}</React.Fragment>;
 }
 
+/**
+ * Whether a scenario shows how the roles differ: one of its steps says to switch View as, or presses a role.
+ * Only then is View as usable while it's open; otherwise it shows the scenario's role, disabled.
+ */
+export const switchesRole = (scenario: ScenarioDef) =>
+  scenario.steps.some((s) => /\bView as\b/.test(s.text) || /^button:(User|Admin|Super Admin)$/.test(s.target ?? ""));
+
 export function useScenario() {
   const state = React.useContext(ScenarioContext);
   if (!state) throw new Error("useScenario needs <ScenarioProvider> above it (it's in the root layout).");
@@ -715,9 +722,10 @@ export function ScenarioBar() {
   if (!active || pathname.startsWith("/flows")) return null;
   const { flow, scenario } = active;
   const key = scenario.id.slice(flow.id.length + 1);
+  /* Back to the list, at this scenario's card. */
   const leave = () => {
     clear();
-    router.push("/flows");
+    router.push(`/flows#${encodeURIComponent(scenario.id)}`);
   };
 
   if (view === "participant") {
