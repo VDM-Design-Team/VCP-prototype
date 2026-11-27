@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@vdm-design-team/vcp-design-system";
+import { Button, IconButton } from "@vdm-design-team/vcp-design-system";
 import { useScenario } from "@/components/scenario";
 import { FLOWS } from "@/flows/catalogue";
 import type { FlowDef, ScenarioDef } from "@/flows/types";
@@ -31,6 +31,12 @@ export function Catalogue() {
   }, []);
   /* The contents mark the flow being read: the last one whose heading has scrolled past the top third. */
   const [current, setCurrent] = React.useState(built[0]?.id);
+  /* Each area of the contents opens and closes. Until you open or close one yourself, the one being read is open
+     and the others closed, so the contents follow you down the page. */
+  const [chosen, setChosen] = React.useState<Readonly<Record<string, boolean>>>({});
+  const currentArea = built.find((f) => f.id === current)?.area;
+  const isOpenArea = (area: string) => chosen[area] ?? area === currentArea;
+  const toggle = (area: string, to?: boolean) => setChosen((was) => ({ ...was, [area]: to ?? !isOpenArea(area) }));
   React.useEffect(() => {
     const onScroll = () => {
       const line = window.innerHeight / 3;
@@ -42,8 +48,9 @@ export function Catalogue() {
       setCurrent(at);
     };
     onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    /* The page scrolls in the app's own container, not the window: listen for any scroll, in the capture phase. */
+    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => document.removeEventListener("scroll", onScroll, { capture: true });
   }, []);
   return (
     <main className="min-h-screen bg-surface-canvas px-6 py-10">
@@ -61,13 +68,36 @@ export function Catalogue() {
           >
             Explore the prototype
           </Button>
-          {areas.map((area) => (
-            <div key={area} className="flex flex-col gap-1">
-              <p className="text-label-sm-semibold text-text-secondary">{area}</p>
-              <ul className="flex flex-col">
-                {built
-                  .filter((f) => f.area === area)
-                  .map((f) => (
+          {areas.map((area) => {
+            const flows = built.filter((f) => f.area === area);
+            const isOpen = isOpenArea(area);
+            const listId = `contents-${area}`;
+            return (
+              <div key={area} className="flex flex-col gap-1">
+                {/* The area's name jumps to its first flow (and opens it here); the caret only opens and closes it.
+                    Two controls, because one that both links and toggles would be neither (DS sidebar-item: a
+                    disclosure is not a link). */}
+                <div className="flex items-center gap-1">
+                  <a
+                    href={`#flow-${flows[0].id}`}
+                    onClick={() => toggle(area, true)}
+                    className="flex-1 rounded-sm px-2 py-1 text-label-sm-semibold text-text-secondary hover:bg-surface-neutral-subtle"
+                  >
+                    {area} <span className="text-text-tertiary">· {flows.length}</span>
+                  </a>
+                  <IconButton
+                    size="xs"
+                    variant="neutral-tertiary"
+                    icon={isOpen ? "caret-up" : "caret-down"}
+                    label={isOpen ? `Hide ${area} flows` : `Show ${area} flows`}
+                    aria-expanded={isOpen}
+                    aria-controls={listId}
+                    onClick={() => toggle(area)}
+                  />
+                </div>
+                {isOpen && (
+              <ul id={listId} className="flex flex-col">
+                {flows.map((f) => (
                     <li key={f.id}>
                       <a
                         href={`#flow-${f.id}`}
@@ -84,8 +114,10 @@ export function Catalogue() {
                     </li>
                   ))}
               </ul>
-            </div>
-          ))}
+                )}
+              </div>
+            );
+          })}
         </nav>
         <div className="flex min-w-0 flex-1 flex-col gap-10">
         <header className="flex flex-col gap-2">
