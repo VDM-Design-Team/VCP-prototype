@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Button, IconButton } from "@vdm-design-team/vcp-design-system";
+import { Button, Chip, Field, IconButton, Select, Tag, type TagProps } from "@vdm-design-team/vcp-design-system";
 import { useScenario } from "@/components/scenario";
+import { ROLES, type Role } from "@/components/roles";
+import { rolesOf, startPageOf } from "@/flows/scenario-tags";
 import { FLOWS } from "@/flows/catalogue";
 import type { FlowDef, ScenarioDef } from "@/flows/types";
 
@@ -15,11 +17,40 @@ import type { FlowDef, ScenarioDef } from "@/flows/types";
  */
 const built = FLOWS.filter((f) => f.scenarios.length > 0);
 const planned = FLOWS.filter((f) => f.scenarios.length === 0);
-const areas = [...new Set(built.map((f) => f.area))];
+/* Every page a scenario starts on, for the "Starts on" filter. */
+const START_PAGES = [...new Set(built.flatMap((f) => f.scenarios.map(startPageOf)))].sort();
+/* A role's tag: one tone each, so a card's people read at a glance. */
+const ROLE_TONE: Record<Role, TagProps["tone"]> = { user: "neutral", admin: "info", "super-admin": "brand" };
+const roleLabel = (role: Role) => ROLES.find((r) => r.value === role)!.label;
 
 export function Catalogue() {
   const router = useRouter();
   const { clear } = useScenario();
+  /* Filters: any of the picked roles (a scenario can be seen as several), and the page it starts on. */
+  const [roles, setRoles] = React.useState<ReadonlySet<Role>>(new Set());
+  const [page, setPage] = React.useState("");
+  const filtering = roles.size > 0 || page !== "";
+  const shown = React.useMemo(
+    () =>
+      built
+        .map((f) => ({
+          ...f,
+          scenarios: f.scenarios.filter(
+            (s) => (roles.size === 0 || rolesOf(s).some((r) => roles.has(r))) && (!page || startPageOf(s) === page),
+          ),
+        }))
+        .filter((f) => f.scenarios.length > 0),
+    [roles, page],
+  );
+  const areas = [...new Set(shown.map((f) => f.area))];
+  const count = shown.reduce((n, f) => n + f.scenarios.length, 0);
+  const toggleRole = (role: Role) =>
+    setRoles((was) => {
+      const next = new Set(was);
+      if (next.has(role)) next.delete(role);
+      else next.add(role);
+      return next;
+    });
   /* Back from a scenario (Finish, Leave scenario) the address names its card: show it, and put focus on its Start,
      so the list doesn't open at the top again. */
   React.useEffect(() => {
@@ -30,18 +61,18 @@ export function Catalogue() {
     card.querySelector<HTMLElement>("button")?.focus({ preventScroll: true });
   }, []);
   /* The contents mark the flow being read: the last one whose heading has scrolled past the top third. */
-  const [current, setCurrent] = React.useState(built[0]?.id);
+  const [current, setCurrent] = React.useState(shown[0]?.id);
   /* Each area of the contents opens and closes. Until you open or close one yourself, the one being read is open
      and the others closed, so the contents follow you down the page. */
   const [chosen, setChosen] = React.useState<Readonly<Record<string, boolean>>>({});
-  const currentArea = built.find((f) => f.id === current)?.area;
+  const currentArea = shown.find((f) => f.id === current)?.area;
   const isOpenArea = (area: string) => chosen[area] ?? area === currentArea;
   const toggle = (area: string, to?: boolean) => setChosen((was) => ({ ...was, [area]: to ?? !isOpenArea(area) }));
   React.useEffect(() => {
     const onScroll = () => {
       const line = window.innerHeight / 3;
-      let at = built[0]?.id;
-      for (const f of built) {
+      let at = shown[0]?.id;
+      for (const f of shown) {
         const el = document.getElementById(`flow-${f.id}`);
         if (el && el.getBoundingClientRect().top <= line) at = f.id;
       }
@@ -51,7 +82,7 @@ export function Catalogue() {
     /* The page scrolls in the app's own container, not the window: listen for any scroll, in the capture phase. */
     document.addEventListener("scroll", onScroll, { capture: true, passive: true });
     return () => document.removeEventListener("scroll", onScroll, { capture: true });
-  }, []);
+  }, [shown]);
   return (
     <main className="min-h-screen bg-surface-canvas px-6 py-10">
       {/* Not centred: the contents sit at the window's left edge, with the list beside them. */}
@@ -70,7 +101,7 @@ export function Catalogue() {
             Explore the prototype
           </Button>
           {areas.map((area) => {
-            const flows = built.filter((f) => f.area === area);
+            const flows = shown.filter((f) => f.area === area);
             const isOpen = isOpenArea(area);
             const listId = `contents-${area}`;
             return (
@@ -127,7 +158,43 @@ export function Catalogue() {
             Pick a scenario to be walked through it step by step, or explore the prototype freely.
           </p>
         </header>
-        {built.map((flow) => (
+        <section aria-label="Filter the scenarios" className="flex flex-wrap items-end gap-4">
+          <div role="group" aria-labelledby="filter-roles" className="flex flex-col gap-2">
+            <span id="filter-roles" className="text-label-sm-medium text-text-secondary">
+              Roles
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {ROLES.map((r) => (
+                <Chip key={r.value} label={r.label} selected={roles.has(r.value)} onClick={() => toggleRole(r.value)} />
+              ))}
+            </div>
+          </div>
+          <Field label="Starts on">
+            <Select
+              size="sm"
+              edge="neutral"
+              value={page}
+              onChange={setPage}
+              options={[{ value: "", label: "Any page" }, ...START_PAGES.map((p) => ({ value: p, label: p }))]}
+            />
+          </Field>
+          {filtering && (
+            <Button
+              size="sm"
+              variant="tertiary"
+              onClick={() => {
+                setRoles(new Set());
+                setPage("");
+              }}
+            >
+              Clear filters
+            </Button>
+          )}
+          <p aria-live="polite" className="text-body-sm-regular text-text-secondary">
+            {count} {count === 1 ? "scenario" : "scenarios"}
+          </p>
+        </section>
+        {shown.map((flow) => (
           <FlowGroup key={flow.id} flow={flow} />
         ))}
         {planned.length > 0 && (
@@ -183,6 +250,17 @@ function ScenarioCard({ flow, scenario }: { flow: FlowDef; scenario: ScenarioDef
       <h3 id={headingId} className="text-body-md-semibold text-text-primary">
         {scenario.name}
       </h3>
+      {/* Who it's seen as (each role it switches to too), and where it starts. */}
+      <ul aria-label="Roles and start page" className="flex flex-wrap gap-1">
+        {rolesOf(scenario).map((role) => (
+          <li key={role}>
+            <Tag size="xs" tone={ROLE_TONE[role]}>{roleLabel(role)}</Tag>
+          </li>
+        ))}
+        <li>
+          <Tag size="xs" variant="outline">{startPageOf(scenario)}</Tag>
+        </li>
+      </ul>
       <p className="flex-1 text-body-sm-regular text-text-secondary">{scenario.demonstrates}</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <Button size="sm" onClick={() => router.push(href)}>
