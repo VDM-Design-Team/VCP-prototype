@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Button, Chip, Field, Icon, IconButton, Input, Select, Tag, type TagProps } from "@vdm-design-team/vcp-design-system";
+import { Button, Field, Icon, IconButton, Input, Select, Tag, type TagProps } from "@vdm-design-team/vcp-design-system";
 import { useScenario } from "@/components/scenario";
 import { ROLES, type Role } from "@/components/roles";
 import { rolesOf, startPageOf } from "@/flows/scenario-tags";
@@ -126,10 +126,25 @@ export function Catalogue() {
               <span id="filter-roles" className="text-label-sm-medium text-text-secondary">
                 Roles
               </span>
-              <div className="flex flex-wrap gap-2">
-                {ROLES.map((r) => (
-                  <Chip key={r.value} label={r.label} selected={roles.has(r.value)} onClick={() => toggleRole(r.value)} />
-                ))}
+              {/* Toggles the size of the cards' role tags: DS Chip's smallest is 28, too big for this column, so each
+                  is a button around the DS Tag (outline off, the role's tonal colour on). */}
+              <div className="flex flex-wrap gap-1">
+                {ROLES.map((r) => {
+                  const on = roles.has(r.value);
+                  return (
+                    <button
+                      key={r.value}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => toggleRole(r.value)}
+                      className="flex rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focused"
+                    >
+                      <Tag size="xs" {...(on ? { tone: ROLE_TONE[r.value] } : { variant: "outline" as const })}>
+                        {r.label}
+                      </Tag>
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <Field label="Starts on">
