@@ -13,6 +13,12 @@ import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
 
 const list = (path: string, text: string, target = "step:av-list"): ScenarioStep => ({ text, target, path });
 const bar = (path: string, text: string): ScenarioStep => ({ text, target: "step:bulk-bar", path });
+/* Steps Next does for you: tick rows, press a button (the bar's, a menu's or the dialog's), enter a dialog's fields. */
+const tick = (path: string, text: string, ...refs: string[]): ScenarioStep => ({
+  ...list(path, text),
+  enter: Object.fromEntries(refs.map((ref) => [`Select ${ref}`, true])),
+});
+const press = (path: string, text: string, button: string): ScenarioStep => ({ text, target: `button:${button}`, path, action: true });
 
 const base = { status: "Implemented", testing: "Not tested", setup: undefined } as const;
 
@@ -23,9 +29,10 @@ export const BULK_SCENARIOS: readonly ScenarioDef[] = [
     role: "user",
     start: "/assigned",
     steps: [
-      list("/assigned", "Eve's Assigned list. Tick VCP-1204 and VCP-1205."),
-      bar("/assigned", "The bar appears under the table: 2 Selected (✕ clears), Status, Urgency, Type, Cycle, Delete. Choose Urgency → High."),
-      bar("/assigned", "\"Change Urgency for 2 Added Values\" shows the new value and the list. Press Confirm, then Next."),
+      tick("/assigned", "Eve's Assigned list. Tick VCP-1204 and VCP-1205, or press Next.", "VCP-1204", "VCP-1205"),
+      press("/assigned", "The bar appears under the table: 2 Selected (✕ clears), Status, Urgency, Type, Cycle, Delete. Open Urgency, or press Next.", "Urgency"),
+      press("/assigned", "Choose High, or press Next.", "High"),
+      press("/assigned", "\"Change Urgency for 2 Added Values\" shows the new value and the list. Press Confirm, or Next.", "Confirm"),
       list("/assigned", "Both read High; the toast says \"Urgency changed to High for 2 Added Values\". The selection clears."),
     ],
     name: "Change the urgency of several",
@@ -41,9 +48,17 @@ export const BULK_SCENARIOS: readonly ScenarioDef[] = [
     role: "admin",
     start: "/manage",
     steps: [
-      list("/manage", "Admin view, on Manage (Development, the admin's domain). Tick VCP-1200 and VCP-1201 (Pending) and VCP-1205 (Confirmed prod)."),
-      bar("/manage", "Status → Pending Review › Accept (a submenu, Figma's)."),
-      bar("/manage", "\"Accept 3 Pending Added Values\". All Development, so the dialog offers Multipart Value; leave it off. Press Confirm, then Next."),
+      tick(
+        "/manage",
+        "Admin view, on Manage (Development, the admin's domain). Tick VCP-1200 and VCP-1201 (Pending) and VCP-1205 (Confirmed prod), or press Next.",
+        "VCP-1200",
+        "VCP-1201",
+        "VCP-1205",
+      ),
+      press("/manage", "Open Status, or press Next.", "Status"),
+      press("/manage", "Pending Review opens a submenu (Figma's). Open it, or press Next.", "Pending Review"),
+      press("/manage", "Choose Accept, or press Next.", "Accept"),
+      press("/manage", "\"Accept 3 Pending Added Values\". All Development, so the dialog offers Multipart Value; leave it off. Press Confirm, or Next.", "Confirm"),
       list(
         "/manage",
         "Two are Accepted (the toast). VCP-1205 isn't Pending, so \"Added Values Failed to Update\" names it and why (Figma 1737:287581). Got it closes it.",
@@ -62,12 +77,20 @@ export const BULK_SCENARIOS: readonly ScenarioDef[] = [
     role: "admin",
     start: "/manage",
     steps: [
-      list("/manage", "Admin view, Development. Tick VCP-1200 and VCP-1201, both Pending."),
-      bar("/manage", "Status → Pending Review › Reject."),
-      bar(
-        "/manage",
-        "A Rejection Reason is required: Confirm with none says \"Select a rejection reason, or one for each Added Value.\" Pick one for all, open List of Added Values to give one AV its own, Confirm, then Next.",
-      ),
+      tick("/manage", "Admin view, Development. Tick VCP-1200 and VCP-1201, both Pending, or press Next.", "VCP-1200", "VCP-1201"),
+      press("/manage", "Open Status, or press Next.", "Status"),
+      press("/manage", "Open Pending Review, or press Next.", "Pending Review"),
+      press("/manage", "Choose Reject, or press Next.", "Reject"),
+      press("/manage", "A Rejection Reason is required. Press Confirm with none, or Next.", "Confirm"),
+      {
+        ...bar("/manage", "Refused: \"Select a rejection reason, or one for each Added Value.\" Pick one for all (Duplicate), or press Next."),
+        enter: { "Rejection Reason": "Duplicate" },
+      },
+      press("/manage", "Open List of Added Values to give one AV its own reason, or press Next.", "List of Added Values"),
+      {
+        ...press("/manage", "Give VCP-1201 its own (Out of Scope) and press Confirm, or press Next.", "Confirm"),
+        enter: { "Rejection reason for VCP-1201": "Out of Scope" },
+      },
       list("/manage", "Both are Rejected, each with its reason, and gone from Manage (Archive → Rejected)."),
     ],
     name: "Reject several, one with its own reason",
@@ -83,15 +106,22 @@ export const BULK_SCENARIOS: readonly ScenarioDef[] = [
     role: "admin",
     start: "/manage",
     steps: [
-      list("/manage", "Admin view, Development. Tick VCP-1200 and VCP-1201, both Pending."),
-      bar(
+      tick("/manage", "Admin view, Development. Tick VCP-1200 and VCP-1201, both Pending, or press Next.", "VCP-1200", "VCP-1201"),
+      press("/manage", "Open Status, or press Next.", "Status"),
+      press("/manage", "Choose Backlog, or press Next.", "Backlog"),
+      press(
         "/manage",
-        "Choose Status → Backlog. \"Move 2 Added Values to Backlog\" asks for Feedback, which is required (decided 13 Nov 2026). Press Confirm with it empty: refused, \"Enter feedback, or some for each Added Value.\" under the field, and the cursor goes to it. Press Cancel, then Next.",
+        "\"Move 2 Added Values to Backlog\" asks for Feedback, which is required (decided 13 Nov 2026). Press Confirm with it empty, or Next.",
+        "Confirm",
       ),
-      bar(
-        "/manage",
-        "Nothing moved: both are still Pending and still ticked. Choose Status → Backlog again and type feedback for all (\"Parked until next quarter's budget is set\"). List of Added Values can give one AV its own; the bulk feedback covers every AV without one. Press Confirm, then Next.",
-      ),
+      {
+        ...press(
+          "/manage",
+          "Refused: \"Enter feedback, or some for each Added Value.\" under the field, and the cursor goes to it. Type feedback for all (\"Parked until next quarter's budget is set\") and press Confirm, or press Next. List of Added Values can give one AV its own; the bulk feedback covers every AV without one.",
+          "Confirm",
+        ),
+        enter: { Feedback: "Parked until next quarter's budget is set" },
+      },
       list("/manage", "Both are in the Backlog, each with its feedback as Remarks, and gone from Manage (Archive → Backlogs). The toast says \"Status changed to Backlog for 2 Added Values.\""),
     ],
     name: "Move several to the Backlog",
@@ -107,11 +137,20 @@ export const BULK_SCENARIOS: readonly ScenarioDef[] = [
     role: "user",
     start: "/assigned",
     steps: [
-      list("/assigned", "Eve's Assigned list, across her domains (an admin's Manage shows one domain at a time, decided 10 Nov 2026). Tick VCP-1204 and VCP-1205, both Development."),
-      bar("/assigned", "Open Status: Development's steps are there (For review … Confirmed prod), from Figma's list. Close it (Escape)."),
-      list("/assigned", "Now also tick VCP-1206, a Design AV."),
-      bar("/assigned", "Open Status again: only what all three share is left (Pending Review, In Progress, Review, Backlog); no domain's own steps (decided 9 Nov 2026). Close it."),
-      bar("/assigned", "A change one domain doesn't have: open Cycle, a searchable list, and pick any cycle. Confirm, then Next."),
+      tick(
+        "/assigned",
+        "Eve's Assigned list, across her domains (an admin's Manage shows one domain at a time, decided 10 Nov 2026). Tick VCP-1204 and VCP-1205, both Development, or press Next.",
+        "VCP-1204",
+        "VCP-1205",
+      ),
+      press("/assigned", "Open Status, or press Next.", "Status"),
+      bar("/assigned", "Development's steps are there (For review … Confirmed prod), from Figma's list. Close it (Escape), then Next."),
+      tick("/assigned", "Now also tick VCP-1206, a Design AV, or press Next.", "VCP-1206"),
+      press("/assigned", "Open Status again, or press Next.", "Status"),
+      bar("/assigned", "Only what all three share is left (Pending Review, In Progress, Review, Backlog); no domain's own steps (decided 9 Nov 2026). Close it, then Next."),
+      press("/assigned", "A change one domain doesn't have: open Cycle, a searchable list, or press Next.", "Cycle"),
+      press("/assigned", "Pick a cycle (C45), or press Next.", "C45 (10/11/2026 - 23/11/2026)"),
+      press("/assigned", "Press Confirm, or Next.", "Confirm"),
       list("/assigned", "The Development AVs move to that cycle; VCP-1206 fails, named in \"Added Values Failed to Update\": \"Design Added Values have no Cycle.\""),
     ],
     name: "Mixed domains",
@@ -127,9 +166,9 @@ export const BULK_SCENARIOS: readonly ScenarioDef[] = [
     role: "user",
     start: "/assigned",
     steps: [
-      list("/assigned", "Eve's Assigned list. Tick VCP-1204 and VCP-1206."),
-      bar("/assigned", "Press Delete (red, at the end of the bar)."),
-      bar("/assigned", "The delete confirmation lists every selected AV, one line each. Press Delete, then Next."),
+      tick("/assigned", "Eve's Assigned list. Tick VCP-1204 and VCP-1206, or press Next.", "VCP-1204", "VCP-1206"),
+      press("/assigned", "Press Delete (red, at the end of the bar), or Next.", "Delete"),
+      press("/assigned", "The delete confirmation lists every selected AV, one line each. Press Delete, or Next.", "Delete"),
       list("/assigned", "Both are gone; the toast says \"2 Added Values deleted.\" Figma's bar offers Delete to everyone, so there's no rule against it here."),
     ],
     name: "Delete several",

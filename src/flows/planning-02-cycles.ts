@@ -25,7 +25,7 @@ export const CYCLES_SCENARIOS: readonly ScenarioDef[] = [
     steps: [
       on("Admin view: Planning → Planning List. Development's cycles, each with Total Capacity and Capacity Remaining, then the Backlog. Cycle 43 is still here because it has unfinished work."),
       on("VCP-1125 in the Backlog already has its dates (16–19/11/2026), in Cycle 45. Note Cycle 45's Capacity Remaining."),
-      drop("Drag VCP-1125 onto Cycle 45 (Next does it for you). The cycle lights up while the row is over it.", "VCP-1125", "Cycle 45"),
+      drop("Drag VCP-1125 onto Cycle 45, or press Next. The cycle lights up while the row is over it.", "VCP-1125", "Cycle 45"),
       on("It's in Cycle 45 with its own dates, now Accepted, and Capacity Remaining is 3 points lower. The toast says where it went."),
     ],
     name: "A Backlog AV with its own dates",
@@ -40,7 +40,7 @@ export const CYCLES_SCENARIOS: readonly ScenarioDef[] = [
     id: "planning-02-cycles.estimated-dates",
     steps: [
       on("VCP-1126 has an assignee (Alice) and points (2), but no dates."),
-      drop("Drag VCP-1126 onto Cycle 44.", "VCP-1126", "Cycle 44"),
+      drop("Drag VCP-1126 onto Cycle 44, or press Next.", "VCP-1126", "Cycle 44"),
       on("It's in Cycle 44 with estimated dates, \"(est.)\": the Start Date is the cycle's next working day, the Due Date a working day per point plus a day's buffer. Both cells play the highlight three times, or until you point at them."),
     ],
     name: "Estimated dates for a cycle",
@@ -55,7 +55,7 @@ export const CYCLES_SCENARIOS: readonly ScenarioDef[] = [
     id: "planning-02-cycles.new-cycle",
     steps: [
       on("VCP-1127's dates (08–15/12/2026) are in Cycle 47, which isn't on the page: no work is planned there yet."),
-      drop("Drag VCP-1127 onto Cycle 45.", "VCP-1127", "Cycle 45"),
+      drop("Drag VCP-1127 onto Cycle 45, or press Next.", "VCP-1127", "Cycle 45"),
       on("Cycle 47 appears with VCP-1127 in it: an AV goes to the cycle its Start Date is in. The toast says why it went there and not to Cycle 45."),
     ],
     name: "A cycle that isn't shown yet",
@@ -70,9 +70,23 @@ export const CYCLES_SCENARIOS: readonly ScenarioDef[] = [
     id: "planning-02-cycles.required-details",
     steps: [
       on("VCP-1128 has no assignee, no points and no dates."),
-      drop("Drag VCP-1128 onto Cycle 45: it needs details first.", "VCP-1128", "Cycle 45"),
-      say("Add Required Details (Figma 142:4943): an estimated Start Date for Cycle 45 and the Cycle; the rest is blank. First pick Noah Foster with 8 points, and Capacity Points 8. The Due Date estimates to 20/11/2026, and Noah is on leave 16–20/11 in the Holiday Registry (Planning · 03): his field says he can't be assigned (in the list he's under Unavailable, free from Nov 21). Press Confirm: it doesn't go through. The toast \"Unavailable Assignee\" (Figma's copy) and focus on Noah's field. Then Next."),
-      say("Swap Noah for Maya Bennett with 5 points, and Capacity Points 5: she's busy then (the field says so) but can be assigned, and the Due Date is estimated. Press Confirm, then Next."),
+      drop("Drag VCP-1128 onto Cycle 45, or press Next: it needs details first.", "VCP-1128", "Cycle 45"),
+      {
+        ...say(
+          "Add Required Details (Figma 142:4943): an estimated Start Date for Cycle 45 and the Cycle; the rest is blank. First pick Noah Foster with 8 points, and Capacity Points 8. The Due Date estimates to 20/11/2026, and Noah is on leave 16–20/11 in the Holiday Registry (Planning · 03): his field says he can't be assigned (in the list he's under Unavailable, free from Nov 21). Press Confirm, or Next.",
+        ),
+        target: "button:Confirm",
+        action: true,
+        enter: { "Assignee 1": "Noah Foster", "Capacity points for assignee 1": "8", "Capacity Points": "8" },
+      },
+      {
+        ...say(
+          "It doesn't go through: the toast \"Unavailable Assignee\" (Figma's copy), and focus on Noah's field. Swap Noah for Maya Bennett with 5 points, and Capacity Points 5: she's busy then (the field says so) but can be assigned, and the Due Date is estimated. Press Confirm, or Next.",
+        ),
+        target: "button:Confirm",
+        action: true,
+        enter: { "Assignee 1": "Maya Bennett", "Capacity points for assignee 1": "5", "Capacity Points": "5" },
+      },
       on("VCP-1128 is in Cycle 45, Accepted, with Maya and the estimated dates, and focus is on its title. (Cancel would have left it in the Backlog, focus on its title there.)"),
     ],
     name: "Add Required Details",
@@ -87,7 +101,7 @@ export const CYCLES_SCENARIOS: readonly ScenarioDef[] = [
     id: "planning-02-cycles.between-cycles",
     steps: [
       on("VCP-1110 (Dock scheduling, 13 points) is in Cycle 45. Note Cycle 45's and Cycle 49's Capacity Remaining."),
-      drop("Drag VCP-1110 onto Cycle 49 (decided 9 Nov 2026: rows move between cycles too).", "VCP-1110", "Cycle 49"),
+      drop("Drag VCP-1110 onto Cycle 49, or press Next (decided 9 Nov 2026: rows move between cycles too).", "VCP-1110", "Cycle 49"),
       on("It's in Cycle 49 with that cycle's estimated dates, highlighted, and still Accepted. Cycle 45 has 13 points back; Cycle 49 has 13 fewer, and may go below 0 (no warning, as Figma)."),
     ],
     name: "From one cycle to another",
@@ -102,8 +116,9 @@ export const CYCLES_SCENARIOS: readonly ScenarioDef[] = [
     id: "planning-02-cycles.back-to-backlog",
     steps: [
       on("Without dragging (decided 9 Nov 2026; DS #335): every row that can move has an Actions button (⋯) in the last column (DS 2.0.0). Completed rows have none; a cycle that has ended takes no rows."),
-      { ...on("Press VCP-1203's Actions button (Tab to it and Enter works too).", "button:Actions for VCP-1203"), action: true },
-      say("Its menu has one item, Move to, with a submenu of where it can go: the other cycles, with their dates, and the Backlog. Open Move to (→ or Enter), choose Backlog, then Next."),
+      { ...on("Press VCP-1203's Actions button (Tab to it and Enter works too), or press Next.", "button:Actions for VCP-1203"), action: true },
+      { ...on("Its menu has one item, Move to. Open it (→ or Enter), or press Next.", "button:Move to"), action: true },
+      { ...on("A submenu of where it can go: the other cycles, with their dates, and the Backlog. Choose Backlog, or press Next.", "button:Backlog"), action: true },
       on("VCP-1203 is in the Backlog, Backlog in its Status History, and focus is on its Actions button there. Cycle 45 has its 5 points back. It keeps its assignee and points for when it's planned again."),
     ],
     name: "Back to the Backlog, by keyboard",

@@ -55,6 +55,8 @@ const SPLIT = (parentChange: Partial<AddedValue> = {}, partChanges: Partial<Adde
 ];
 
 const at = (id: string, text: string, target = "step:av-menu"): ScenarioStep => ({ text, target, path: `/added-values/${id}` });
+/* A step Next does for you: it presses the target (a `step:` target, the button inside it). */
+const press = (id: string, text: string, target: string): ScenarioStep => ({ ...at(id, text, target), action: true });
 
 const base = { status: "Implemented", testing: "Not tested", role: "admin", setup: undefined } as const;
 
@@ -66,13 +68,17 @@ export const MULTIPART_SCENARIOS: readonly ScenarioDef[] = [
     avs: [THREE_SETS],
     steps: [
       at("vcp-1201", "Admin view. VCP-1201 is Pending and Development's, with three problem sets.", "step:multipart-source"),
-      at(
-        "vcp-1201",
-        "Press Accept and tick Multipart Value: \"Rename Individual parts\" lists the three problem sets, each with a Preview. Name the first, leave the others blank, Confirm, then Next.",
-        "button:Accept",
-      ),
+      press("vcp-1201", "Press Accept, or Next.", "button:Accept"),
+      {
+        ...at("vcp-1201", "Tick Multipart Value, or press Next: \"Rename Individual parts\" lists the three problem sets, each with a Preview.", "button:Confirm"),
+        enter: { "Multipart Value": true },
+      },
+      {
+        ...press("vcp-1201", "Name the first, leave the others blank, and press Confirm, or press Next.", "button:Confirm"),
+        enter: { "Problem Set 1": "Supplier scorecard on the planning page" },
+      },
       at("vcp-1201", "Accepted, in three parts: the Multipart section lists them, 0% done. Blank titles became \"(2/3) Supplier scorecard…\".", "step:multipart"),
-      at("vcp-1201", "Open a part from its title: it's an AV of its own, with a Parent chip back to VCP-1201.", "step:multipart"),
+      press("vcp-1201", "Open a part from its title, or press Next: it's an AV of its own, with a Parent chip back to VCP-1201.", "button:Part 2:*"),
       { text: "The part's page: its own status, assignees and dates. The Parent chip goes back.", target: "step:parent", path: "/added-values/*" },
     ],
     name: "Accept as multipart",
@@ -89,7 +95,12 @@ export const MULTIPART_SCENARIOS: readonly ScenarioDef[] = [
     avs: SPLIT(),
     steps: [
       { text: "Manage: VCP-1203 is a parent, with a progress ring (1 of 3 done) and a brand edge on the left.", target: "step:av-list", path: "/manage" },
-      { text: "Its parts read 1/3, 2/3, 3/3, each with a Parent: VCP-1203 chip. Press one.", target: "step:av-list", path: "/manage" },
+      {
+        text: "Its parts read 1/3, 2/3, 3/3, each with a Parent: VCP-1203 chip. Press one, or Next.",
+        target: "button:Parent: VCP-1203",
+        path: "/manage",
+        action: true,
+      },
       at(PARENT_ID, "The chip opens the parent: its Multipart section, 33% (1/3 parts completed).", "step:multipart"),
     ],
     name: "Parents and parts in the table",
@@ -106,14 +117,19 @@ export const MULTIPART_SCENARIOS: readonly ScenarioDef[] = [
     avs: SPLIT(),
     steps: [
       at(PARENT_ID, "VCP-1203 has three parts. As an admin (an editor) you see Add Part under them.", "step:multipart"),
-      at(PARENT_ID, "Press Add Part. Leave the title blank (or type one), Confirm, then Next.", "step:multipart"),
+      press(PARENT_ID, "Press Add Part, or Next.", "button:Add Part"),
+      press(PARENT_ID, "Leave the title blank (or type one) and press Confirm, or press Next.", "button:Confirm"),
       at(
         PARENT_ID,
         "Part 4 is added, \"(4/4) Collapsible sidebar…\" when left blank, and the progress counts it: 25%. The other default titles are renumbered, (2/4) and (3/4); part 1's typed title stays (decided 9 Nov 2026).",
         "step:multipart",
       ),
-      at(PARENT_ID, "Now rename one. Hover (or tab to) part 1, \"Collapse the rail to icons\": an edit button appears after its title. Press it.", "step:multipart"),
-      at(PARENT_ID, "\"Edit Child Part Title\": clear the title and Save, then Next.", "step:multipart"),
+      press(
+        PARENT_ID,
+        "Now rename one. Hover (or tab to) part 1, \"Collapse the rail to icons\": an edit button appears after its title. Press it, or Next.",
+        "button:Edit title of part 1",
+      ),
+      { ...press(PARENT_ID, "\"Edit Child Part Title\": clear the title and press Save, or press Next.", "button:Save"), enter: { Title: "" } },
       at(PARENT_ID, "A blank title puts the default back: \"(1/4) Collapsible sidebar…\" (decided 6 Nov 2026).", "step:multipart"),
     ],
     name: "Add and rename parts",
@@ -129,11 +145,12 @@ export const MULTIPART_SCENARIOS: readonly ScenarioDef[] = [
     start: `/added-values/${PART_IDS[2]}`,
     avs: SPLIT({ status: "In Progress" }, [{}, { status: "Completed", step: undefined }, { status: "Review", handoff: { date: "08-11-2026", links: [], attachments: [] } }]),
     steps: [
-      at(PART_IDS[2], "Part 3 of VCP-1203 is in Review; parts 1 and 2 are Completed.", "button:Accept"),
-      at(PART_IDS[2], "Press Accept, then Accept in the review, then Next.", "button:Accept"),
-      at(PART_IDS[2], "Part 3 is Completed. Open the parent from the Parent chip.", "step:parent"),
+      press(PART_IDS[2], "Part 3 of VCP-1203 is in Review; parts 1 and 2 are Completed. Press Accept, or Next.", "button:Accept"),
+      press(PART_IDS[2], "Press Accept in the review, or Next.", "button:Accept"),
+      press(PART_IDS[2], "Part 3 is Completed. Open the parent from the Parent chip, or press Next.", "step:parent"),
       at(PARENT_ID, "The parent completed itself: every part is done, 100% (decided 9 Nov 2026). Status History logs it.", "step:multipart"),
-      at(PARENT_ID, "It needs one more piece of work. Press Add Part: \"Status will change\" warns it goes back to In Progress. Confirm, then Next.", "step:multipart"),
+      press(PARENT_ID, "It needs one more piece of work. Press Add Part, or Next.", "button:Add Part"),
+      press(PARENT_ID, "\"Status will change\" warns it goes back to In Progress. Press Confirm, or Next.", "button:Confirm"),
       at(PARENT_ID, "Back In Progress, with the new part at 75%. The toast says so."),
     ],
     name: "The parent completes, and reopens",
@@ -149,7 +166,8 @@ export const MULTIPART_SCENARIOS: readonly ScenarioDef[] = [
     start: `/added-values/${PART_IDS[2]}`,
     avs: SPLIT(),
     steps: [
-      at(PART_IDS[2], "A part's page. Open ⋮ → Edit."),
+      press(PART_IDS[2], "A part's page. Open ⋮, or press Next.", "step:av-menu"),
+      press(PART_IDS[2], "Choose Edit, or press Next.", "button:Edit"),
       {
         text: "Projects, AV Category, Type and Urgency are greyed: the part takes them from its parent (Figma 1404:132644; DS #333). The rest can change.",
         target: "step:details",
@@ -169,7 +187,8 @@ export const MULTIPART_SCENARIOS: readonly ScenarioDef[] = [
     start: "/added-values/vcp-1201",
     steps: [
       at("vcp-1201", "VCP-1201 as it is: one problem set.", "step:multipart-source"),
-      at("vcp-1201", "Press Accept: Multipart Value is disabled, \"It needs at least two problem sets to split.\" (decided 9 Nov 2026). Cancel, then Next.", "button:Accept"),
+      press("vcp-1201", "Press Accept, or Next.", "button:Accept"),
+      at("vcp-1201", "Multipart Value is disabled: \"It needs at least two problem sets to split.\" (decided 9 Nov 2026).", "button:Confirm"),
     ],
     name: "One problem set",
     demonstrates: "An AV needs two or more problem sets to be split.",
