@@ -19,7 +19,7 @@ Keep public holidays, team days off and personal leave in one place, so everyone
 2. **Add Holiday** (DS `HolidayModal`, Figma `3:8583`): Holiday Name, Recurring Yearly (on by default; ⓘ "Repeat this holiday every year, or keep it as a one-time event."), Date (a two-month range; Apply / Clear), **All Day** (on; off, it asks From and To, 24-hour), Holiday Type (Public, Team, Individual) and, for a Team or an Individual holiday, who it **Applies to** (teams, or people). **Add** checks: "Enter the holiday’s name", "Select a date", "Enter a start time" / "Enter an end time" for a partial day, "Select a holiday type", "Select who it applies to"; the first to fail takes focus. Added: a toast, Added By the admin, Manual Entry.
 3. **Edit** (`3:8584`): only manual entries; filled in; **Save**. System entries (Google Calendar, Hubstaff) can only be deleted.
 4. **Delete**: "Are you sure you want to delete?" (DS `ConfirmDeleteModal`, decided in #285's review). For a **Hubstaff duplicate** (the amber flag: "Hubstaff already includes this entry. Remove it from VCP to avoid duplicate coverage.") it uses Figma's "Remove Manual Holiday Entry?" copy (`3:8586`) and **Remove**. Focus then goes to Add Holiday.
-5. **What it changes elsewhere** (the prototype's rules, below): on the Planning List an assignee is **Unavailable** over all-day leave or a holiday that covers them, **Busy** over a partial day, and **public holidays aren't working days** in the estimated dates.
+5. **What it changes elsewhere** (the prototype's rules, below): on the Planning List an assignee is **Unavailable** over all-day leave or a holiday that covers them, **Busy** over a partial day, and **public holidays aren't working days** in the estimated dates Removing the leave frees them again. Planning · 02's *Add Required Details* walks it with Noah Foster's leave.
 
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
@@ -28,6 +28,7 @@ Keep public holidays, team days off and personal leave in one place, so everyone
 | Filters match nothing | "No holidays match your filters." with **Reset** | Reset puts the filters back, and focus goes to the first filter |
 | No entries at all | "No holidays have been added yet." | An admin adds one |
 | Import from Hubstaff | A toast: not in the prototype (Figma doesn't draw it) | — |
+| A user (not an admin) | The same table and filters, without Add Holiday, Import from Hubstaff or the Actions column (Figma `1234:179617`) | — |
 
 ## Completion or exit
 - **Done:** the registry is right, and the Planning List's availability follows it.

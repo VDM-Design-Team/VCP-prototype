@@ -4,13 +4,13 @@ import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
  * Planning · 03 Holiday registry — the flow doc is
  * `flows/planning-03-holidays.md`, the FigJam page is "Planning · 03 Holiday
  * registry". An admin adds, edits and removes holidays and leave (DS
- * `HolidayTable`, `HolidayModal`); a user reads them. Leave makes
- * a person unavailable on the Planning List (Planning · 02); public holidays
- * aren't working days in its estimates. Figma: Holiday Registry 3:7732.
+ * `HolidayTable`, `HolidayModal`); a user reads them (the flow doc says so; no
+ * scenario). Leave makes a person unavailable on the Planning List: Planning · 02's
+ * Add Required Details walks it. Public holidays aren't working days in its
+ * estimates. Figma: Holiday Registry 3:7732.
  */
 
 const PATH = "/planning/holiday-registry";
-const PLANNING = "/planning/planning-list";
 const on = (text: string, target = "step:holidays", path = PATH): ScenarioStep => ({ text, target, path });
 /* A step inside a dialog: no outline (the dialog is the whole screen). */
 const say = (text: string, path = PATH): ScenarioStep => ({ text, path });
@@ -20,24 +20,6 @@ const admin = { status: "Implemented", testing: "Not tested", role: "admin", sta
 const conditions = "Eve as Admin on the Holiday Registry; the sample holidays and leave, today 05/11/2026.";
 
 export const HOLIDAY_SCENARIOS: readonly ScenarioDef[] = [
-  {
-    ...admin,
-    role: "user",
-    id: "planning-03-holidays.as-a-user",
-    start: "/",
-    steps: [
-      { ...press("User view, on the Dashboard: a user's rail has Holiday Registry as a row of its own (decided 9 Nov 2026; DS #337). Open it.", "Holiday Registry", "/"), target: "button:Holiday Registry" },
-      on("The same table and filters (Figma 1234:179617), but no Add Holiday, no Import from Hubstaff and no Actions column. They read everyone's entries."),
-      on("Holiday type → Individual Holiday: only personal leave stays."),
-      on("Applies to → Noah Foster: only what covers him, his leave and the holidays that cover everyone."),
-    ],
-    name: "As a user: read only",
-    demonstrates: "What a non-admin sees: the registry without its admin actions (Figma's Normal User table).",
-    conditions: "Eve as a User, starting on the Dashboard.",
-    simulated: "The entries are sample data.",
-    expected: "No Add, Import or Actions; the filters narrow the table.",
-    task: "As a user, find out when Noah is away.",
-  },
   {
     ...admin,
     id: "planning-03-holidays.add",
@@ -85,28 +67,6 @@ export const HOLIDAY_SCENARIOS: readonly ScenarioDef[] = [
     simulated: "Hubstaff's entries are sample data; nothing syncs.",
     expected: "The flagged row is removed; the Hubstaff row stays.",
     task: "As an admin, clean up Jack's leave, which is in VCP twice.",
-  },
-  {
-    ...admin,
-    id: "planning-03-holidays.leave-and-planning",
-    steps: [
-      on("Noah Foster is on leave 16–20/11/2026 (Annual leave, Applies to Noah Foster). Leave here is what makes someone unavailable when planning."),
-      press("Open Planning List from the rail.", "Planning List"),
-      { text: "Drag VCP-1128 onto Cycle 45 (Next does it): Add Required Details opens.", target: "step:planning", path: PLANNING, drop: { row: "VCP-1128", on: "Cycle 45" } },
-      say("Pick Noah Foster with 8 points: the Due Date estimates to 20/11, inside his leave, so he can't be assigned (in the list he's under Unavailable, free from Nov 21). Press Cancel, then Next.", PLANNING),
-      press("Back to the Holiday Registry from the rail.", "Holiday Registry", PLANNING),
-      press("Delete Noah's leave.", "Delete Annual leave, Noah Foster"),
-      say("Confirm with Delete, then Next."),
-      press("Open Planning List again.", "Planning List"),
-      { text: "Drag VCP-1128 onto Cycle 45 again.", target: "step:planning", path: PLANNING, drop: { row: "VCP-1128", on: "Cycle 45" } },
-      say("Pick Noah with 8 points again: now he's free (no caption), and Confirm plans it. The registry and the plan are one picture.", PLANNING),
-    ],
-    name: "Leave and planning",
-    demonstrates: "The registry feeding the Planning List: leave makes an assignee unavailable; removing it frees them.",
-    conditions,
-    simulated: "Both pages read the same sample data, until a scenario starts again.",
-    expected: "Noah unavailable while his leave stands; available once it's removed.",
-    task: "As an admin, see why Noah can't take the comment-export AV, then clear his leave and give it to him.",
   },
 ];
 
