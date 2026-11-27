@@ -11,6 +11,7 @@ import { useSettings } from "./settings-store";
 import { ADMIN_DOMAINS, useShellState } from "./shell-state";
 import { findScenario } from "@/flows/catalogue";
 import type { FlowDef, ScenarioDef, ScenarioStep, StepFill } from "@/flows/types";
+import { ViewAs } from "./view-as";
 
 export type ScenarioView = "reviewer" | "participant";
 
@@ -352,7 +353,8 @@ function findTarget(target: string): HTMLElement | null {
   const at = target.indexOf(":");
   const kind = target.slice(0, at);
   const value = target.slice(at + 1);
-  const outsideBar = (el: Element) => !el.closest("[data-scenario-bar]");
+  /* The card's own buttons are never a step's target; its View as is (a step can say "Switch View as to Admin"). */
+  const outsideBar = (el: Element) => !el.closest("[data-scenario-bar]") || !!el.closest("[data-view-as]");
   if (kind === "step") return document.querySelector<HTMLElement>(`[data-flow-step="${CSS.escape(value)}"]`);
   if (kind === "button")
     return (
@@ -508,9 +510,10 @@ export function ScenarioBar() {
   if (!active || pathname.startsWith("/flows")) return null;
   const { flow, scenario } = active;
   const key = scenario.id.slice(flow.id.length + 1);
+  /* Back to the list, at this scenario's card. */
   const leave = () => {
     clear();
-    router.push("/flows");
+    router.push(`/flows#${encodeURIComponent(scenario.id)}`);
   };
 
   if (view === "participant") {
@@ -608,6 +611,8 @@ export function ScenarioBar() {
             </p>
           </div>
         )}
+        {/* The floating View as bar would sit under this card, so the card carries it while a scenario is open. */}
+        <ViewAs />
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="secondary" disabled={trail.length < 2} onClick={back}>
             Back

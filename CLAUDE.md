@@ -82,7 +82,8 @@ task; a scenario is one set of conditions inside it.
   press did on the same page goes back to the press. The
   participant view has no guidance. **Reset, Finish and Leave scenario** put
   everything back: the sample data (anything the scenario created or changed),
-  its toasts, the role and the rail. Finish and Leave return to the list.
+  its toasts, the role and the rail. Finish and Leave return to the list, at
+  the scenario's card. While a scenario is open, View as is in its card.
 - **One card per outcome.** A scenario keeps its own card when its starting
   data, its person or its result differs. Cancel paths, "who sees it" checks
   and single validations are steps or branches of the scenario they belong to,
