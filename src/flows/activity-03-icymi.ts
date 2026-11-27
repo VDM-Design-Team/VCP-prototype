@@ -22,7 +22,8 @@ export const ICYMI_SCENARIOS: readonly ScenarioDef[] = [
     steps: [
       on("Under the Value Cards: \"In Case You Missed it\" (Figma 1552:13939). Each card is an AV that has been waiting: who raised it and when, its title, and why it's here, Overdue, Due Soon, Awaiting Review or Pending, and for how long. The order is Figma's: overdue first, then due soon, awaiting review and pending; the longest wait first within each."),
       on("Point at the ⓘ (or Tab to it): \"Added Values that have been waiting for a while and may need your attention.\" (Figma's tooltip). More cards than fit: point at the row's edge for the arrow, which moves one card (Figma: Arrow Button Scroll); Tab, Shift + wheel, a swipe or dragging the row scroll it too."),
-      on("Press the first card, Filters for the notification inbox (Overdue): it opens the AV (Figma: Card Interaction, Go to AV). Then Next."),
+      /* The card's name is all its words: who, when, the title, why. */
+      { ...on("Press the first card, Filters for the notification inbox (Overdue), or Next: it opens the AV (Figma: Card Interaction, Go to AV)."), target: "button:Marvin Ode4 weeks agoFilters for the notification inbox*", action: true },
       { text: "The AV it's about. Opening it doesn't take it off the strip: it's still overdue.", target: "step:details", path: "/added-values/*" },
     ],
     name: "Open a card",
@@ -39,11 +40,12 @@ export const ICYMI_SCENARIOS: readonly ScenarioDef[] = [
     steps: [
       on("User view: only Eve's own AVs, the ones she raised or is assigned to: her overdue one, one due soon, and one awaiting her review (she raised it). No Pending cards: accepting is an admin's, and an admin sees the domain's."),
       on("Point at a card: its ✕ appears (Figma: Remove/Dismiss Card). Tab reaches it too: \"Dismiss <title>\"."),
-      press("Dismiss Holiday registry export (Due Soon).", "Dismiss Holiday registry export"),
+      press("Dismiss Holiday registry export (Due Soon), or press Next.", "Dismiss Holiday registry export"),
       on("It's gone and the rest close up; focus is on the card that took its place. A toast: \"Dismissed\", with Undo (decided 9 Nov 2026). Undo brings it back, with focus on it."),
-      on("Dismiss the other two: the strip stays, with its heading and \"You’re all caught up.\" (an empty strip on arrival isn't drawn at all). They stay away while nothing changes, even across pages. Open Assigned → Holiday registry export (VCP-1204), then Next."),
-      { ...press("On its page, move it on: Move to Ready for deploy.", "Move to Ready for deploy"), path: "/added-values/vcp-1204" },
-      { text: "Its status changed. Back to the Dashboard (the rail), then Next.", path: "/added-values/vcp-1204" },
+      { ...press("Dismiss the other two, or press Next.", "Dismiss Export for the task log trail"), first: ["button:Dismiss Filters for the notification inbox"] },
+      { ...on("The strip stays, with its heading and \"You’re all caught up.\" (an empty strip on arrival isn't drawn at all). They stay away while nothing changes, even across pages. Open Assigned → Holiday registry export (VCP-1204), or press Next."), open: "/added-values/vcp-1204" },
+      { ...press("On its page, move it on: Move to Ready for deploy, or press Next.", "Move to Ready for deploy"), path: "/added-values/vcp-1204" },
+      { text: "Its status changed. Back to the Dashboard (the rail), or press Next.", path: "/added-values/vcp-1204", open: "/" },
       on("It's back on the strip: a dismissal lasts until the AV's status or due date changes (decided 9 Nov 2026)."),
     ],
     name: "Dismiss a card, and it comes back",

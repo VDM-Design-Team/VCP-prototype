@@ -17,9 +17,11 @@ export type TestingStatus = "Not tested" | "Tested";
  * - `step:<name>`: an element marked `data-flow-step="<name>"` on the screen;
  * - `group:<Label>`: a field group named by its label (DetailCard's "Tags", "Assignee");
  * - `button:<Text>`: a button by its words ("Submit"), or an icon-only one by its name; a trailing `*`
- *   matches the start ("Part 2:*"); in an open dialog, the dialog's own buttons come first;
+ *   matches the start ("Part 2:*"), a trailing `[n]` picks the nth of that name ("Add reaction[2]");
+ *   in an open dialog, the dialog's own buttons come first;
  * - `link:<href>`: a link by where it goes ("/added-values/vcp-1104", a Gantt bar);
- * - `field:<Name>`: a field by its label or name, as `enter` finds it ("Date", to open its picker).
+ * - `field:<Name>`: a field by its label or name, as `enter` finds it ("Date", to open its picker); a file
+ *   field takes a file name, and Next attaches a stand-in file of that name (nothing is uploaded).
  * Without a target, the step is text only.
  */
 export interface ScenarioStep {
