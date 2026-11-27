@@ -267,8 +267,9 @@ function FlowGroup({ flow }: { flow: FlowDef }) {
           </a>
         )}
       </div>
-      {/* As many columns as the window has room for: 2, 3, then 4 on a wide screen. */}
-      <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+      {/* As many columns as the window has room for (2, 3, then 4), with every card wide enough for Start and As
+          participant side by side. */}
+      <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {flow.scenarios.map((s) => (
           <ScenarioCard key={s.id} flow={flow} scenario={s} />
         ))}
@@ -303,11 +304,11 @@ function ScenarioCard({ flow, scenario }: { flow: FlowDef; scenario: ScenarioDef
         </li>
       </ul>
       <p className="flex-1 text-body-sm-regular text-text-secondary">{scenario.demonstrates}</p>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="mt-3 flex items-center gap-2">
         <Button size="sm" onClick={() => router.push(href)}>
           Start<span className="sr-only"> {scenario.name}</span>
         </Button>
-        <Button size="sm" variant="tertiary" onClick={() => router.push(`${href}?view=participant`)}>
+        <Button size="sm" variant="secondary" onClick={() => router.push(`${href}?view=participant`)}>
           As participant<span className="sr-only">: {scenario.name}</span>
         </Button>
       </div>
