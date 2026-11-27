@@ -33,10 +33,16 @@ export const INITIATE_SCENARIOS: readonly ScenarioDef[] = [
     start: "/added-values/vcp-1200/edit",
     steps: [
       edit("Eve's Pending AV, open for editing. Under the cards: Initiate to other Domains. Its own domain, Development, isn't offered.", "step:duplicate"),
-      edit("Tick Initiate to Design (BESA) assignment.", "step:duplicate"),
-      edit("The copy in Design (BESA) domain appears, filled in from the AV. Clear its title, then Next.", "step:copy-design"),
-      edit("Press Submit.", "button:Submit", true),
-      edit("Blocked: each copy needs a title. The copy's Title shows the error, and a toast says which copy needs one. Unticking the domain would clear it too. Type a title for Design, then Next.", "step:copy-design"),
+      { ...edit("Tick Initiate to Design (BESA) assignment, or press Next.", "step:duplicate"), enter: { "Initiate to Design (BESA)": true } },
+      { ...edit("The copy in Design (BESA) domain appears, filled in from the AV. Clear its title, or press Next.", "step:copy-design"), enter: { Title: "" } },
+      edit("Press Submit, or Next.", "button:Submit", true),
+      {
+        ...edit(
+          "Blocked: each copy needs a title. The copy's Title shows the error, and a toast says which copy needs one. Unticking the domain would clear it too. Type a title for Design, or press Next.",
+          "step:copy-design",
+        ),
+        enter: { Title: "Undo for deleted description cards (design)" },
+      },
       {
         text: "Submit and Save as draft both send the copy (decided 9 Nov 2026). Which one?",
         target: "step:actions",
@@ -46,8 +52,8 @@ export const INITIATE_SCENARIOS: readonly ScenarioDef[] = [
           { label: "Save as draft: only titles are checked", goto: "draft" },
         ],
       },
-      { id: "submit", ...edit("Press Submit. The AV's checks run, and the copy needs a title.", "button:Submit", true), next: "saved" },
-      { id: "draft", ...edit("Press Save as draft. The AV's title and the copy's title are checked.", "button:Save as draft", true) },
+      { id: "submit", ...edit("Press Submit, or Next. The AV's checks run, and the copy needs a title.", "button:Submit", true), next: "saved" },
+      { id: "draft", ...edit("Press Save as draft, or Next. The AV's title and the copy's title are checked.", "button:Save as draft", true) },
       { id: "saved", ...page("Saved, still Pending. The details card now lists Initiated to: Design (BESA), Initiated (Figma 1142:144122).", "step:details") },
     ],
     name: "Initiate to Design",
@@ -64,7 +70,8 @@ export const INITIATE_SCENARIOS: readonly ScenarioDef[] = [
     avs: [withCopy("In design")],
     steps: [
       page("Design has moved its copy on: Initiated to shows In design. The original is still Pending (Figma 1144:46123).", "step:details"),
-      page("Open ⋮ → Edit."),
+      { ...page("Open ⋮, or press Next."), action: true },
+      { ...page("Choose Edit, or press Next.", "button:Edit"), action: true },
       edit("Design (BESA) is greyed out: an AV can't be initiated to the same domain twice. The others can still be picked.", "step:duplicate"),
     ],
     name: "The copy moves on its own",

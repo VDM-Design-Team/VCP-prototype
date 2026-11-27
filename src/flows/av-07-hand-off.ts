@@ -12,6 +12,8 @@ import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
  */
 
 const on = (id: string, text: string, target = "step:av-menu"): ScenarioStep => ({ text, target, path: `/added-values/${id}` });
+/* A step Next does for you: it presses the target. */
+const press = (id: string, text: string, target: string): ScenarioStep => ({ ...on(id, text, target), action: true });
 
 const base = { status: "Implemented", testing: "Not tested", role: "user", setup: undefined } as const;
 
@@ -21,17 +23,21 @@ export const HANDOFF_SCENARIOS: readonly ScenarioDef[] = [
     id: "av-07-hand-off.on-time",
     start: "/added-values/vcp-1206",
     steps: [
-      on("vcp-1206", "VCP-1206 is a Design AV at its last step, Design review, and on time. It has no files attached.", "button:Move to Handoff"),
-      on(
+      press("vcp-1206", "VCP-1206 is a Design AV at its last step, Design review, and on time. It has no files attached. Press Move to Handoff, or Next.", "button:Move to Handoff"),
+      press(
         "vcp-1206",
-        "Press Move to Handoff. No banner and no reason: the date (today), links and files. Under Demo Links: \"A handoff needs at least one demo link or one attachment.\" Press Handoff with only the date: refused, \"Add a demo link or attach a file.\" under Demo Links, and the cursor is in the first link box. Then Next.",
-        "button:Move to Handoff",
+        "No banner and no reason: the date (today), links and files. Under Demo Links: \"A handoff needs at least one demo link or one attachment.\" Press Handoff with only the date, or Next.",
+        "button:Handoff",
       ),
-      on(
-        "vcp-1206",
-        "Give it something to review: type a link (it must start with https://, e.g. https://www.figma.com/file/tooltips) or attach a file. The message goes. Design's footer is Cancel · Handoff. Press Handoff, then Next.",
-        "button:Move to Handoff",
-      ),
+      on("vcp-1206", "Refused: \"Add a demo link or attach a file.\" under Demo Links, and the cursor is in the first link box.", "button:Handoff"),
+      {
+        ...press(
+          "vcp-1206",
+          "Give it something to review: type a link (it must start with https://) or attach a file, and the message goes. Design's footer is Cancel · Handoff. Press Handoff, or Next.",
+          "button:Handoff",
+        ),
+        enter: { "Demo link 1": "https://www.figma.com/file/tooltips" },
+      },
       on("vcp-1206", "In Review, with the link for Alice, the initiator, to open. She decides it next."),
     ],
     name: "Hand off on time (Design)",
@@ -46,17 +52,17 @@ export const HANDOFF_SCENARIOS: readonly ScenarioDef[] = [
     id: "av-07-hand-off.overdue",
     start: "/added-values/vcp-1205",
     steps: [
-      on("vcp-1205", "VCP-1205: Eve is the assignee, it's at Development's last step, Confirmed prod, and 3 days overdue.", "button:Move to Handoff"),
-      on(
-        "vcp-1205",
-        "Press Move to Handoff. The dialog names the delay and asks why. Press Handoff without a reason: refused, \"Please select a reason before completing the AV\" under Overdue Reason, with the cursor on it. Press Cancel, then Next.",
-        "button:Move to Handoff",
-      ),
-      on(
-        "vcp-1205",
-        "Nothing moved. Open it again and pick a reason. The AV already has a file (inbox-filters.png), so there is something to review; a demo link is extra. Press Handoff & Publish (or Handoff), then Next.",
-        "button:Move to Handoff",
-      ),
+      press("vcp-1205", "VCP-1205: Eve is the assignee, it's at Development's last step, Confirmed prod, and 3 days overdue. Press Move to Handoff, or Next.", "button:Move to Handoff"),
+      press("vcp-1205", "The dialog names the delay and asks why. Press Handoff without a reason, or Next.", "button:Handoff"),
+      on("vcp-1205", "Refused: \"Please select a reason before completing the AV\" under Overdue Reason, with the cursor on it.", "button:Handoff"),
+      {
+        ...press(
+          "vcp-1205",
+          "Pick a reason. The AV already has a file (inbox-filters.png), so there is something to review; a demo link is extra. Press Handoff (or Handoff & Publish), or Next.",
+          "button:Handoff",
+        ),
+        enter: { "Overdue Reason": "Dependencies" },
+      },
       on("vcp-1205", "In Review now: Marvin, the initiator, decides it next (the toast says so). Eve has no more moves."),
     ],
     name: "Hand off late work",
@@ -83,22 +89,14 @@ export const HANDOFF_SCENARIOS: readonly ScenarioDef[] = [
           { label: "Reject: send it back", goto: "reject" },
         ],
       },
-      {
-        id: "accept",
-        ...on(
-          "vcp-1207",
-          "Press Accept. The review shows what was handed off: the estimate, the completion date, links and files. Press Accept in it, then Next.",
-          "button:Accept",
-        ),
-      },
+      { id: "accept", ...press("vcp-1207", "Press Accept, or Next.", "button:Accept") },
+      press("vcp-1207", "The review shows what was handed off: the estimate, the completion date, links and files. Press Accept in it, or Next.", "button:Accept"),
       { ...on("vcp-1207", "Completed: the toast's link opens Archive → Completed."), next: "end" },
+      { id: "reject", ...press("vcp-1207", "Press Reject, or Next.", "button:Reject") },
+      press("vcp-1207", "The same review opens. Press Reject in it, or Next.", "button:Reject"),
       {
-        id: "reject",
-        ...on(
-          "vcp-1207",
-          "Press Reject. A reason dialog opens over the review (Figma 791:99377); pick a handoff rejection reason and press Reject. Then Next.",
-          "button:Reject",
-        ),
+        ...press("vcp-1207", "A reason dialog opens over the review (Figma 791:99377). Pick a handoff rejection reason and press Reject, or press Next.", "button:Reject"),
+        enter: { "Rejection Reason": "Functionality" },
       },
       on(
         "vcp-1207",
@@ -119,8 +117,11 @@ export const HANDOFF_SCENARIOS: readonly ScenarioDef[] = [
     role: "admin",
     start: "/added-values/vcp-1205",
     steps: [
-      on("vcp-1205", "Admin view: at the last step an admin's button reads \"Move to Handoff\", the same as the assignee's (DS 2.0.0, decided 17 Nov 2026).", "button:Move to Handoff"),
-      on("vcp-1205", "Press Move to Handoff, give the overdue reason, and hand it off: the AV's own file is what there is to review. Then Next.", "button:Move to Handoff"),
+      press("vcp-1205", "Admin view: at the last step an admin's button reads \"Move to Handoff\", the same as the assignee's (DS 2.0.0, decided 17 Nov 2026). Press it, or Next.", "button:Move to Handoff"),
+      {
+        ...press("vcp-1205", "Give the overdue reason and hand it off: the AV's own file is what there is to review. Press Handoff, or Next.", "button:Handoff"),
+        enter: { "Overdue Reason": "Dependencies" },
+      },
       on("vcp-1205", "In Review, an admin can decide it too: Reject or Accept, like the initiator.", "button:Accept"),
     ],
     name: "An admin hands off and reviews",
