@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Button, Chip, Field, IconButton, Select, Tag, type TagProps } from "@vdm-design-team/vcp-design-system";
+import { Button, Chip, Field, Icon, IconButton, Input, Select, Tag, type TagProps } from "@vdm-design-team/vcp-design-system";
 import { useScenario } from "@/components/scenario";
 import { ROLES, type Role } from "@/components/roles";
 import { rolesOf, startPageOf } from "@/flows/scenario-tags";
@@ -19,9 +19,13 @@ const built = FLOWS.filter((f) => f.scenarios.length > 0);
 const planned = FLOWS.filter((f) => f.scenarios.length === 0);
 /* Every page a scenario starts on, for the "Starts on" filter. */
 const START_PAGES = [...new Set(built.flatMap((f) => f.scenarios.map(startPageOf)))].sort();
-/* A role's tag: one tone each, so a card's people read at a glance. */
+/* Every tag is tonal. A colour per role, so a card's people read at a glance; the start page has a colour no role
+   has, so it never reads as one. */
 const ROLE_TONE: Record<Role, TagProps["tone"]> = { user: "neutral", admin: "info", "super-admin": "brand" };
 const roleLabel = (role: Role) => ROLES.find((r) => r.value === role)!.label;
+/* What the search reads: what the card and its flow heading show (title, description, flow, tags). */
+const searchText = (flow: FlowDef, s: ScenarioDef) =>
+  [s.name, s.demonstrates, `${flow.area} ${flow.number} ${flow.name}`, ...rolesOf(s).map(roleLabel), startPageOf(s)].join(" ").toLowerCase();
 
 export function Catalogue() {
   const router = useRouter();
@@ -29,19 +33,23 @@ export function Catalogue() {
   /* Filters: any of the picked roles (a scenario can be seen as several), and the page it starts on. */
   const [roles, setRoles] = React.useState<ReadonlySet<Role>>(new Set());
   const [page, setPage] = React.useState("");
-  const filtering = roles.size > 0 || page !== "";
-  const shown = React.useMemo(
-    () =>
-      built
+  const [query, setQuery] = React.useState("");
+  const filtering = roles.size > 0 || page !== "" || query.trim() !== "";
+  const shown = React.useMemo(() => {
+    /* Every word typed must appear somewhere on the card, in any order. */
+    const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return built
         .map((f) => ({
           ...f,
           scenarios: f.scenarios.filter(
-            (s) => (roles.size === 0 || rolesOf(s).some((r) => roles.has(r))) && (!page || startPageOf(s) === page),
+            (s) =>
+              (roles.size === 0 || rolesOf(s).some((r) => roles.has(r))) &&
+              (!page || startPageOf(s) === page) &&
+              words.every((w) => searchText(f, s).includes(w)),
           ),
         }))
-        .filter((f) => f.scenarios.length > 0),
-    [roles, page],
-  );
+        .filter((f) => f.scenarios.length > 0);
+  }, [roles, page, query]);
   const areas = [...new Set(shown.map((f) => f.area))];
   const count = shown.reduce((n, f) => n + f.scenarios.length, 0);
   const toggleRole = (role: Role) =>
@@ -100,6 +108,58 @@ export function Catalogue() {
           >
             Explore the prototype
           </Button>
+          {/* Find a scenario: search what the cards say, filter by role and start page. */}
+          <section aria-label="Find a scenario" className="flex flex-col gap-3">
+            <Field label="Search">
+              <Input
+                type="search"
+                size="sm"
+                edge="neutral"
+                fullWidth
+                placeholder="Title, description, flow…"
+                leadingIcon={<Icon name="magnifying-glass" size={16} />}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </Field>
+            <div role="group" aria-labelledby="filter-roles" className="flex flex-col gap-2">
+              <span id="filter-roles" className="text-label-sm-medium text-text-secondary">
+                Roles
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {ROLES.map((r) => (
+                  <Chip key={r.value} label={r.label} selected={roles.has(r.value)} onClick={() => toggleRole(r.value)} />
+                ))}
+              </div>
+            </div>
+            <Field label="Starts on">
+              <Select
+                size="sm"
+                edge="neutral"
+                value={page}
+                onChange={setPage}
+                options={[{ value: "", label: "Any page" }, ...START_PAGES.map((p) => ({ value: p, label: p }))]}
+              />
+            </Field>
+            <div className="flex items-center justify-between gap-2">
+              <p aria-live="polite" className="text-body-sm-regular text-text-secondary">
+                {count} {count === 1 ? "scenario" : "scenarios"}
+              </p>
+              {filtering && (
+                <Button
+                  size="sm"
+                  variant="tertiary"
+                  onClick={() => {
+                    setQuery("");
+                    setRoles(new Set());
+                    setPage("");
+                  }}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+          </section>
           {areas.map((area) => {
             const flows = shown.filter((f) => f.area === area);
             const isOpen = isOpenArea(area);
@@ -158,42 +218,6 @@ export function Catalogue() {
             Pick a scenario to be walked through it step by step, or explore the prototype freely.
           </p>
         </header>
-        <section aria-label="Filter the scenarios" className="flex flex-wrap items-end gap-4">
-          <div role="group" aria-labelledby="filter-roles" className="flex flex-col gap-2">
-            <span id="filter-roles" className="text-label-sm-medium text-text-secondary">
-              Roles
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {ROLES.map((r) => (
-                <Chip key={r.value} label={r.label} selected={roles.has(r.value)} onClick={() => toggleRole(r.value)} />
-              ))}
-            </div>
-          </div>
-          <Field label="Starts on">
-            <Select
-              size="sm"
-              edge="neutral"
-              value={page}
-              onChange={setPage}
-              options={[{ value: "", label: "Any page" }, ...START_PAGES.map((p) => ({ value: p, label: p }))]}
-            />
-          </Field>
-          {filtering && (
-            <Button
-              size="sm"
-              variant="tertiary"
-              onClick={() => {
-                setRoles(new Set());
-                setPage("");
-              }}
-            >
-              Clear filters
-            </Button>
-          )}
-          <p aria-live="polite" className="text-body-sm-regular text-text-secondary">
-            {count} {count === 1 ? "scenario" : "scenarios"}
-          </p>
-        </section>
         {shown.map((flow) => (
           <FlowGroup key={flow.id} flow={flow} />
         ))}
@@ -258,7 +282,7 @@ function ScenarioCard({ flow, scenario }: { flow: FlowDef; scenario: ScenarioDef
           </li>
         ))}
         <li>
-          <Tag size="xs" variant="outline">{startPageOf(scenario)}</Tag>
+          <Tag size="xs" tone="success">{startPageOf(scenario)}</Tag>
         </li>
       </ul>
       <p className="flex-1 text-body-sm-regular text-text-secondary">{scenario.demonstrates}</p>
