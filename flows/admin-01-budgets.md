@@ -80,3 +80,5 @@ The red bar (red-500 on white) is 3.09:1 in light and 2.17:1 in dark: it clears 
 ## Unresolved questions
 - **The card's percent**: Figma's over-budget card reads 100% at 170/120. Capped on purpose, or the real figure (142%) as built?
 - **Amber in light**: Figma's #f0b100 has no DS token in light. Add one to GDL, or keep `accent.yellow.medium` (#fdc700)?
+- **The domain switcher for users**: switching domain isn't only an admin's; anyone in more than one domain switches too. The prototype gives the switcher to admins only. Confirm, and the rail changes in a later PR.
+- **Why it's under Admin**: setting budgets is the super admin's, reading them the admin's. The Admin area holds both roles' screens (Admin · 04's Accounts and Domains are the super admin's too). Keep it here, or give the super admin an area of its own?
