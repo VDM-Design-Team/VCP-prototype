@@ -92,7 +92,7 @@ export default function SettingsScreen() {
             <PersonalInfoForm
               initial={{ name: VIEWER.name, email: "eve.kestrel@example.com" }}
               emailReadOnly
-              onSave={() => toast(changesSaved({ description: "Your details are saved." }))}
+              onSave={() => toast(changesSaved())}
             />
           )}
           {shown === "users" && <UsersTab domainValue={domainValue} />}
@@ -173,7 +173,11 @@ function UsersTab({ domainValue }: { domainValue: string }) {
       roles: { ...base.roles, [domainValue]: draft.roles ?? [] },
     });
     setOpen(null);
-    toast({ tone: "success", title: editing ? "Changes saved" : "User created", description: editing ? `${draft.name}'s account is saved.` : `${draft.name} is added, ${draft.status === "approved" ? "approved" : "waiting for approval"}.` });
+    toast(
+      editing
+        ? changesSaved({ description: `${draft.name}'s account is up to date.` })
+        : { tone: "success", title: `${draft.name} added`, description: draft.status === "approved" ? undefined : "They're waiting for approval." },
+    );
   };
 
   return (
@@ -334,7 +338,7 @@ function AdminPanel({ domainValue }: { domainValue: string }) {
             setPanelList(domainValue, tagFor.list, next);
           } else setPanelList(domainValue, tagFor.list, [...items, { id: `${slug(name)}-${Date.now()}`, label: name }]);
           setTagFor(null);
-          toast({ tone: "success", title: tagFor.item ? "Renamed" : "Added", description: `${name} is saved.` });
+          toast({ tone: "success", title: tagFor.item ? `Renamed to ${name}` : `${name} added` });
         }}
       />
       {teamFor && (

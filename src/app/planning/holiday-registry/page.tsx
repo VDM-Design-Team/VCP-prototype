@@ -2,14 +2,15 @@
 
 import * as React from "react";
 import {
+  changesSaved,
   ConfirmDeleteModal,
-  HolidayModal,
-  HolidayRegistryPage,
-  useToast,
   type DataTableSort,
   type HolidayDraft,
   type HolidayFilters,
+  HolidayModal,
+  HolidayRegistryPage,
   type HolidayRow,
+  useToast,
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { useHolidays } from "@/components/holiday-store";
@@ -91,10 +92,10 @@ export default function HolidayRegistryScreen() {
     const entry = { ...d, from: d.from, to: d.to, people, teams: d.type === "team" ? appliesTo : undefined };
     if (current) {
       update(current.id, entry);
-      toast({ tone: "success", title: "Holiday saved", description: d.name });
+      toast(changesSaved({ description: `${d.name} is up to date.` }));
     } else {
       add({ ...entry, addedBy: VIEWER.name, source: "manual" });
-      toast({ tone: "success", title: "Holiday added", description: d.name });
+      toast({ tone: "success", title: `${d.name} added` });
     }
     setEditing(null);
   };
@@ -155,7 +156,7 @@ export default function HolidayRegistryScreen() {
           onClose={() => setRemoving(null)}
           onConfirm={() => {
             remove(removing.id);
-            toast({ tone: "success", title: "Holiday removed", description: removing.name });
+            toast({ tone: "success", title: `${removing.name} removed` });
             setRemoving(null);
             focusAdd();
           }}

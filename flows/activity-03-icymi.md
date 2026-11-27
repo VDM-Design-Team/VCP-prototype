@@ -17,7 +17,7 @@ Bring back the Added Values that have been waiting too long, before they slip fu
 1. **The strip** (DS `InCaseYouMissedIt`): "In Case You Missed it", an ⓘ ("Added Values that have been waiting for a while and may need your attention."), and a row of cards (DS `InCaseYouMissedItCard`): who raised it and when, the title, and why it's here, **Overdue** ("since 3 days ago"), **Due Soon** ("in 7 days"), **Awaiting Review** or **Pending** ("since …").
 2. **Scrolling**: an arrow at the row's edge moves one card (Figma's Arrow Button Scroll); Tab, Shift + wheel, a swipe or dragging the row scroll it too.
 3. **Open a card**: it goes to its AV (Figma's Go to AV).
-4. **Dismiss a card** (its ✕, "Dismiss <title>"): it's gone, the rest close up, and focus moves to the next card (Figma's Remove/Dismiss Card). A toast says "Dismissed" with **Undo**, which brings it back with focus on it (decided 9 Nov 2026). **It stays away until its AV's status or due date changes**, then comes back (decided).
+4. **Dismiss a card** (its ✕, "Dismiss <title>"): it's gone, the rest close up, and focus moves to the next card (Figma's Remove/Dismiss Card). A toast says "Card dismissed" with **Undo**, which brings it back with focus on it (decided 9 Nov 2026). **It stays away until its AV's status or due date changes**, then comes back (decided).
 5. **The last one dismissed**: the strip stays, with "You’re all caught up.". A strip with nothing in it on arrival isn't drawn at all.
 
 ## Alternatives, failures and recovery

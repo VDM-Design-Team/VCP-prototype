@@ -9,16 +9,17 @@ import {
   DashboardFilters,
   DashboardHeader,
   DomainBudgetSummary,
+  formatDateRange,
   InCaseYouMissedIt,
+  MIN_ACTION_TOAST_DURATION,
   PageTitle,
+  type Quarter,
   SprintMetrics,
   StatCard,
   TeamCapacity,
   UserCapacity,
-  ValueCards,
-  formatDateRange,
   useToast,
-  type Quarter,
+  ValueCards,
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { Panel } from "@/components/panel";
@@ -112,9 +113,10 @@ export default function DashboardScreen() {
           dismiss(item.id, keyOf(item.id));
           toast({
             tone: "info",
-            title: "Dismissed",
+            title: "Card dismissed",
             description: `${item.title} comes back if its status or due date changes.`,
             actionLabel: "Undo",
+            duration: MIN_ACTION_TOAST_DURATION,
             onAction: () => restore(item.id, item.title),
           });
         }}
@@ -203,7 +205,7 @@ export default function DashboardScreen() {
                       const who = teamName(team);
                       toast({
                         tone: "success",
-                        title: "Cycle Report exported",
+                        title: "Cycle report exported",
                         description:
                           key === "csv"
                             ? `CSV: one row per Added Value in ${c} (${who}), with its status, points, assignees and dates.`

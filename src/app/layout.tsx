@@ -29,7 +29,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <NotificationStoreProvider>
                   <BudgetStoreProvider>
                   <SettingsStoreProvider>
-                    <ToastProvider>
+                    {/* Above a dialog's overlay: Modal and the toasts' viewport are both z-50 and the dialog comes later
+                        in the page, so it covered them (Planning 02). A design system fix to raise. */}
+                    <ToastProvider viewportClassName="z-60">
                       <ScenarioProvider>
                         <ScenarioScreen>{children}</ScenarioScreen>
                         <RoleSwitch />

@@ -32,11 +32,11 @@ export default function DomainsScreen() {
             ],
             onAdd: (list, name) => {
               setListOf(list.id)([...list.items, { id: `${slug(name)}-${Date.now()}`, label: name }]);
-              toast({ tone: "success", title: "Added", description: `${name} is saved.` });
+              toast({ tone: "success", title: `${name} added` });
             },
             onRename: (list, item, name) => {
               setListOf(list.id)(list.items.map((i) => (i.id === item.id ? { ...i, label: name } : i)));
-              toast({ tone: "success", title: "Renamed", description: `${name} is saved.` });
+              toast({ tone: "success", title: `Renamed to ${name}` });
             },
             onDelete: (list, item) => {
               if (list.id === "projects") {
@@ -50,7 +50,7 @@ export default function DomainsScreen() {
               }
               setListOf(list.id)(list.items.filter((i) => i.id !== item.id));
               /* The confirm says it can't be undone, so there is no Undo. */
-              toast({ tone: "info", title: list.id === "domains" ? "Domain deleted" : "Project deleted", description: `${item.label} is deleted.` });
+              toast({ tone: "success", title: `${item.label} deleted` });
             },
           }}
         />

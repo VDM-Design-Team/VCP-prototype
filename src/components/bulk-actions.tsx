@@ -2,21 +2,22 @@
 
 import * as React from "react";
 import {
-  BulkActionBar,
-  BulkActionConfirmModal,
-  BulkActionFailedModal,
-  ConfirmDeleteAVModal,
-  formatDate,
-  HANDOFF_REJECTION_REASONS,
-  PENDING_REJECTION_REASONS,
-  useToast,
   type AVType,
   type AVUrgency,
   type BulkAction,
+  BulkActionBar,
+  BulkActionConfirmModal,
+  BulkActionFailedModal,
   type BulkActionFailure,
   type BulkDomain,
   type BulkRejectionReason,
+  bulkUpdated,
+  ConfirmDeleteAVModal,
+  formatDate,
+  HANDOFF_REJECTION_REASONS,
   type MenuItem,
+  PENDING_REJECTION_REASONS,
+  useToast,
 } from "@vdm-design-team/vcp-design-system";
 import { useAddedValues } from "./av-store";
 import { TODAY } from "@/data/gantt";
@@ -138,14 +139,12 @@ export function BulkActions({
     setOp(null);
     onClear();
     if (ok.length) {
-      toast({
-        tone: "success",
-        title: "Added Values Updated",
-        description:
-          op.kind === "delete"
-            ? `${ok.length} Added Value${ok.length === 1 ? "" : "s"} deleted.`
-            : `${property} changed to ${value} for ${ok.length} Added Value${ok.length === 1 ? "" : "s"}.`,
-      });
+      /* DS recipe for a change to several; a deletion says it in the title. */
+      toast(
+        op.kind === "delete"
+          ? { tone: "success", title: `${ok.length} Added ${ok.length === 1 ? "Value" : "Values"} deleted` }
+          : bulkUpdated({ property, value, count: ok.length }),
+      );
     }
     if (failures.length) setFailed({ failures, total: selected.length, property, value });
   };

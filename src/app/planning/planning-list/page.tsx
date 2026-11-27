@@ -4,17 +4,18 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
   type BannerProps,
-  MoveAVToCycleModal,
-  PlanningPage,
+  type DataTableSort,
   formatCycleRange,
   formatDate,
-  useToast,
-  type DataTableSort,
   type MoveAVToCycleDraft,
+  MoveAVToCycleModal,
   type MoveAVToCycleResult,
   type PlanningFiltersValue,
+  PlanningPage,
   type PlanningRow,
   type PlanningSection,
+  unavailableAssignee,
+  useToast,
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { useAddedValues } from "@/components/av-store";
@@ -356,12 +357,7 @@ export default function PlanningListScreen() {
           onConfirm={confirmDetails}
           onInvalid={(reason) => {
             if (reason === "unavailable-assignee")
-              toast({
-                tone: "critical",
-                title: "Unavailable Assignee",
-                description:
-                  "A selected assignee is unavailable during the chosen dates. Please change the dates or remove this assignee before submitting.",
-              });
+              toast(unavailableAssignee());
           }}
           people={people}
           cycles={CYCLE_OPTIONS}

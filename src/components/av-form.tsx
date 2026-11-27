@@ -4,13 +4,17 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
   Button,
-  ConfirmModal,
   confirmations,
+  ConfirmModal,
+  type DeliverableFile,
+  type DeliverableLinkItem,
   DeliverablesCard,
   DescriptionCard,
   DescriptionCardTitle,
   DescriptionSection,
   DetailCard,
+  type DetailCardField,
+  type DetailCardValue,
   discarded,
   Field,
   fileKind,
@@ -18,15 +22,14 @@ import {
   formatDate,
   InitiateToOtherDomain,
   Input,
+  MIN_ACTION_TOAST_DURATION,
   missingInput,
-  undoDeletion,
   PageTitle,
+  type ToastOptions,
+  unavailableAssignee,
+  undoDeletion,
   useAttachmentFiles,
   useToast,
-  type DeliverableFile,
-  type DeliverableLinkItem,
-  type DetailCardField,
-  type DetailCardValue,
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { cameFromAV, forgetEditOrigin } from "@/components/edit-return";
@@ -57,8 +60,8 @@ interface Problems {
   deliverables: Record<number, string>;
   desiredOutcome?: string;
   details: Partial<Record<DetailCardField, string>>;
-  /** One "Missing Input" toast each, in the page's order. */
-  toasts: string[];
+  /** One toast each, in the page's order: DS recipes (missingInput, unavailableAssignee), beside the field errors. */
+  toasts: ToastOptions[];
   /** A copy for another domain with no title (AV · 08), by domain value. */
   copies: Record<string, string>;
 }
@@ -85,18 +88,18 @@ function check(d: SubmitDraft): Problems {
   const p: Problems = { problems: {}, solutions: {}, deliverables: {}, details: {}, toasts: [], copies: {} };
   if (blank(d.title)) {
     p.title = EMPTY_FIELD;
-    p.toasts.push("Title Field can't be empty, please fill it in before submitting.");
+    p.toasts.push(missingInput("Title"));
   }
 
   /* Problems and solutions: at least one of each, and every problem with its solution. */
   const pairs = Math.max(d.problems.length, d.solutions.length);
   if (d.problems.every(blank)) {
     p.problems[0] = EMPTY_FIELD;
-    p.toasts.push("Problem Field can't be empty, please fill it in before submitting.");
+    p.toasts.push(missingInput("Problems"));
   }
   if (d.solutions.every(blank)) {
     p.solutions[0] = EMPTY_FIELD;
-    p.toasts.push("Solution Field can't be empty, please fill it in before submitting.");
+    p.toasts.push(missingInput("Solutions"));
   }
   let unpaired = false;
   for (let i = 0; i < pairs; i++) {
@@ -108,27 +111,28 @@ function check(d: SubmitDraft): Problems {
       if (i < d.solutions.length) p.solutions[i] = PAIR;
     }
   }
-  if (unpaired) p.toasts.push("Each problem needs its solution: fill in both, or remove the pair.");
+  /* No recipe says this: the missing-input toast, with what's wrong instead of "can't be empty". */
+  if (unpaired) p.toasts.push(missingInput("", "fill", { description: "Each problem needs its solution. Please fill in both, or remove the pair, before submitting." }));
 
   if (d.deliverables.every(blank)) {
     p.deliverables[0] = EMPTY_FIELD;
-    p.toasts.push("Acceptance Criteria / Deliverables Field can't be empty, please fill it in before submitting.");
+    p.toasts.push(missingInput("Acceptance Criteria / Deliverables"));
   }
   if (blank(d.desiredOutcome)) {
     p.desiredOutcome = EMPTY_FIELD;
-    p.toasts.push("Desired Outcome Field can't be empty, please fill it in before submitting.");
+    p.toasts.push(missingInput("Desired Outcome"));
   }
 
   /* Projects: Figma "“Projects” Field Error" (1026:166742). */
   if (!d.details.projects?.length) {
     p.details.projects = "Please select a project tag before submitting";
-    p.toasts.push("Projects Field can't be empty, please fill it in before submitting.");
+    p.toasts.push(missingInput("project", "select"));
   }
 
   /* The tag rule (decided 26 Nov 2026): at least one tag, of any kind, global or the domain's (Figma's message). */
   if (!d.details.tags?.length) {
     p.details.tags = "Please select at least one tag before submitting";
-    p.toasts.push("Please select at least one Tag before submitting");
+    p.toasts.push(missingInput("tag", "select-any"));
   }
 
   /* An assignee away during the AV's dates blocks it; a busy one only warns. */
@@ -138,7 +142,7 @@ function check(d: SubmitDraft): Problems {
     if (clash?.state === "unavailable") away.push(`${a.name} is ${clash.why} ${range(clash.from, clash.to)}`);
   }
   /* The card marks the chip (red edge, a line under it); refusing the Submit is the page's, with its toast. */
-  if (away.length) p.toasts.push(`Assignee unavailable: ${away.join("; ")}.`);
+  if (away.length) p.toasts.push(unavailableAssignee());
   return p;
 }
 
@@ -153,7 +157,7 @@ function checkDraft(d: SubmitDraft, isDraft: boolean): Problems {
   const p: Problems = { problems: {}, solutions: {}, deliverables: {}, details: {}, toasts: [], copies: {} };
   if (!isDraft && blank(d.title)) {
     p.title = DRAFT_TITLE;
-    p.toasts.push("Title Field can't be empty, please fill it in before saving.");
+    p.toasts.push(missingInput("Title", "fill", { description: "Title can’t be empty. Please fill it in before saving." }));
   }
   return p;
 }
@@ -296,7 +300,9 @@ function Form({ editing }: { editing?: AddedValue }) {
       for (const d of initiate) {
         if (blank(copies[d]?.title ?? "")) {
           p.copies[d] = before === "submitting" ? EMPTY_FIELD : DRAFT_TITLE;
-          p.toasts.push(`The copy in ${domainName(d)} domain needs a title before ${before}.`);
+          p.toasts.push(
+            missingInput("", "fill", { description: `The copy in the ${domainName(d)} domain needs a title. Please fill it in before ${before}.` }),
+          );
         }
       }
       return p;
@@ -388,9 +394,9 @@ function Form({ editing }: { editing?: AddedValue }) {
     setAttempted(kind);
     dismissAll();
     if (!blocked(found)) return true;
-    /* DS 2.0.0's missingInput recipe (sentence-case title, not announced, times out: the field errors stay),
-       with Figma's own wording for each field. */
-    for (const message of found.toasts) toast(missingInput("", "fill", { description: message }));
+    /* The DS recipes (missingInput, unavailableAssignee): critical, not announced, timed out, since the field errors
+       stay; each names its field. */
+    for (const options of found.toasts) toast(options);
     setBlockedPresses((n) => n + 1);
     return false;
   };
@@ -520,6 +526,8 @@ function Form({ editing }: { editing?: AddedValue }) {
         title: `${av.ref} saved as a draft`,
         description: onlyInitiatorsSee(av.initiators),
         actionLabel: "Open it",
+        /* With an action, a toast times out only from 15 s (DS): VCP's toasts close on their own. */
+        duration: MIN_ACTION_TOAST_DURATION,
         onAction: () => router.push(`/added-values/${av.id}`),
       });
       return;
