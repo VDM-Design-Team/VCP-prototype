@@ -24,7 +24,7 @@ Keep an Added Value that isn't finished, to finish and submit it later.
 |---|---|---|
 | No Title | Nothing blocks: the draft is saved as "Draft - *date time*" | Rename it later in Edit (AV · 04) |
 | A domain ticked in "Initiate to other Domains" whose copy has no title | A "Missing input" toast and an error under that copy's Title | Type the copy's title |
-| Anything Submit would block (empty fields, an unpaired problem, the tag rule, an assignee away) | Nothing: **Submit's checks don't run** on a draft | Not needed. They run when the draft is submitted (AV · 04) |
+| Anything Submit would block (empty fields, an unpaired problem, no tags, an assignee away) | Nothing: **Submit's checks don't run** on a draft | Not needed. They run when the draft is submitted (AV · 04) |
 | Submit was pressed first and blocked | Save as draft clears Submit's toasts and errors, then saves | — |
 
 ## Completion or exit

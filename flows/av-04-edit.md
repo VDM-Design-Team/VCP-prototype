@@ -29,7 +29,7 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
 |---|---|---|
-| Any Submit check fails (empty field, unpaired problem, tag rule, assignee away) | As AV · 01: one "Missing input" toast per problem and the field errors; the first error is scrolled to and focused | Fix the field; Submit again |
+| Any Submit check fails (empty field, unpaired problem, no tags, assignee away) | As AV · 01: one "Missing input" toast per problem and the field errors; the first error is scrolled to and focused | Fix the field; Submit again |
 | No project | "Please select a project tag before submitting" under Projects, and a "Missing input" toast (Figma `1026:166742`) | Pick a project. *Applies to AV · 01 Submit too* |
 | No Title on Save as draft | As AV · 03 | Type a title |
 | Discard on a Draft or Pending AV | AV · 02: the confirm, then the AV is gone | Cancel keeps it |
@@ -49,4 +49,4 @@ Change an Added Value: finish a saved draft and submit it, or correct one alread
 - **The page title.** Figma strikes through "Added Value Creation" on its edit pages; the prototype says "Edit VCP-1199".
 - **Design system:** Figma's Discard is red text: DS `Button` `critical-tertiary` (built for AV · 02; `danger-tertiary` before 1.0.0).
 - **Projects is now checked on Submit** for new AVs too (AV · 01), since Figma's error says "before submitting".
-- **The tag rule follows the AV's domain:** a Design AV needs a Design tag (placeholders: Design, Visual design, UX research). The sample AVs now carry a global tag, so they pass the rule when edited.
+- **Tags:** at least one, of any kind (decided 26 Nov 2026). A Design AV offers the global tags and Design's own (placeholders: Design, Visual design, UX research).

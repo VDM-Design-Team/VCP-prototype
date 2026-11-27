@@ -589,9 +589,15 @@ function StepHighlight({ target, stepKey }: { target: string; stepKey: string })
       const el = findTarget(target);
       if (el && !scrolled) {
         /* Only when it's out of view, and only as far as needed, so it never
-           fights the page's own scrolling (a blocked Submit scrolls to its first error). */
+           fights the page's own scrolling (a blocked Submit scrolls to its first error). A part taller than the
+           screen (the whole form) is in view once any of it shows: scrolling to its nearest edge would pull the
+           page away from that first error. And none while the page has just put the cursor in an invalid field. */
         const box = el.getBoundingClientRect();
-        if (box.top < 0 || box.bottom > window.innerHeight) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        const showing = box.bottom > 0 && box.top < window.innerHeight;
+        const fits = box.height <= window.innerHeight;
+        const onError = document.activeElement?.getAttribute("aria-invalid") === "true";
+        if (!onError && (!showing || (fits && (box.top < 0 || box.bottom > window.innerHeight))))
+          el.scrollIntoView({ block: "nearest", behavior: "smooth" });
         scrolled = true;
       }
       const r = el?.getBoundingClientRect() ?? null;

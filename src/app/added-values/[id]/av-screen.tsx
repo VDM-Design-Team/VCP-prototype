@@ -34,6 +34,7 @@ import {
   type AVTransition,
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
+import { openingEditFrom } from "@/components/edit-return";
 import { useShellState } from "@/components/shell-state";
 import { MEMBERS, forViewer } from "@/components/comments";
 import { NO_FREE_REFERENCE, useAddedValues } from "@/components/av-store";
@@ -197,7 +198,10 @@ export function AVScreen({ id }: { id: string }) {
                   role={admin ? "admin" : "user"}
                   status={av.status}
                   /* Decided 9 Nov 2026: the same edit page at every status (AV · 04). */
-                  onEdit={() => router.push(`/added-values/${av.id}/edit`)}
+                  onEdit={() => {
+                    openingEditFrom(av.id);
+                    router.push(`/added-values/${av.id}/edit`);
+                  }}
                   onDelete={() => setDialog("delete")}
                   /* `DetailCardMenu` owns which moves a role and a status get. Decided
                      13 Nov 2026: an admin also gets them on a Rejected AV (Backlog,
@@ -253,34 +257,7 @@ export function AVScreen({ id }: { id: string }) {
             </div>
           )}
           <DescriptionCardTitle reference={av.ref} title={av.title} />
-          {av.problems.length > 0 && (
-            <DescriptionSection type="problem" data-flow-step="multipart-source">
-              {av.problems.map((p) => (
-                <DescriptionCard key={p}>{p}</DescriptionCard>
-              ))}
-            </DescriptionSection>
-          )}
-          {av.solutions.length > 0 && (
-            <DescriptionSection type="solution">
-              {av.solutions.map((s) => (
-                <DescriptionCard key={s}>{s}</DescriptionCard>
-              ))}
-            </DescriptionSection>
-          )}
-          {av.deliverables.length > 0 && (
-            <DescriptionSection type="deliverable">
-              {av.deliverables.map((d) => (
-                <DescriptionCard key={d}>{d}</DescriptionCard>
-              ))}
-            </DescriptionSection>
-          )}
-          {/* A draft can leave any of these blank: a section with nothing in it isn't drawn. */}
-          {av.desiredOutcome && (
-            <DescriptionSection type="desired-outcome">
-              <DescriptionCard>{av.desiredOutcome}</DescriptionCard>
-            </DescriptionSection>
-          )}
-          {/* AV · 10: a multipart AV's parts (DS #272), each its own AV. Add Part
+          {/* AV · 10: a multipart AV's parts (DS #272), each its own AV, at the top, under the title (the AV 10 review). Add Part
               and renaming are for editors (decided 6 Nov 2026): an admin or the initiator. */}
           {av.parts && av.parts.length > 0 && (
             <div data-flow-step="multipart">
@@ -309,6 +286,33 @@ export function AVScreen({ id }: { id: string }) {
                   : {})}
               />
             </div>
+          )}
+          {av.problems.length > 0 && (
+            <DescriptionSection type="problem" data-flow-step="multipart-source">
+              {av.problems.map((p) => (
+                <DescriptionCard key={p}>{p}</DescriptionCard>
+              ))}
+            </DescriptionSection>
+          )}
+          {av.solutions.length > 0 && (
+            <DescriptionSection type="solution">
+              {av.solutions.map((s) => (
+                <DescriptionCard key={s}>{s}</DescriptionCard>
+              ))}
+            </DescriptionSection>
+          )}
+          {av.deliverables.length > 0 && (
+            <DescriptionSection type="deliverable">
+              {av.deliverables.map((d) => (
+                <DescriptionCard key={d}>{d}</DescriptionCard>
+              ))}
+            </DescriptionSection>
+          )}
+          {/* A draft can leave any of these blank: a section with nothing in it isn't drawn. */}
+          {av.desiredOutcome && (
+            <DescriptionSection type="desired-outcome">
+              <DescriptionCard>{av.desiredOutcome}</DescriptionCard>
+            </DescriptionSection>
           )}
           <StatusHistory headingLevel={2} entries={av.history} />
           {/* Where a guided scenario's step points (Activity · 01): see src/flows/types.ts. */}
