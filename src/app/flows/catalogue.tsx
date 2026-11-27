@@ -63,12 +63,15 @@ export function Catalogue() {
   }, []);
   /* The contents mark the flow being read: the last one whose heading has scrolled past the top third. */
   const [current, setCurrent] = React.useState(shown[0]?.id);
-  /* Each area of the contents opens and closes. Until you open or close one yourself, the one being read is open
-     and the others closed, so the contents follow you down the page. */
-  const [chosen, setChosen] = React.useState<Readonly<Record<string, boolean>>>({});
+  /* Each area of the contents opens and closes. On its own, the one being read is open and the others closed, so the
+     contents follow you down the page. What you open or close by hand holds while you stay in that area; scroll into
+     another and it follows you again. */
   const currentArea = shown.find((f) => f.id === current)?.area;
-  const isOpenArea = (area: string) => chosen[area] ?? area === currentArea;
-  const toggle = (area: string, to?: boolean) => setChosen((was) => ({ ...was, [area]: to ?? !isOpenArea(area) }));
+  const [chosen, setChosen] = React.useState<{ in?: string; open: Readonly<Record<string, boolean>> }>({ open: {} });
+  const choices = chosen.in === currentArea ? chosen.open : {};
+  const isOpenArea = (area: string) => choices[area] ?? area === currentArea;
+  const toggle = (area: string, to?: boolean) =>
+    setChosen({ in: currentArea, open: { ...choices, [area]: to ?? !isOpenArea(area) } });
   React.useEffect(() => {
     const onScroll = () => {
       const line = window.innerHeight / 3;
