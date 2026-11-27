@@ -12,12 +12,16 @@ import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
  * accepted, on a domain step or in Review (Move to Backlog or Draft).
  */
 
-const onManage: ScenarioStep = {
-  text: "Admin view, on Manage: every open Added Value, Pending ones included. Open the AV from its row.",
+/* Next opens the AV, as its row's title does. */
+const onManage = (id: string): ScenarioStep => ({
+  text: `Admin view, on Manage: every open Added Value, Pending ones included. Open ${id.toUpperCase()} from its row, or press Next.`,
   target: "step:av-list",
   path: "/manage",
-};
+  open: `/added-values/${id}`,
+});
 const onAV = (id: string, text: string, target = "step:av-menu"): ScenarioStep => ({ text, target, path: `/added-values/${id}` });
+/* A step Next does for you: it presses the target (a `step:` target, the button inside it). */
+const press = (id: string, text: string, target: string): ScenarioStep => ({ ...onAV(id, text, target), action: true });
 
 const base = { status: "Implemented", testing: "Not tested", role: "admin", setup: undefined } as const;
 
@@ -27,9 +31,9 @@ export const DECIDE_SCENARIOS: readonly ScenarioDef[] = [
     id: "av-06-accept-reject.accept",
     start: "/manage",
     steps: [
-      onManage,
-      onAV("vcp-1201", "VCP-1201, Pending: Reject and Accept in the header are an admin's.", "button:Accept"),
-      onAV("vcp-1201", "Press Accept. The dialog asks to confirm; Multipart (AV · 10) stays off. Press Confirm, then Next.", "button:Accept"),
+      onManage("vcp-1201"),
+      press("vcp-1201", "VCP-1201, Pending: Reject and Accept in the header are an admin's. Press Accept, or Next.", "button:Accept"),
+      press("vcp-1201", "The dialog asks to confirm; Multipart (AV · 10) stays off. Press Confirm, or Next.", "button:Confirm"),
       onAV("vcp-1201", "Accepted: Date Accepted is set, Status History logs it, and the header's next move is Move to In Progress. A toast confirms it."),
     ],
     name: "Accept a Pending AV",
@@ -45,46 +49,44 @@ export const DECIDE_SCENARIOS: readonly ScenarioDef[] = [
     domain: "Design (BESA)",
     start: "/manage",
     steps: [
-      onManage,
-      onAV("vcp-1202", "VCP-1202 is Lena's, Pending.", "button:Reject"),
-      onAV(
-        "vcp-1202",
-        "Press Reject. Reject in the dialog stays faded until a Rejection Reason is picked; each reason shows what it means. Pick one, press Reject, then Next.",
-        "button:Reject",
-      ),
+      onManage("vcp-1202"),
+      press("vcp-1202", "VCP-1202 is Lena's, Pending. Press Reject, or Next.", "button:Reject"),
       {
-        text: "Rejected: a red banner says why (Figma 1094:95365). The toast's link opens Archive → Rejected.",
+        ...onAV("vcp-1202", "Reject in the dialog stays faded until a Rejection Reason is picked; each reason shows what it means. Which reason?", "button:Reject"),
+        options: [
+          { label: "One from the list", goto: "listed" },
+          { label: "Other, with your own words", goto: "other" },
+        ],
+      },
+      {
+        id: "listed",
+        ...press("vcp-1202", "Pick a reason (Duplicate, say) and press Reject, or press Next.", "button:Reject"),
+        enter: { "Rejection Reason": "Duplicate" },
+        next: "rejected",
+      },
+      {
+        id: "other",
+        ...onAV("vcp-1202", "Choose Other, or press Next: it has no explanation, and gives an optional text field instead (Figma 1139:137784)."),
+        enter: { "Rejection Reason": "Other" },
+      },
+      {
+        ...press("vcp-1202", "Type a reason and press Reject, or press Next.", "button:Reject"),
+        enter: { "Rejection Reason — details": "Already covered by the archive redesign." },
+      },
+      {
+        id: "rejected",
+        text: "Rejected: a red banner says why (Figma 1094:95365), with your text for Other. The toast's link opens Archive → Rejected.",
         path: "/added-values/vcp-1202",
       },
-      { text: "Open Archive → Rejected in the sidebar.", path: "/added-values/vcp-1202" },
+      { text: "Open Archive → Rejected in the sidebar, or press Next.", path: "/added-values/vcp-1202", open: "/archive/rejected" },
       { text: "It's listed there, and gone from Manage. An admin can still reopen it from its ⋮ menu (the next scenario).", target: "step:av-list", path: "/archive/rejected" },
     ],
     name: "Reject a Pending AV",
-    demonstrates: "Rejecting needs a reason; the AV shows it and moves to Archive → Rejected.",
+    demonstrates: "Rejecting needs a reason (a listed one, or Other with free text); the AV shows it and moves to Archive → Rejected.",
     conditions: "Eve as Admin of Design (the rail's domain switcher), on Manage. Lena's VCP-1202 is Pending.",
     simulated: "Rejecting always succeeds.",
-    expected: "Reject stays disabled until a reason is chosen. Then a red \"This Added Value was rejected\" banner with the reason, a toast, and the AV in Archive → Rejected.",
+    expected: "Reject stays disabled until a reason is chosen; Other shows a text field. Then a red \"This Added Value was rejected\" banner with the reason (\"Other: …\" with the text), a toast, and the AV in Archive → Rejected.",
     task: "As an admin, turn down Lena's Added Value, and say why.",
-  },
-  {
-    ...base,
-    id: "av-06-accept-reject.reject-other",
-    start: "/added-values/vcp-1202",
-    steps: [
-      onAV("vcp-1202", "Press Reject, then choose Other as the reason.", "button:Reject"),
-      onAV(
-        "vcp-1202",
-        "Other has no explanation; it gives an optional text field instead (Figma 1139:137784). Type a reason, press Reject, then Next.",
-        "button:Reject",
-      ),
-      { text: "The banner shows Other with what you typed.", path: "/added-values/vcp-1202" },
-    ],
-    name: "Reject with Other",
-    demonstrates: "The Other reason takes free text, which the Rejected banner shows.",
-    conditions: "Eve as Admin, on Lena's Pending VCP-1202.",
-    simulated: "Rejecting always succeeds.",
-    expected: "Choosing Other shows a text field; the banner reads \"Other: …\" with the text.",
-    task: "As an admin, reject Lena's Added Value for a reason that isn't in the list.",
   },
   {
     ...base,
@@ -95,13 +97,14 @@ export const DECIDE_SCENARIOS: readonly ScenarioDef[] = [
         "vcp-1209",
         "Admin view. VCP-1209 is Lena's, rejected two weeks ago as a duplicate: the red banner says why. Rejected is no longer final for an admin (decided 13 Nov 2026).",
       ),
-      onAV("vcp-1209", "Open ⋮: above Edit and Delete are Move to Backlog, Move to Pending and Move to Draft. Choose Move to Pending, then Next."),
+      press("vcp-1209", "Open ⋮, or press Next.", "step:av-menu"),
+      press("vcp-1209", "Above Edit and Delete are Move to Backlog, Move to Pending and Move to Draft. Choose Move to Pending, or press Next.", "button:Move to Pending"),
       onAV(
         "vcp-1209",
         "Pending again: the banner is gone, Reject and Accept are back in the header, and Status History logs Rejected → Pending. A toast confirms it.",
         "button:Accept",
       ),
-      { text: "Open Manage in the sidebar.", path: "/added-values/vcp-1209" },
+      { text: "Open Manage in the sidebar, or press Next.", path: "/added-values/vcp-1209", open: "/manage" },
       { text: "It's back in the admins' queue, to be decided again, and gone from Archive → Rejected.", target: "step:av-list", path: "/manage" },
     ],
     name: "Reopen a rejected AV",
@@ -120,10 +123,12 @@ export const DECIDE_SCENARIOS: readonly ScenarioDef[] = [
         "vcp-1204",
         "Admin view. VCP-1204 was accepted and is being worked on: it's In QA. On work in progress (Accepted, a domain step, Review) an admin's ⋮ menu has Move to Backlog and Move to Draft (decided 13 Nov 2026).",
       ),
-      onAV(
-        "vcp-1204",
-        "Open ⋮ → Move to Backlog. Feedback is required, as in AV · 05: type why (\"Paused until the registry sync is fixed\"), press Move to Backlog, then Next.",
-      ),
+      press("vcp-1204", "Open ⋮, or press Next.", "step:av-menu"),
+      press("vcp-1204", "Choose Move to Backlog, or press Next.", "button:Move to Backlog"),
+      {
+        ...press("vcp-1204", "Feedback is required, as in AV · 05. Type why (\"Paused until the registry sync is fixed\") and press Move to Backlog, or press Next.", "button:Move to Backlog"),
+        enter: { Feedback: "Paused until the registry sync is fixed" },
+      },
       {
         text: "Backlog, with the feedback as Remarks. Its plan stays on it (assignees, dates, points); Date Accepted goes, and Status History logs In QA → Backlog. The toast's link opens Archive → Backlogs.",
         target: "step:remarks",
@@ -131,44 +136,12 @@ export const DECIDE_SCENARIOS: readonly ScenarioDef[] = [
       },
       onAV("vcp-1204", "It comes back the way any Backlog AV does (AV · 05): Accept or Reject in the header, or ⋮ → Move to Pending / Move to Draft."),
     ],
-    name: "Park work in progress",
+    name: "Move in-progress work to the Backlog",
     demonstrates: "An admin moves an accepted, in-progress AV to the Backlog, saying why; acceptance is not a one-way door.",
     conditions: "Eve as Admin, on VCP-1204 at In QA (Development).",
     simulated: "The move always succeeds. Nobody is notified in the prototype (Activity · 02).",
     expected: "An admin's ⋮ menu on an in-progress AV has Move to Backlog and Move to Draft. Move to Backlog asks for feedback (required), then the AV is in the Backlog with Remarks and listed in Archive → Backlogs.",
     task: "As an admin: the holiday export has to wait for another fix. Take it out of the work for now, and say why.",
-  },
-  {
-    ...base,
-    id: "av-06-accept-reject.cancel",
-    start: "/added-values/vcp-1201",
-    steps: [
-      onAV("vcp-1201", "Press Reject, pick a reason, then Cancel (or Escape). Nothing changes, and focus returns to Reject. Then Next.", "button:Reject"),
-      onAV("vcp-1201", "Press Reject again: the dialog has forgotten the reason. Cancel, then Next.", "button:Reject"),
-      onAV("vcp-1201", "Same for Accept: Cancel leaves it Pending.", "button:Accept"),
-    ],
-    name: "Change your mind",
-    demonstrates: "Cancel moves nothing, and each dialog starts fresh.",
-    conditions: "Eve as Admin, on Marvin's Pending VCP-1201.",
-    simulated: "Nothing is sent.",
-    expected: "The AV stays Pending; the reject dialog clears itself when it closes.",
-    task: "As an admin, start to reject Marvin's Added Value, then change your mind.",
-  },
-  {
-    ...base,
-    id: "av-06-accept-reject.not-an-admin",
-    role: "user",
-    start: "/added-values/vcp-1200",
-    steps: [
-      onAV("vcp-1200", "Eve as a User, on her own Pending AV: no Accept or Reject. Only an admin decides."),
-      onAV("vcp-1200", "Switch View as to Admin (bottom bar): Reject and Accept appear.", "button:Accept"),
-    ],
-    name: "Not an admin",
-    demonstrates: "Only an admin sees Accept and Reject; the initiator waits.",
-    conditions: "Eve as User, on her Pending VCP-1200.",
-    simulated: "Roles come from the View as switch.",
-    expected: "No decision buttons as a User; they appear as an Admin.",
-    task: "Your Added Value about undo is waiting for review. Can you approve it yourself?",
   },
 ];
 
