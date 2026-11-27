@@ -230,8 +230,11 @@ export function Catalogue() {
         <div className="flex min-w-0 flex-1 flex-col gap-10">
         <header className="flex flex-col gap-2">
           <h1 className="text-heading-lg-semibold text-text-primary">Flows &amp; Scenarios</h1>
-          <p className="text-body-md-regular text-text-secondary">
-            Pick a scenario to be walked through it step by step, or explore the prototype freely.
+          <p className="max-w-3xl text-body-md-regular text-text-secondary">
+            <strong className="font-semibold text-text-primary">Start</strong> walks you through a scenario step by step,
+            with Back and Next. <strong className="font-semibold text-text-primary">As participant</strong> is for a
+            usability test: the same scenario with only its task, no steps, so you can watch someone find their own way;
+            they press I&apos;m done when they think they&apos;ve finished. Or explore the prototype freely.
           </p>
         </header>
         {shown.map((flow) => (

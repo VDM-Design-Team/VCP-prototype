@@ -512,6 +512,8 @@ export function ScenarioBar() {
   const pathname = usePathname();
   const { active, view, trail, next, back, start, clear, formValues, fillForm } = useScenario();
   const headingId = React.useId();
+  /* A participant says when they think they're done (the scenario it was said in, so a new one starts fresh). */
+  const [doneIn, setDoneIn] = React.useState<string>();
   if (!active || pathname.startsWith("/flows")) return null;
   const { flow, scenario } = active;
   const key = scenario.id.slice(flow.id.length + 1);
@@ -528,10 +530,35 @@ export function ScenarioBar() {
         aria-labelledby={headingId}
         className="fixed bottom-4 left-4 z-50 w-80 rounded-md border border-stroke-default bg-surface-elevated p-4 shadow-card"
       >
-        <h2 id={headingId} className="text-label-sm-medium text-text-secondary">
-          Your task
-        </h2>
-        <p className="mt-1 text-body-sm-medium text-text-primary">{scenario.task}</p>
+        {/* The task only: no steps, no outlines. The participant decides when they're done (a usability test's
+            rule: whether they really got there is what the facilitator watches), and can stop at any time. */}
+        {doneIn === scenario.id ? (
+          <div className="flex flex-col gap-3">
+            <h2 id={headingId} className="text-body-md-semibold text-text-primary">
+              Task finished. Thank you!
+            </h2>
+            <Button size="sm" onClick={leave}>
+              Back to the scenarios
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1">
+              <h2 id={headingId} className="text-label-sm-medium text-text-secondary">
+                Your task
+              </h2>
+              <p className="text-body-sm-medium text-text-primary">{scenario.task}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => setDoneIn(scenario.id)}>
+                I&apos;m done
+              </Button>
+              <Button size="sm" variant="tertiary" onClick={leave}>
+                Stop the task
+              </Button>
+            </div>
+          </div>
+        )}
       </aside>
     );
   }
