@@ -231,6 +231,8 @@ export function Catalogue() {
         <header className="flex flex-col gap-2">
           <h1 className="text-heading-lg-semibold text-text-primary">Flows &amp; Scenarios</h1>
           <p className="max-w-3xl text-body-md-regular text-text-secondary">
+            Pick a scenario to be walked through it step by step, or explore the prototype freely.
+            <br />
             <strong className="font-semibold text-text-primary">Start</strong>: guided, step by step.{" "}
             <strong className="font-semibold text-text-primary">As participant</strong>: the task only, for usability tests.
           </p>
