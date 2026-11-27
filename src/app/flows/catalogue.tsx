@@ -13,11 +13,13 @@ import type { FlowDef, ScenarioDef } from "@/flows/types";
  * the flows with none yet are listed as planned. A scenario's card and its
  * start read the same definition.
  */
+const built = FLOWS.filter((f) => f.scenarios.length > 0);
+const planned = FLOWS.filter((f) => f.scenarios.length === 0);
+const areas = [...new Set(built.map((f) => f.area))];
+
 export function Catalogue() {
   const router = useRouter();
   const { clear } = useScenario();
-  const built = FLOWS.filter((f) => f.scenarios.length > 0);
-  const planned = FLOWS.filter((f) => f.scenarios.length === 0);
   /* Back from a scenario (Finish, Leave scenario) the address names its card: show it, and put focus on its Start,
      so the list doesn't open at the top again. */
   React.useEffect(() => {
@@ -27,24 +29,67 @@ export function Catalogue() {
     card.scrollIntoView({ block: "center" });
     card.querySelector<HTMLElement>("button")?.focus({ preventScroll: true });
   }, []);
+  /* The contents mark the flow being read: the last one whose heading has scrolled past the top third. */
+  const [current, setCurrent] = React.useState(built[0]?.id);
+  React.useEffect(() => {
+    const onScroll = () => {
+      const line = window.innerHeight / 3;
+      let at = built[0]?.id;
+      for (const f of built) {
+        const el = document.getElementById(`flow-${f.id}`);
+        if (el && el.getBoundingClientRect().top <= line) at = f.id;
+      }
+      setCurrent(at);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   return (
-    <main className="min-h-screen bg-surface-canvas px-6 pb-10">
-      <div className="mx-auto flex max-w-5xl flex-col gap-10">
-        {/* Stays at the top while the list scrolls, so the way out is always in reach. */}
-        <header className="sticky top-0 z-10 flex flex-col gap-2 border-b border-stroke-default bg-surface-canvas pb-4 pt-10">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h1 className="text-heading-lg-semibold text-text-primary">Flows &amp; Scenarios</h1>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => {
-                clear();
-                router.push("/");
-              }}
-            >
-              Explore the prototype
-            </Button>
-          </div>
+    <main className="min-h-screen bg-surface-canvas px-6 py-10">
+      <div className="mx-auto flex max-w-7xl flex-col gap-10 lg:flex-row lg:items-start">
+        {/* Contents: every flow by area, a jump to each, and the way out. Sticky beside the list on a wide window;
+            above it on a narrow one. */}
+        <nav aria-label="Flows" className="flex shrink-0 flex-col gap-4 lg:sticky lg:top-10 lg:max-h-screen lg:w-64 lg:overflow-y-auto lg:pb-10">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              clear();
+              router.push("/");
+            }}
+          >
+            Explore the prototype
+          </Button>
+          {areas.map((area) => (
+            <div key={area} className="flex flex-col gap-1">
+              <p className="text-label-sm-semibold text-text-secondary">{area}</p>
+              <ul className="flex flex-col">
+                {built
+                  .filter((f) => f.area === area)
+                  .map((f) => (
+                    <li key={f.id}>
+                      <a
+                        href={`#flow-${f.id}`}
+                        aria-current={current === f.id ? "location" : undefined}
+                        className={`flex justify-between gap-2 rounded-sm px-2 py-1 text-body-sm-regular hover:bg-surface-neutral-subtle ${
+                          current === f.id ? "bg-surface-neutral-subtle text-text-primary" : "text-text-secondary"
+                        }`}
+                      >
+                        <span>
+                          {f.number} {f.name}
+                        </span>
+                        <span className="text-text-tertiary">{f.scenarios.length}</span>
+                      </a>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          ))}
+        </nav>
+        <div className="flex min-w-0 flex-1 flex-col gap-10">
+        <header className="flex flex-col gap-2">
+          <h1 className="text-heading-lg-semibold text-text-primary">Flows &amp; Scenarios</h1>
           <p className="text-body-md-regular text-text-secondary">
             Pick a scenario to be walked through it step by step, or explore the prototype freely.
           </p>
@@ -62,6 +107,7 @@ export function Catalogue() {
             </p>
           </section>
         )}
+        </div>
       </div>
     </main>
   );
@@ -72,7 +118,7 @@ function FlowGroup({ flow }: { flow: FlowDef }) {
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline gap-3">
-        <h2 id={headingId} className="text-title-md-semibold text-text-primary">
+        <h2 id={headingId} className="scroll-mt-10 text-title-md-semibold text-text-primary">
           {flow.area} · {flow.number} {flow.name}
         </h2>
         {flow.figjam && (
@@ -99,7 +145,7 @@ function ScenarioCard({ flow, scenario }: { flow: FlowDef; scenario: ScenarioDef
       /* Leaving the scenario comes back to this card (`/flows#<id>`). */
       id={scenario.id}
       aria-labelledby={headingId}
-      className="flex scroll-mt-48 flex-col gap-2 rounded-md border border-stroke-default bg-surface-elevated p-4"
+      className="flex flex-col gap-2 rounded-md border border-stroke-default bg-surface-elevated p-4"
     >
       <h3 id={headingId} className="text-body-md-semibold text-text-primary">
         {scenario.name}
