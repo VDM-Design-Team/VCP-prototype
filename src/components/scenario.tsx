@@ -11,7 +11,6 @@ import { useSettings } from "./settings-store";
 import { ADMIN_DOMAINS, useShellState } from "./shell-state";
 import { findScenario } from "@/flows/catalogue";
 import type { FlowDef, ScenarioDef, ScenarioStep, StepFill } from "@/flows/types";
-import { ViewAs } from "./view-as";
 
 export type ScenarioView = "reviewer" | "participant";
 
@@ -285,6 +284,13 @@ export function ScenarioScreen({ children }: { children: React.ReactNode }) {
   return <React.Fragment key={rebuilt}>{children}</React.Fragment>;
 }
 
+/**
+ * Whether a scenario shows how the roles differ: one of its steps says to switch View as, or presses a role.
+ * Only then is View as usable while it's open; otherwise it shows the scenario's role, disabled.
+ */
+export const switchesRole = (scenario: ScenarioDef) =>
+  scenario.steps.some((s) => /\bView as\b/.test(s.text) || /^button:(User|Admin|Super Admin)$/.test(s.target ?? ""));
+
 export function useScenario() {
   const state = React.useContext(ScenarioContext);
   if (!state) throw new Error("useScenario needs <ScenarioProvider> above it (it's in the root layout).");
@@ -353,8 +359,7 @@ function findTarget(target: string): HTMLElement | null {
   const at = target.indexOf(":");
   const kind = target.slice(0, at);
   const value = target.slice(at + 1);
-  /* The card's own buttons are never a step's target; its View as is (a step can say "Switch View as to Admin"). */
-  const outsideBar = (el: Element) => !el.closest("[data-scenario-bar]") || !!el.closest("[data-view-as]");
+  const outsideBar = (el: Element) => !el.closest("[data-scenario-bar]");
   if (kind === "step") return document.querySelector<HTMLElement>(`[data-flow-step="${CSS.escape(value)}"]`);
   if (kind === "button")
     return (
@@ -611,8 +616,6 @@ export function ScenarioBar() {
             </p>
           </div>
         )}
-        {/* The floating View as bar would sit under this card, so the card carries it while a scenario is open. */}
-        <ViewAs />
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="secondary" disabled={trail.length < 2} onClick={back}>
             Back
