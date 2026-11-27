@@ -17,7 +17,7 @@ Keep each domain's people, lists and teams right (an admin), and everyone's acco
 ## Main steps and decision points
 1. **Settings** (Figma `806:102049`, DS `Tabs`): Personal Info, **Users**, **Admin Panel**, Announcements, Manuals, Password.
 2. **Users** (DS `UsersTable`, Figma `992:3002`): the domain's people, their status (DS `AccountStatusTag`) and when they were added; a search, sorting, pages.
-   - **+ New User** (DS `UserAccountModal`, "Create New User"): Status, Name, Email, Roles. Submit: "User created".
+   - **+ New User** (DS `UserAccountModal`, "Create New User"): Status, Name, Email, Roles. Submit: "<Name> added" ("They're waiting for approval." when pending).
    - **View** (the same dialog, filled): Status, Name, Email, **Capacity Points** with its own **Save** (it saves the points alone), Roles. Submit: "Changes saved".
    - **Capacity Points are a per-person cap** (decided 10 Nov 2026): the most that person can take in one cycle. The cycle's fixed total stays separate. **The Planning List warns** when someone's work in an open cycle goes past their cap ("Jack Morgan: 12 of 8 points in C44"); the dashboard's User Capacity row is capped by it.
 3. **Admin Panel** (DS `DomainCard`, Figma `806:102342`): **Roles**, **Status** and **Assignee Types**, each with Add New, a pencil (rename) and a bin (delete).
@@ -41,8 +41,8 @@ Keep each domain's people, lists and teams right (an admin), and everyone's acco
 | A team with no name | "Give the team a name." | Name it |
 | Add Manual with no name, or no file | "Give the manual a name." / "Add at least one file." | Fill them in |
 | A row deleted with its bin (a tag, a status step, a team) | "<name> deleted", with Undo (DS `undoDeletion` recipe); focus on the next row's Delete (or the previous one's, or Add New) | Undo |
-| An account deleted after the confirm | "Account deleted", no Undo (the confirm says it can't be undone); focus on the next row's Delete, or the previous one's, or the search | — |
-| A domain or a project deleted after the confirm | "Domain deleted" / "Project deleted", no Undo; focus on the card's Add New (DS `TagManagement`) | — |
+| An account deleted after the confirm | "<Name> deleted" ("They can no longer sign in."), no Undo (the confirm says it can't be undone); focus on the next row's Delete, or the previous one's, or the search | — |
+| A domain or a project deleted after the confirm | "<Name> deleted", no Undo; focus on the card's Add New (DS `TagManagement`) | — |
 | A project Added Values still belong to | Delete is refused: "Can't delete VCP", "used by" them (decided 10 Nov 2026); the dialog stays open | Cancel, or move the Added Values first |
 
 ## Completion or exit

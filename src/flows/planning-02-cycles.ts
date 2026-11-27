@@ -81,7 +81,7 @@ export const CYCLES_SCENARIOS: readonly ScenarioDef[] = [
       },
       {
         ...say(
-          "It doesn't go through: the toast \"Unavailable Assignee\" (Figma's copy), and focus on Noah's field. Swap Noah for Maya Bennett with 5 points, and Capacity Points 5: she's busy then (the field says so) but can be assigned, and the Due Date is estimated. Press Confirm, or Next.",
+          "It doesn't go through: the toast \"Assignee unavailable\" (the design system's copy), and focus on Noah's field. Swap Noah for Maya Bennett with 5 points, and Capacity Points 5: she's busy then (the field says so) but can be assigned, and the Due Date is estimated. Press Confirm, or Next.",
         ),
         target: "button:Confirm",
         action: true,

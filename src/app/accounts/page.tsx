@@ -5,11 +5,12 @@ import {
   ACCOUNT_STATUS_OPTIONS,
   AccountsPage,
   Button,
+  changesSaved,
   ConfirmDeleteModal,
-  UserAccountModal,
-  useToast,
   type DataTableSort,
   type UserAccountDraft,
+  UserAccountModal,
+  useToast,
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { SEARCH, neighbours, useFocusAfterRemove } from "@/components/focus-after-remove";
@@ -55,7 +56,9 @@ export default function AccountsScreen() {
       access: Object.fromEntries(draft.access.map((r) => [String(r.id), { access: r.access, admin: r.admin }])),
     });
     setOpen(null);
-    toast({ tone: "success", title: editing ? "Changes saved" : "Account added", description: `${draft.name}: ${draft.access.filter((r) => r.access).length} domain(s).` });
+    const domains = draft.access.filter((r) => r.access).length;
+    const access = `${draft.name} has access to ${domains} ${domains === 1 ? "domain" : "domains"}.`;
+    toast(editing ? changesSaved({ description: access }) : { tone: "success", title: `${draft.name} added`, description: access });
   };
 
   return (
@@ -121,7 +124,7 @@ export default function AccountsScreen() {
           removeAccount(gone.id);
           setDeleting(null);
           /* The confirm says it can't be undone (Figma's copy), so there is no Undo. */
-          toast({ tone: "info", title: "Account deleted", description: `${gone.name} can no longer sign in.` });
+          toast({ tone: "success", title: `${gone.name} deleted`, description: "They can no longer sign in." });
         }}
       />
     </Screen>

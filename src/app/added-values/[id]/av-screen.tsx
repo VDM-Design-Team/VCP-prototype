@@ -4,12 +4,11 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
   AcceptPendingAVModal,
-  ChildPartModal,
-  MultipartParentChip,
-  MultipartSection,
-  Banner,
+  type AVProgressionRole,
+  type AVTransition,
   backloggedBanner,
-  rejectedBanner,
+  Banner,
+  ChildPartModal,
   CommentSection,
   ConfirmDeleteAVModal,
   DeliverablesCard,
@@ -19,19 +18,21 @@ import {
   DetailCard,
   DetailCardMenu,
   EmptyState,
-  HandoffAVModal,
-  MoveToBacklogModal,
   HANDOFF_REJECTION_REASONS,
+  HandoffAVModal,
   Icon,
+  MIN_ACTION_TOAST_DURATION,
+  MoveToBacklogModal,
+  MultipartParentChip,
+  MultipartSection,
   PageTitle,
   PENDING_REJECTION_REASONS,
+  rejectedBanner,
   RejectPendingAVModal,
   ReviewAVModal,
   StatusHistory,
   StatusProgression,
   useToast,
-  type AVProgressionRole,
-  type AVTransition,
 } from "@vdm-design-team/vcp-design-system";
 import { Screen } from "@/components/screen";
 import { openingEditFrom } from "@/components/edit-return";
@@ -61,6 +62,8 @@ const BEFORE_ACCEPTANCE = { remarks: undefined, rejection: undefined, dateAccept
 
 /** "05-11-2026" — the handoff dialog's date format. */
 const ddmmyyyy = (iso: string) => iso.split("-").reverse().join("-");
+/** A toast's detail for a reason picked in a dialog ("Reason: Duplicate."), or none. */
+const reasonLine = (label?: string) => (label ? `Reason: ${label}.` : undefined);
 
 /** Who the viewer is to this AV, as the status buttons need it. */
 function headerRole(av: AddedValue, admin: boolean): AVProgressionRole | undefined {
@@ -148,6 +151,8 @@ export function AVScreen({ id }: { id: string }) {
       title,
       description,
       actionLabel: "Open the archive",
+      /* With an action, a toast times out only from 15 s (DS): VCP's toasts close on their own. */
+      duration: MIN_ACTION_TOAST_DURATION,
       onAction: () => router.push(`/archive/${archive}`),
     });
 
@@ -499,7 +504,7 @@ export function AVScreen({ id }: { id: string }) {
           archiveToast(
             `${av.ref} rejected`,
             "rejected",
-            PENDING_REJECTION_REASONS.find((r) => r.value === reason)?.label,
+            reasonLine(PENDING_REJECTION_REASONS.find((r) => r.value === reason)?.label),
           );
         }}
       />
@@ -551,7 +556,7 @@ export function AVScreen({ id }: { id: string }) {
           toast({
             tone: "success",
             title: `${av.ref} sent back to ${last.label}`,
-            description: HANDOFF_REJECTION_REASONS.find((r) => r.value === reason)?.label,
+            description: reasonLine(HANDOFF_REJECTION_REASONS.find((r) => r.value === reason)?.label),
           });
         }}
       />

@@ -75,7 +75,7 @@ export default function ContactListScreen() {
           setAll((a) => a.filter((r) => r.id !== gone.id));
           setDeleting(null);
           /* The confirm says it can't be undone, so there is no Undo. */
-          toast({ tone: "success", title: "Message deleted", description: `The message from ${gone.email} was deleted.` });
+          toast({ tone: "success", title: "Message deleted", description: `From ${gone.email}.` });
         }}
       />
     </Screen>

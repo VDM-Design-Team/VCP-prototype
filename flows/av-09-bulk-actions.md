@@ -28,7 +28,7 @@ Change several Added Values at once, instead of opening each one.
    - Backlog: a **required Feedback** *(decided 13 Nov 2026, as moving one AV asks for it in AV · 05)*. The bulk feedback covers every AV that has none of its own; Confirm with an AV left without any is refused with "Enter feedback, or some for each Added Value." and the cursor goes to the field.
 
    Delete opens `ConfirmDeleteAVModal` with every title.
-4. **Confirm** changes every selected AV that can take it, clears the selection and shows **"Added Values Updated"**, e.g. "Urgency changed to High for 2 Added Values." (Figma `1728:282486`).
+4. **Confirm** changes every selected AV that can take it, clears the selection and shows **"Added Values updated"** (the design system's `bulkUpdated`), e.g. "Urgency changed to High for 2 Added Values."; a deletion says "2 Added Values deleted" (Figma `1728:282486`).
 5. If some can't: **"Added Values Failed to Update"** (`BulkActionFailedModal`): "1 of 3 added values failed to update Status to Accepted", each with its reference, title and why (Figma `1737:287581`). **Got it** closes it.
 
 ## What Figma defines (the action bar, `1707:166018`)

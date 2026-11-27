@@ -40,7 +40,7 @@ export const ICYMI_SCENARIOS: readonly ScenarioDef[] = [
       on("User view: only Eve's own AVs, the ones she raised or is assigned to: her overdue one, one due soon, and one awaiting her review (she raised it). No Pending cards: accepting is an admin's, and an admin sees the domain's."),
       on("Point at a card: its ✕ appears (Figma: Remove/Dismiss Card). Tab reaches it too: \"Dismiss <title>\"."),
       press("Dismiss Holiday registry export (Due Soon).", "Dismiss Holiday registry export"),
-      on("It's gone and the rest close up; focus is on the card that took its place. A toast: \"Dismissed\", with Undo (decided 9 Nov 2026). Undo brings it back, with focus on it."),
+      on("It's gone and the rest close up; focus is on the card that took its place. A toast: \"Card dismissed\", with Undo (decided 9 Nov 2026). Undo brings it back, with focus on it."),
       on("Dismiss the other two: the strip stays, with its heading and \"You’re all caught up.\" (an empty strip on arrival isn't drawn at all). They stay away while nothing changes, even across pages. Open Assigned → Holiday registry export (VCP-1204), then Next."),
       { ...press("On its page, move it on: Move to Ready for deploy.", "Move to Ready for deploy"), path: "/added-values/vcp-1204" },
       { text: "Its status changed. Back to the Dashboard (the rail), then Next.", path: "/added-values/vcp-1204" },

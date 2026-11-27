@@ -30,7 +30,7 @@ Plan Backlog Added Values into cycles, each with dates, an assignee and points, 
 ## Alternatives, failures and recovery
 | Condition | What the user sees | How they recover |
 |---|---|---|
-| An unavailable assignee, Confirm | The error under their field, focus there, and the toast "Unavailable Assignee: A selected assignee is unavailable during the chosen dates. Please change the dates or remove this assignee before submitting." | Pick someone else, or change the dates |
+| An unavailable assignee, Confirm | The error under their field, focus there, and the toast "Assignee unavailable: A selected assignee is unavailable during the chosen dates. Please change the dates or remove this assignee before submitting." | Pick someone else, or change the dates |
 | Details missing, Confirm | Each missing field says so | Fill them in |
 | Cancel | The AV stays in the Backlog; focus on its title | — |
 | Filters leave a section empty | "No Added Values here." in that section | Reset |

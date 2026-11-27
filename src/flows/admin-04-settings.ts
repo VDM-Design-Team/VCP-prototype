@@ -25,7 +25,7 @@ export const SETTINGS_SCENARIOS: readonly ScenarioDef[] = [
       press("Open Users: Development's people (the rail's domain), with their status and when they were added.", "Users"),
       press("Press + New User.", "New User"),
       { text: "Create New User (Figma's New User): a Status (Pending, say), a Name, an Email, and tick a Role (Developer). Submit, then Next.", path: SETTINGS },
-      on("\"User created\": they're in the table, with their status. A pending user waits for approval."),
+      on("\"<their name> added\": they're in the table, with their status. A pending user waits for approval, and the toast says so."),
     ],
     name: "Add a user",
     demonstrates: "The Users tab and Create New User (Figma 992:3002).",
@@ -144,7 +144,7 @@ export const SETTINGS_SCENARIOS: readonly ScenarioDef[] = [
     steps: [
       press("Press Delete on Priya Shah (pending).", "Delete Priya Shah", "/accounts"),
       { text: "\"Are you sure you want to delete?\" with her name, so nobody deletes the wrong one. Press Delete, then Next.", path: "/accounts" },
-      on("\"Account deleted\". Focus is on the Delete of the row before hers (she was the last), not lost. The confirm said it can't be undone, so there is no Undo.", "step:accounts", "/accounts"),
+      on("\"Priya Shah deleted\". Focus is on the Delete of the row before hers (she was the last), not lost. The confirm said it can't be undone, so there is no Undo.", "step:accounts", "/accounts"),
     ],
     name: "Delete an account",
     demonstrates: "Deleting a user, with the confirm; focus moves on, not lost.",
