@@ -27,6 +27,13 @@ export interface WalkedStep {
   via: "start" | "next" | "action" | "fill" | "enter" | "page";
 }
 
+/**
+ * Whether each walked step (by its place in the trail) needs a dialog or popover Back can't rebuild: its part of the
+ * screen was inside one when it began, and its own `first` can't open it again (it starts inside it, as a date
+ * picker's field does, rather than on the page, as the bell does). Back then goes on to the press that opens it.
+ */
+const inDialogAt = new Map<number, boolean>();
+
 type FormValues = Record<string, unknown>;
 /** What Back does again after rebuilding a form's page: a fill, or a press (a blocked Submit's errors). */
 type Redo = { set: FormValues } | { press: string };
@@ -197,7 +204,20 @@ export function ScenarioProvider({ children }: { children: React.ReactNode }) {
         const redone = (via: WalkedStep["via"]) => via === "action" || via === "enter";
         /* A branch picked on a press's result ("Which reason?" in the reject dialog) belongs to that press too. */
         const branched = (i: number) => trail[i].via === "next" && !!active.scenario.steps[trail[i - 1].index]?.options;
-        while (to > 1 && (redone(trail[to - 1].via) || branched(to - 1)) && trail[to - 1].path === trail[to - 2].path) to -= 1;
+        /* Only a step that just shows a press's result goes: one that asks for something of its own (a press, an
+           entry, a fill, a choice) stays, unless what it asks for was inside a dialog Back can't rebuild. */
+        const resultOnly = (i: number) => {
+          const step = active.scenario.steps[trail[i].index];
+          const asks = !!(step?.action || step?.enter || step?.fill || step?.first || step?.options);
+          return !asks || !!inDialogAt.get(i);
+        };
+        while (
+          to > 1 &&
+          (redone(trail[to - 1].via) || branched(to - 1)) &&
+          resultOnly(to - 1) &&
+          trail[to - 1].path === trail[to - 2].path
+        )
+          to -= 1;
         const kept = trail.slice(0, to);
         const landing = kept[kept.length - 1];
         /* The form isn't sample data: it's rebuilt from the scenario's setup. So what the walk did on this page
@@ -754,6 +774,43 @@ export function ScenarioBar() {
     const t = window.setTimeout(() => noteTextAtStart(current?.enter, current?.target), 50);
     return () => window.clearTimeout(t);
   }, [current, pathname]);
+  /* As a step begins: note whether its part of the screen is in a dialog (for Back), and if it's inside a popover
+     or menu that isn't open (Next's own click on the step before closed it), open it, so the reviewer can do the
+     step themselves. Only `first` presses that open something (`aria-expanded`) are made: a step's other `first`
+     presses (dismissing cards, ticking rows) stay Next's. */
+  const at = trail.length - 1;
+  const guided = view !== "participant";
+  const stepHere = !!active && !!current && onPage(current, active.scenario, pathname);
+  React.useEffect(() => {
+    if (!current || !stepHere) return;
+    let cancelled = false;
+    const part = () =>
+      current.target
+        ? findTarget(current.target)
+        : current.enter
+          ? (Object.keys(current.enter).map((name) => findField(name)).find(Boolean) ?? null)
+          : null;
+    const shown = () =>
+      current.target ? !!findTarget(current.target) : !current.enter || Object.keys(current.enter).every((name) => !!findField(name));
+    const t = window.setTimeout(async () => {
+      if (guided && current.first && !shown()) {
+        for (const f of current.first) {
+          const el = pressable(f);
+          if (cancelled || !el?.hasAttribute("aria-expanded") || el.getAttribute("aria-expanded") === "true") continue;
+          el.click();
+          await pause(150);
+        }
+      }
+      if (cancelled) return;
+      const inDialog = (el: Element | null | undefined) => !!el?.closest('[role="dialog"], [role="alertdialog"]');
+      const opener = current.first?.[0] ? pressable(current.first[0]) : null;
+      inDialogAt.set(at, inDialog(part()) && !(opener && !inDialog(opener)));
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [current, stepHere, at, guided]);
   if (!active || pathname.startsWith("/flows")) return null;
   const { flow, scenario } = active;
   const key = scenario.id.slice(flow.id.length + 1);
