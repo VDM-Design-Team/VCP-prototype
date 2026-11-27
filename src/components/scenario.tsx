@@ -735,10 +735,21 @@ export function ScenarioBar() {
         aria-labelledby={headingId}
         className="fixed bottom-4 left-4 z-50 w-80 rounded-md border border-stroke-default bg-surface-elevated p-4 shadow-card"
       >
-        <h2 id={headingId} className="text-label-sm-medium text-text-secondary">
-          Your task
-        </h2>
-        <p className="mt-1 text-body-sm-medium text-text-primary">{scenario.task}</p>
+        {/* The task only: no steps, no outlines. The participant says when they're done (a usability test's rule:
+            whether they really got there is what the facilitator watches), which also takes them back to the list. */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <h2 id={headingId} className="text-label-sm-medium text-text-secondary">
+              Your task
+            </h2>
+            <p className="text-body-sm-medium text-text-primary">{scenario.task}</p>
+          </div>
+          <div>
+            <Button size="sm" onClick={leave}>
+              I&apos;m done
+            </Button>
+          </div>
+        </div>
       </aside>
     );
   }

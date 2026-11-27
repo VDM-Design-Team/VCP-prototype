@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Button, IconButton } from "@vdm-design-team/vcp-design-system";
+import { Button, Field, Icon, IconButton, Input, SearchSelect, Tag, type TagProps } from "@vdm-design-team/vcp-design-system";
 import { useScenario } from "@/components/scenario";
+import { ROLES, type Role } from "@/components/roles";
+import { rolesOf, startPageOf } from "@/flows/scenario-tags";
 import { FLOWS } from "@/flows/catalogue";
 import type { FlowDef, ScenarioDef } from "@/flows/types";
 
@@ -15,11 +17,41 @@ import type { FlowDef, ScenarioDef } from "@/flows/types";
  */
 const built = FLOWS.filter((f) => f.scenarios.length > 0);
 const planned = FLOWS.filter((f) => f.scenarios.length === 0);
-const areas = [...new Set(built.map((f) => f.area))];
+/* Every page a scenario starts on, for the "Starts on" filter. */
+const START_PAGES = [...new Set(built.flatMap((f) => f.scenarios.map(startPageOf)))].sort();
+/* Every tag is tonal. A colour per role, so a card's people read at a glance; the start page has a colour no role
+   has, so it never reads as one. */
+const ROLE_TONE: Record<Role, TagProps["tone"]> = { user: "neutral", admin: "info", "super-admin": "brand" };
+const roleLabel = (role: Role) => ROLES.find((r) => r.value === role)!.label;
+/* What the search reads: what the card and its flow heading show (title, description, flow, tags). */
+const searchText = (flow: FlowDef, s: ScenarioDef) =>
+  [s.name, s.demonstrates, `${flow.area} ${flow.number} ${flow.name}`, ...rolesOf(s).map(roleLabel), startPageOf(s)].join(" ").toLowerCase();
 
 export function Catalogue() {
   const router = useRouter();
   const { clear } = useScenario();
+  /* Filters: any of the picked roles (a scenario can be seen as several), and the page it starts on. */
+  const [roles, setRoles] = React.useState<ReadonlySet<Role>>(new Set());
+  const [page, setPage] = React.useState("");
+  const [query, setQuery] = React.useState("");
+  const filtering = roles.size > 0 || page !== "" || query.trim() !== "";
+  const shown = React.useMemo(() => {
+    /* Every word typed must appear somewhere on the card, in any order. */
+    const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return built
+        .map((f) => ({
+          ...f,
+          scenarios: f.scenarios.filter(
+            (s) =>
+              (roles.size === 0 || rolesOf(s).some((r) => roles.has(r))) &&
+              (!page || startPageOf(s) === page) &&
+              words.every((w) => searchText(f, s).includes(w)),
+          ),
+        }))
+        .filter((f) => f.scenarios.length > 0);
+  }, [roles, page, query]);
+  const areas = [...new Set(shown.map((f) => f.area))];
+  const count = shown.reduce((n, f) => n + f.scenarios.length, 0);
   /* Back from a scenario (Finish, Leave scenario) the address names its card: show it, and put focus on its Start,
      so the list doesn't open at the top again. */
   React.useEffect(() => {
@@ -29,36 +61,45 @@ export function Catalogue() {
     card.scrollIntoView({ block: "center" });
     card.querySelector<HTMLElement>("button")?.focus({ preventScroll: true });
   }, []);
-  /* The contents mark the flow being read: the last one whose heading has scrolled past the top third. */
-  const [current, setCurrent] = React.useState(built[0]?.id);
-  /* Each area of the contents opens and closes. Until you open or close one yourself, the one being read is open
-     and the others closed, so the contents follow you down the page. */
-  const [chosen, setChosen] = React.useState<Readonly<Record<string, boolean>>>({});
-  const currentArea = built.find((f) => f.id === current)?.area;
-  const isOpenArea = (area: string) => chosen[area] ?? area === currentArea;
-  const toggle = (area: string, to?: boolean) => setChosen((was) => ({ ...was, [area]: to ?? !isOpenArea(area) }));
+  /* The contents mark the flow being read: the last one whose heading has scrolled past the top third. `visit` counts
+     the areas entered, so a stay in an area can be told from a later one in the same area. */
+  const [here, setHere] = React.useState<{ flow?: string; visit: number }>({ flow: shown[0]?.id, visit: 0 });
+  const current = here.flow;
+  /* Each area of the contents opens and closes. On its own, the one being read is open and the others closed, so the
+     contents follow you down the page. What you open or close by hand lasts while you stay in that area; once you're
+     in another, it's gone, and coming back doesn't bring it back. */
+  const currentArea = shown.find((f) => f.id === current)?.area;
+  const [chosen, setChosen] = React.useState<{ visit?: number; open: Readonly<Record<string, boolean>> }>({ open: {} });
+  const choices = chosen.visit === here.visit ? chosen.open : {};
+  const isOpenArea = (area: string) => choices[area] ?? area === currentArea;
+  const toggle = (area: string, to?: boolean) =>
+    setChosen({ visit: here.visit, open: { ...choices, [area]: to ?? !isOpenArea(area) } });
   React.useEffect(() => {
+    const areaOf = (id?: string) => shown.find((f) => f.id === id)?.area;
     const onScroll = () => {
       const line = window.innerHeight / 3;
-      let at = built[0]?.id;
-      for (const f of built) {
+      let at = shown[0]?.id;
+      for (const f of shown) {
         const el = document.getElementById(`flow-${f.id}`);
         if (el && el.getBoundingClientRect().top <= line) at = f.id;
       }
-      setCurrent(at);
+      setHere((was) =>
+        was.flow === at ? was : { flow: at, visit: areaOf(at) === areaOf(was.flow) ? was.visit : was.visit + 1 },
+      );
     };
     onScroll();
     /* The page scrolls in the app's own container, not the window: listen for any scroll, in the capture phase. */
     document.addEventListener("scroll", onScroll, { capture: true, passive: true });
     return () => document.removeEventListener("scroll", onScroll, { capture: true });
-  }, []);
+  }, [shown]);
   return (
     <main className="min-h-screen bg-surface-canvas px-6 py-10">
       {/* Not centred: the contents sit at the window's left edge, with the list beside them. */}
-      <div className="flex max-w-7xl flex-col gap-10 lg:flex-row lg:items-start lg:gap-8">
+      <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:gap-10">
         {/* Contents: every flow by area, a jump to each, and the way out. Sticky beside the list on a wide window;
-            above it on a narrow one. */}
-        <nav aria-label="Flows" className="flex shrink-0 flex-col gap-4 lg:sticky lg:top-10 lg:max-h-screen lg:w-64 lg:overflow-y-auto lg:pb-10">
+            above it on a narrow one. It scrolls on its own, which clips at its edges: 4 inside (offset outside) keeps
+            the fields' focus rings whole. */}
+        <nav aria-label="Flows" className="flex shrink-0 flex-col gap-4 lg:sticky lg:top-10 lg:-mx-1 lg:-mt-1 lg:max-h-screen lg:w-66 lg:overflow-y-auto lg:px-1 lg:pb-10 lg:pt-1">
           <Button
             size="sm"
             variant="secondary"
@@ -69,8 +110,70 @@ export function Catalogue() {
           >
             Explore the prototype
           </Button>
+          {/* Find a scenario: search what the cards say, filter by role and start page. */}
+          <section aria-label="Find a scenario" className="flex flex-col gap-3">
+            <Field label="Search">
+              <Input
+                type="search"
+                size="sm"
+                edge="neutral"
+                fullWidth
+                placeholder="Title, description, flow…"
+                leadingIcon={<Icon name="magnifying-glass" size={16} />}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </Field>
+            <Field label="Roles">
+              <SearchSelect
+                size="sm"
+                multiple
+                display="tags"
+                rows="tag"
+                searchable={false}
+                edge="neutral"
+                emphasis="regular"
+                placeholder="Any role"
+                options={ROLES.map((r) => ({ value: r.value, label: r.label, tone: ROLE_TONE[r.value] }))}
+                value={[...roles]}
+                onChange={(picked) => setRoles(new Set(picked as Role[]))}
+              />
+            </Field>
+            <Field label="Starts on">
+              {/* The ✕ (once a page is picked) empties it: back to any page. */}
+              <SearchSelect
+                size="sm"
+                edge="neutral"
+                emphasis="regular"
+                clearable
+                placeholder="Any page"
+                searchPlaceholder="Search pages"
+                value={page}
+                onChange={setPage}
+                options={START_PAGES.map((p) => ({ value: p, label: p }))}
+              />
+            </Field>
+            <div className="flex items-center justify-between gap-2">
+              <p aria-live="polite" className="text-body-sm-regular text-text-secondary">
+                {count} {count === 1 ? "scenario" : "scenarios"}
+              </p>
+              {filtering && (
+                <Button
+                  size="sm"
+                  variant="tertiary"
+                  onClick={() => {
+                    setQuery("");
+                    setRoles(new Set());
+                    setPage("");
+                  }}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+          </section>
           {areas.map((area) => {
-            const flows = built.filter((f) => f.area === area);
+            const flows = shown.filter((f) => f.area === area);
             const isOpen = isOpenArea(area);
             const listId = `contents-${area}`;
             return (
@@ -79,10 +182,14 @@ export function Catalogue() {
                     Two controls, because one that both links and toggles would be neither (DS sidebar-item: a
                     disclosure is not a link). */}
                 <div className="flex items-center gap-1">
+                  {/* Closed while you read one of its flows: the area itself is marked, as its flow would be. */}
                   <a
                     href={`#flow-${flows[0].id}`}
                     onClick={() => toggle(area, true)}
-                    className="flex-1 rounded-sm px-2 py-1 text-label-sm-semibold text-text-secondary hover:bg-surface-neutral-subtle"
+                    aria-current={!isOpen && area === currentArea ? "location" : undefined}
+                    className={`flex-1 rounded-sm px-2 py-1 text-label-sm-semibold hover:bg-surface-neutral-subtle ${
+                      !isOpen && area === currentArea ? "bg-surface-neutral-subtle text-text-primary" : "text-text-secondary"
+                    }`}
                   >
                     {area} <span className="text-text-tertiary">· {flows.length}</span>
                   </a>
@@ -123,11 +230,14 @@ export function Catalogue() {
         <div className="flex min-w-0 flex-1 flex-col gap-10">
         <header className="flex flex-col gap-2">
           <h1 className="text-heading-lg-semibold text-text-primary">Flows &amp; Scenarios</h1>
-          <p className="text-body-md-regular text-text-secondary">
+          <p className="max-w-3xl text-body-md-regular text-text-secondary">
             Pick a scenario to be walked through it step by step, or explore the prototype freely.
+            <br />
+            <strong className="font-semibold text-text-primary">Start</strong>: guided, step by step.{" "}
+            <strong className="font-semibold text-text-primary">As participant</strong>: the task only, for usability tests.
           </p>
         </header>
-        {built.map((flow) => (
+        {shown.map((flow) => (
           <FlowGroup key={flow.id} flow={flow} />
         ))}
         {planned.length > 0 && (
@@ -160,7 +270,9 @@ function FlowGroup({ flow }: { flow: FlowDef }) {
           </a>
         )}
       </div>
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* As many columns as the window has room for (2, 3, then 4), with every card wide enough for Start and As
+          participant side by side. */}
+      <ul className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {flow.scenarios.map((s) => (
           <ScenarioCard key={s.id} flow={flow} scenario={s} />
         ))}
@@ -178,17 +290,28 @@ function ScenarioCard({ flow, scenario }: { flow: FlowDef; scenario: ScenarioDef
       /* Leaving the scenario comes back to this card (`/flows#<id>`). */
       id={scenario.id}
       aria-labelledby={headingId}
-      className="flex flex-col gap-2 rounded-md border border-stroke-default bg-surface-elevated p-4"
+      className="flex flex-col gap-3 rounded-md border border-stroke-default bg-surface-elevated p-6"
     >
       <h3 id={headingId} className="text-body-md-semibold text-text-primary">
         {scenario.name}
       </h3>
+      {/* Who it's seen as (each role it switches to too), and where it starts. */}
+      <ul aria-label="Roles and start page" className="flex flex-wrap gap-1">
+        {rolesOf(scenario).map((role) => (
+          <li key={role}>
+            <Tag size="xs" tone={ROLE_TONE[role]}>{roleLabel(role)}</Tag>
+          </li>
+        ))}
+        <li>
+          <Tag size="xs" tone="success">{startPageOf(scenario)}</Tag>
+        </li>
+      </ul>
       <p className="flex-1 text-body-sm-regular text-text-secondary">{scenario.demonstrates}</p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
+      <div className="mt-3 flex items-center gap-2">
         <Button size="sm" onClick={() => router.push(href)}>
           Start<span className="sr-only"> {scenario.name}</span>
         </Button>
-        <Button size="sm" variant="tertiary" onClick={() => router.push(`${href}?view=participant`)}>
+        <Button size="sm" variant="secondary" onClick={() => router.push(`${href}?view=participant`)}>
           As participant<span className="sr-only">: {scenario.name}</span>
         </Button>
       </div>
