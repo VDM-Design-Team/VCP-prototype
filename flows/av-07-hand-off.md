@@ -38,7 +38,7 @@ Hand finished work over for review, and have it signed off (Completed) or sent b
 
 ## Unresolved questions
 - **The decided handoff form: done.** On 6 Nov the Handoff Date became a required calendar field, in one form shared by single and bulk handoff, with shared attachments. The prototype moved to it with design system 1.0.0 (12 Nov): the date is passed as ISO and a file removed in the dialog is left out of the handoff.
-- **Decided 13 Nov 2026:** a handoff needs at least one demo link or one attachment. The scenarios that handed off with only a date now add a link, or use an AV that already has a file; "Nothing to review" walks the refusal.
+- **Decided 13 Nov 2026:** a handoff needs at least one demo link or one attachment. The scenarios that handed off with only a date now add a link, or use an AV that already has a file; *Hand off on time (Design)* walks the refusal before handing off with a link.
 - **Focus on a blocked handoff: done.** A refused handoff puts focus on the first field that is wrong: the date, the overdue reason, or the first link box.
 - **Date format:** the handoff dialog's date reads dd/mm/yyyy since 1.0.0; the review dialog still reads "05-11-2026" (its dates are text the prototype passes); the 6 Nov decision is dd/mm/yyyy.
 - **Handoff & Publish:** what "publish" does isn't drawn; the prototype only words the toast differently.

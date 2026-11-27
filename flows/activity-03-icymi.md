@@ -25,6 +25,7 @@ Bring back the Added Values that have been waiting too long, before they slip fu
 |---|---|---|
 | Nothing waiting | No strip | — |
 | Everything dismissed | "You’re all caught up." | — |
+| A user, not an admin | Only their own AVs (raised or assigned), no Pending cards; an admin sees the domain's | — |
 
 ## Completion or exit
 - **Done:** the AVs that have waited are opened or knowingly set aside.

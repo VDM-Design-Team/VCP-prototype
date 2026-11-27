@@ -70,8 +70,14 @@ task; a scenario is one set of conditions inside it.
   screen never disagree: a press step has `action` (Next presses the target;
   a `step:` target presses the button inside it), a change on the form has
   `fill` (Next fills it in; your own change counts once it's done and you stop
-  typing), a page to open has `open` (Next opens it), and a drag step has
-  `drop` (row, section). Write such a step as "Type a title, or press Next".
+  typing), fields that aren't the AV form (a dialog's reason, a demo link, a
+  row's checkbox, a filter, an assignee) have `enter` (field name → text,
+  option words, a list of words for a multi-select, or true/false; Next enters
+  them, your own entries count once they all hold something), a page to open
+  has `open` (Next opens it), and a drag step has `drop` (row, section). A step
+  can press `first` what it takes to reach its fields (`field:Date`, then the
+  picker's days). With a dialog or menu open, targets and fields are looked for
+  in it first. Write such a step as "Type a title, or press Next".
   A step's `path` is exact, or
   uses `*` (one segment in the middle, the rest at the end). A scenario that needs
   sample AVs changed lists them in `avs` (matched by id). When the user's own
@@ -79,10 +85,18 @@ task; a scenario is one set of conditions inside it.
   puts back what the screen held when that step began (the sample data, the
   role, the rail and the page) and rebuilds the screen, then redoes the fills
   and presses walked on that page before it; a step that only shows what a
-  press did on the same page goes back to the press. The
+  press did on the same page (a dialog, its entries, a branch picked in it)
+  goes back to the press. The
   participant view has no guidance. **Reset, Finish and Leave scenario** put
   everything back: the sample data (anything the scenario created or changed),
   its toasts, the role and the rail. Finish and Leave return to the list.
+- **One card per outcome.** A scenario keeps its own card when its starting
+  data, its person or its result differs. Cancel paths, "who sees it" checks
+  and single validations are steps or branches of the scenario they belong to,
+  and the flow doc's failures table still lists every rule on its own row. A
+  different person keeps a card only when they *do* something different: what
+  a role can't do (no Accept for a user, no Add Part for a non-editor) is a row
+  in the flow doc, not a card. A cut scenario's id is never reused.
 - `/flows/<flow-id>/<scenario>` is a scenario's shareable link. Opening it
   resets the sample data, the role and the rail, then opens its screen.
   `?view=participant` hides the reviewer controls for a usability session.

@@ -5,7 +5,7 @@ import type { FlowDef, ScenarioDef, ScenarioStep } from "./types";
  * `flows/activity-01-reactions.md`, the FigJam page is "Activity · 01 Comment
  * reactions". Anyone reacts to a comment or reply on an AV (DS `CommentSection`
  * and `EmojiReactionPicker`): the quick 👍, the palette, joining someone's
- * reaction, and taking yours back. Figma: AV Comment Section 231:26974, flows
+ * reaction and taking it back. Figma: AV Comment Section 231:26974, flows
  * "Comment Reaction" 634:68928.
  */
 
@@ -26,28 +26,16 @@ export const REACTION_SCENARIOS: readonly ScenarioDef[] = [
       on("VCP-1205's comments. Under each comment and reply: the thumbs up and Add reaction, then any reactions (Figma's reaction row)."),
       press("On Alice's comment, press the thumbs up (Figma: Reacting with Thumbs Up).", "React with thumbs up"),
       on("\"👍 1\" appears, outlined in blue: it's yours (Own Reaction). The button now says Remove thumbs up reaction; pressing it again takes it back."),
+      press("For any other emoji, press Add reaction (the smiley with a plus) on the same comment.", "Add reaction"),
+      say("The palette (Figma 644:92458): Hand Gestures, Smileys & People, Symbols. Pick 🙌; it closes. Then Next."),
+      on("\"🙌 1\", yours, after the 👍: reactions sit in the order they were first added (Figma: Several Reactions). Picking an emoji you already used takes it back (Figma 644:92616)."),
     ],
-    name: "A quick thumbs up",
-    demonstrates: "The quick 👍 button (Figma 620:55208).",
+    name: "Add a reaction",
+    demonstrates: "The quick 👍 button (Figma 620:55208) and the add-reaction palette (Figma 643:70525).",
     conditions,
     simulated: "Reactions aren't saved. Alice would be told (decided 9 Nov 2026: the author hears of a reaction; DS #341), shown in Activity · 02.",
-    expected: "A 👍 1 pill, yours, on Alice's comment.",
-    task: "Let Alice know you like her idea, with one click.",
-  },
-  {
-    ...base,
-    id: "activity-01-reactions.palette",
-    steps: [
-      press("On Alice's comment, press Add reaction (the smiley with a plus).", "Add reaction"),
-      say("The palette (Figma 644:92458): Hand Gestures, Smileys & People, Symbols. Pick 🙌; it closes. Then Next."),
-      on("\"🙌 1\", yours. Reactions sit in the order they were first added (Figma: Several Reactions). Picking an emoji you already used takes it back (Figma 644:92616)."),
-    ],
-    name: "Pick from the palette",
-    demonstrates: "The add-reaction palette (Figma 643:70525).",
-    conditions,
-    simulated: "Nothing is saved.",
-    expected: "A 🙌 1 pill, yours.",
-    task: "Cheer Alice's idea with a raised-hands emoji.",
+    expected: "A 👍 1 and a 🙌 1 pill, both yours, on Alice's comment.",
+    task: "Let Alice know you like her idea: a thumbs up, then a raised-hands emoji.",
   },
   {
     ...base,
@@ -56,29 +44,15 @@ export const REACTION_SCENARIOS: readonly ScenarioDef[] = [
       on("Marvin's comment has \"👀 1\". Point at it, or Tab to it: \"Alice Carter reacted with :eyes:\" (Figma's who-reacted tooltip)."),
       press("Press 👀 to add yours.", "1 reaction, 👀"),
       on("\"👀 2\", now blue: yours too. Its tooltip reads \"You and Alice Carter reacted with :eyes:\" (Figma: Join Existing Emoji Reaction)."),
+      press("Changed your mind? Press it again to take yours back (Figma: Removing Your Reaction).", "2 reactions, 👀, you reacted"),
+      on("\"👀 1\", grey: Alice's stays. Take back the last of a reaction and its pill goes; focus moves to the next pill, or to Add reaction (DS #338), never to the page. A reply has the same row (Figma 634:68953)."),
     ],
-    name: "Join someone's reaction",
-    demonstrates: "Adding to an existing reaction, and who reacted (Figma 644:93264).",
+    name: "Join someone's reaction, and take it back",
+    demonstrates: "Adding to an existing reaction, who reacted, and removing yours from the pill (Figma 644:93264, 634:68953).",
     conditions,
     simulated: "Nothing is saved.",
-    expected: "👀 2, yours and Alice's.",
-    task: "Show Marvin you've seen his nudge, the way Alice did.",
-  },
-  {
-    ...base,
-    id: "activity-01-reactions.take-back",
-    steps: [
-      press("Open the reply under Marvin's comment: Show 1 Reply.", "Show 1 Reply"),
-      on("Your reply has \"👍 2\": you and Marvin (Own Reaction, blue)."),
-      press("Press it to take yours back (Figma: Removing Your Reaction).", "2 reactions, 👍, you reacted"),
-      on("\"👍 1\", grey: Marvin's stays. Take back the last of a reaction and its pill goes; focus moves to the next pill, or to Add reaction (DS #338), never to the page."),
-    ],
-    name: "Take your reaction back",
-    demonstrates: "Removing your reaction from a pill; a reply has the same row (Figma 634:68953).",
-    conditions,
-    simulated: "Nothing is saved.",
-    expected: "👍 1, Marvin's only.",
-    task: "You thumbed-up your own reply by mistake: undo it.",
+    expected: "👀 2, yours and Alice's; then 👀 1, Alice's only.",
+    task: "Show Marvin you've seen his nudge, the way Alice did; then take it back.",
   },
   {
     ...base,

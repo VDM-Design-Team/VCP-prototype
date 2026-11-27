@@ -34,7 +34,14 @@ export const BACKLOG_SCENARIOS: readonly ScenarioDef[] = [
       ),
       press("Nothing moved: it's still a Draft. Open ⋮ again.", "step:av-menu", "vcp-1199"),
       press("Choose Move to Backlog.", "button:Move to Backlog", "vcp-1199"),
-      press("The field is empty: it resets every time. Type why (\"Waiting for the filter bar redesign\"): Move to Backlog turns on. Press it.", "button:Move to Backlog", "vcp-1199"),
+      {
+        ...press(
+          "The field is empty: it resets every time. Type why (\"Waiting for the filter bar redesign\"): Move to Backlog turns on. Press it, or Next.",
+          "button:Move to Backlog",
+          "vcp-1199",
+        ),
+        enter: { Feedback: "Waiting for the filter bar redesign" },
+      },
       {
         text: "It stays open, now Backlog. A yellow banner, \"This Added Value was moved to the backlog\", shows the feedback (Figma 1090:27191); the toast's link opens the archive.",
         target: "step:remarks",
@@ -71,7 +78,7 @@ export const BACKLOG_SCENARIOS: readonly ScenarioDef[] = [
       menu("Admin view. VCP-1201 is Marvin's, Pending. An admin's ⋮ on Pending has Move to Backlog and Move to Draft.", "vcp-1201"),
       press("Open ⋮.", "step:av-menu", "vcp-1201"),
       press("Choose Move to Backlog.", "button:Move to Backlog", "vcp-1201"),
-      press("Type a reason, then press Move to Backlog.", "button:Move to Backlog", "vcp-1201"),
+      { ...press("Type a reason, then press Move to Backlog; or press Next.", "button:Move to Backlog", "vcp-1201"), enter: { Feedback: "Needs a supplier list first" } },
       {
         text: "Backlog, with Remarks. An admin can decide it from here: Reject and Accept in the header (Figma 1094:97734; DS #330).",
         target: "step:remarks",
