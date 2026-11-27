@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Button, Field, Icon, IconButton, Input, SearchSelect, Select, Tag, type TagProps } from "@vdm-design-team/vcp-design-system";
+import { Button, Field, Icon, IconButton, Input, SearchSelect, Tag, type TagProps } from "@vdm-design-team/vcp-design-system";
 import { useScenario } from "@/components/scenario";
 import { ROLES, type Role } from "@/components/roles";
 import { rolesOf, startPageOf } from "@/flows/scenario-tags";
@@ -131,12 +131,17 @@ export function Catalogue() {
               />
             </Field>
             <Field label="Starts on">
-              <Select
+              {/* The ✕ (once a page is picked) empties it: back to any page. */}
+              <SearchSelect
                 size="sm"
                 edge="neutral"
+                emphasis="regular"
+                clearable
+                placeholder="Any page"
+                searchPlaceholder="Search pages"
                 value={page}
                 onChange={setPage}
-                options={[{ value: "", label: "Any page" }, ...START_PAGES.map((p) => ({ value: p, label: p }))]}
+                options={START_PAGES.map((p) => ({ value: p, label: p }))}
               />
             </Field>
             <div className="flex items-center justify-between gap-2">
