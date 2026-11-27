@@ -61,18 +61,21 @@ export function Catalogue() {
     card.scrollIntoView({ block: "center" });
     card.querySelector<HTMLElement>("button")?.focus({ preventScroll: true });
   }, []);
-  /* The contents mark the flow being read: the last one whose heading has scrolled past the top third. */
-  const [current, setCurrent] = React.useState(shown[0]?.id);
+  /* The contents mark the flow being read: the last one whose heading has scrolled past the top third. `visit` counts
+     the areas entered, so a stay in an area can be told from a later one in the same area. */
+  const [here, setHere] = React.useState<{ flow?: string; visit: number }>({ flow: shown[0]?.id, visit: 0 });
+  const current = here.flow;
   /* Each area of the contents opens and closes. On its own, the one being read is open and the others closed, so the
-     contents follow you down the page. What you open or close by hand holds while you stay in that area; scroll into
-     another and it follows you again. */
+     contents follow you down the page. What you open or close by hand lasts while you stay in that area; once you're
+     in another, it's gone, and coming back doesn't bring it back. */
   const currentArea = shown.find((f) => f.id === current)?.area;
-  const [chosen, setChosen] = React.useState<{ in?: string; open: Readonly<Record<string, boolean>> }>({ open: {} });
-  const choices = chosen.in === currentArea ? chosen.open : {};
+  const [chosen, setChosen] = React.useState<{ visit?: number; open: Readonly<Record<string, boolean>> }>({ open: {} });
+  const choices = chosen.visit === here.visit ? chosen.open : {};
   const isOpenArea = (area: string) => choices[area] ?? area === currentArea;
   const toggle = (area: string, to?: boolean) =>
-    setChosen({ in: currentArea, open: { ...choices, [area]: to ?? !isOpenArea(area) } });
+    setChosen({ visit: here.visit, open: { ...choices, [area]: to ?? !isOpenArea(area) } });
   React.useEffect(() => {
+    const areaOf = (id?: string) => shown.find((f) => f.id === id)?.area;
     const onScroll = () => {
       const line = window.innerHeight / 3;
       let at = shown[0]?.id;
@@ -80,7 +83,9 @@ export function Catalogue() {
         const el = document.getElementById(`flow-${f.id}`);
         if (el && el.getBoundingClientRect().top <= line) at = f.id;
       }
-      setCurrent(at);
+      setHere((was) =>
+        was.flow === at ? was : { flow: at, visit: areaOf(at) === areaOf(was.flow) ? was.visit : was.visit + 1 },
+      );
     };
     onScroll();
     /* The page scrolls in the app's own container, not the window: listen for any scroll, in the capture phase. */
